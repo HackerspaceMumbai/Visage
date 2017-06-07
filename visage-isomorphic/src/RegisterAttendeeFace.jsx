@@ -1,19 +1,24 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import DropzoneComponent from 'react-dropzone-component';
+// import queryString from  'query-string';
 
 export default class RegisterAttendeeFace extends React.Component {
+
     constructor(props) {
         super(props);
-
+    //    (new URLSearchParams(props.location.search)).get('eventName')
+    //    const parsed = queryString.parse(props.location.search);
         // For a full list of possible configurations,
         // please consult http://www.dropzonejs.com/#configuration
         this.djsConfig = {
             acceptedFiles: "image/jpeg,image/png,image/gif",
             addRemoveLinks: true,
             params: {
-                eventName: 'Azure-Cloud_Meetup',
-                participantEmail: 'participant@outlook.com'
+                // eventName: 'Azure-Cloud_Meetup',
+                eventName: (new URLSearchParams(this.props.location.search)).get('event_name'),
+                // participantEmail: 'participant@outlook.com'
+                participantEmail: (new URLSearchParams(this.props.location.search)).get('participant_email')
             }
         };
 
@@ -34,13 +39,13 @@ export default class RegisterAttendeeFace extends React.Component {
     render() {
         const config = this.componentConfig;
         const djsConfig = this.djsConfig;
-
+          
         // For a list of all possible events (there are many), see README.md!
         const eventHandlers = {
             drop: this.callbackArray,
             addedfile: this.callback,
         }
 
-        return <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig} />
+        return   <div> <h4>Meetup : {(new URLSearchParams(this.props.location.search)).get('event_name')}, </h4> <h4>Attendee : {(new URLSearchParams(this.props.location.search)).get('participant_email')} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;
     }
 }
