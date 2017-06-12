@@ -46,6 +46,6 @@ export default class RegisterAttendeeFace extends React.Component {
             addedfile: this.callback,
         }
 
-        return   <div> <h4>Meetup : {(new URLSearchParams(this.props.location.search)).get('event_name')}, </h4> <h4>Attendee : {(new URLSearchParams(this.props.location.search)).get('participant_email')} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;
+        return   <div> <h4>Meetup : {(new URLSearchParams(this.props.location.search)).get('event_name')} </h4> <h4>Attendee : {(new URLSearchParams(this.props.location.search)).get('participant_email')} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;
     }
 }

@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.15.0",
+    "dotenv-extended": "^2.0.1",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
     "multer": "^1.1.0",

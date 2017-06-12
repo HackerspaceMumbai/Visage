@@ -25552,7 +25552,7 @@
 	                    null,
 	                    'Meetup : ',
 	                    new URLSearchParams(this.props.location.search).get('event_name'),
-	                    ', '
+	                    ' '
 	                ),
 	                ' ',
 	                _react2.default.createElement(
