@@ -7,7 +7,7 @@ module.exports = (app) => {
 
    
 
-    const upload = multer({ storage: storage });
+    const upload = multer();
         
 
     app.post('/uploadHandler', function (req, res, next) {
