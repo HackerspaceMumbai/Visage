@@ -46,4 +46,8 @@ module.exports = (app) => {
 
         res.send({ responseText: req.file.path }); // You can send any response to the user here
     });
+
+    app.get('/',function(req, res){
+        res.sendFile('index.html');
+    });
 }

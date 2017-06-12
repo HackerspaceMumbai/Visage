@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+// import { browserHistory, Router, Route, Link, withRouter } from 'react-router';
+import { BrowserRouter, Route } from 'react-router-dom'
 import RegisterAttendeeFace from './RegisterAttendeeFace.jsx';
-
 
 // Render
 
@@ -21,4 +22,12 @@ class RegisterAttendeeFaceMain extends React.Component {
     }
 }
 
-ReactDOM.render(<RegisterAttendeeFace />, document.getElementById('host'));
+// ReactDOM.render(<RegisterAttendeeFace />, document.getElementById('host'));
+ReactDOM.render(
+   (
+     <BrowserRouter>
+          <Route path="/" component={RegisterAttendeeFace}/>
+     </BrowserRouter>
+     )
+    ,document.getElementById('host')
+);
