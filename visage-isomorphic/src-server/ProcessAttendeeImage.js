@@ -4,13 +4,50 @@ module.exports = (app) => {
     //const bodyParser = require('body-parser');
     var oxford = require('project-oxford'),
     client = new oxford.Client(process.env.FACE_API_KEY);
-
+   console.log(process.env.FACE_API_KEY);
    
 
-    const upload = multer();
-        
+const storage = multer.diskStorage({
 
-    app.post('/uploadHandler', function (req, res, next) {
+        destination: './uploads/',
+
+        filename: function (req, file, cb) {
+
+            // Mimetype stores the file type, set extensions according to filetype
+
+            switch (file.mimetype) {
+
+                case 'image/jpeg':
+
+                    ext = '.jpeg';
+
+                    break;
+
+                case 'image/png':
+
+                    ext = '.png';
+
+                    break;
+
+                case 'image/gif':
+
+                    ext = '.gif';
+
+                    break;
+
+            }
+
+
+
+            cb(null, file.originalname.slice(0, 4) + Date.now() + ext);
+
+        }
+
+    });
+
+    const upload = multer({ storage: storage });        
+
+    app.post('/uploadHandler', upload.single('file'),  function (req, res, next) {
         if (req.file && req.file.originalname) {
             console.log(`Received file ${req.file.originalname}`);
 
