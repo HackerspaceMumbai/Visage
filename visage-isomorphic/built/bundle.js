@@ -25528,6 +25528,9 @@
 	        _this.callback = function () {
 	            return console.log('Hello!');
 	        };
+	        _this.successCallback = function (file, response, error) {
+	            return console.log(response);
+	        };
 	        return _this;
 	    }
 
@@ -25540,7 +25543,8 @@
 	            // For a list of all possible events (there are many), see README.md!
 	            var eventHandlers = {
 	                drop: this.callbackArray,
-	                addedfile: this.callback
+	                addedfile: this.callback,
+	                success: this.successCallback
 	            };
 
 	            return _react2.default.createElement(
