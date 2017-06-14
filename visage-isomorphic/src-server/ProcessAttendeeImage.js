@@ -49,26 +49,33 @@ module.exports = (app) => {
                                 .then(function (response) {
                                     console.log(response);
                                     // console.log(JSON.parse(JSON.stringify(response)).personGroupId);
+                                    console.log('Face Added');
                                     responseArgs = {"status" : "success",  "responseText" : "Face Added"};
-                                }).catch(function (err) {
-                                    responseArgs = {"status" : "failed"};
-                                    console.log(err);
-                                    console.log("Could Not add Face");
-                                    responseArgs = {"status" : "failed",  "responseText" : "Could Not add Face"};
-                                });
+                                    res.send({responseText : 'Face Successfully Added'});
+                                })
+                                // .catch(function (err) {
+                                //     responseArgs = {"status" : "failed"};
+                                //     console.log(err);
+                                //     console.log("Could Not add Face");
+                                //     responseArgs = {"status" : "failed",  "responseText" : "Could Not add Face"};
+                                // });
 
-                        }).catch(function (err) {
-                            console.log(err);
-                            console.log("Could Not Create Person");
-                            responseArgs = {"status" : "failed",  "responseText" : "Could Not Create Person"};
+                        })
+                        // .catch(function (err) {
+                        //     console.log(err);
+                        //     console.log("Could Not Create Person");
+                        //     responseArgs = {"status" : "failed",  "responseText" : "Could Not Create Person"};
 
-                        });
+                        // });
 
 
-                }).catch(function (err) {
+                })
+                .catch(function (err) {
                     console.log(err);
                     console.log("No Such Meetup group");
                     responseArgs = {"status" : "failed", "responseText" : "No Such Meetup group"};
+                    res.status(500).send('Face could not be added, please click on link sent in email and try again');
+
 
                 });
 
@@ -78,9 +85,8 @@ module.exports = (app) => {
 
         }
 
-
-
-        res.send(responseArgs); // You can send any response to the user here
+        
+         // You can send any response to the user here
     });
 
     app.get('/', function (req, res) {
