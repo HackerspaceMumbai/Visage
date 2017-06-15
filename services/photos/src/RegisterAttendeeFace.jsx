@@ -13,7 +13,7 @@ export default class RegisterAttendeeFace extends React.Component {
         // please consult http://www.dropzonejs.com/#configuration
         this.djsConfig = {
             acceptedFiles: "image/jpeg,image/png,image/gif",
-            addRemoveLinks: true,
+            addRemoveLinks: false,
             params: {
                 // eventName: 'Azure-Cloud_Meetup',
                 eventName: (new URLSearchParams(this.props.location.search)).get('event_name'),
@@ -34,6 +34,7 @@ export default class RegisterAttendeeFace extends React.Component {
 
         // Simple callbacks work too, of course
         this.callback = () => console.log('Hello!');
+        // this.successCallback = (file, response) => alert("Face Registered.");
     }
 
     render() {
@@ -44,6 +45,7 @@ export default class RegisterAttendeeFace extends React.Component {
         const eventHandlers = {
             drop: this.callbackArray,
             addedfile: this.callback,
+           // success: this.successCallback,
         }
 
         return   <div> <h4>Meetup : {(new URLSearchParams(this.props.location.search)).get('event_name')} </h4> <h4>Attendee : {(new URLSearchParams(this.props.location.search)).get('participant_email')} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;

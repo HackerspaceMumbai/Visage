@@ -3,6 +3,12 @@
     "configurations": [
         
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "program": "${workspaceRoot}\\visage-isomorphic\\server.js"
+        },
+        {
             "name": "Docker: Attach to Node",
             "type": "node",
             "request": "attach",
