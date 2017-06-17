@@ -151,17 +151,25 @@ namespace IntelligentKioskSample.Controls
             this.hostGrid.Children.Add(b);
         }
 
+        public void ShowCaptionMessage(string Message)
+        {
+            this.CaptionText = string.Format(Message);
+            this.DataContext = this;
+            this.captionCanvas.Visibility = Visibility.Visible;
+        }
+
         public void ShowIdentificationData(double age, string gender, uint confidence, string name = null)
         {
             int roundedAge = (int)Math.Round(age);
 
             if (!string.IsNullOrEmpty(name))
             {
-                this.CaptionText = string.Format("{0}, {1} ({2}%)", name, roundedAge, confidence);
+                this.CaptionText = string.Format("{0}, {1} (Confidence Level - {2}%)", name, roundedAge, confidence);
                 this.genderIcon.Visibility = Visibility.Collapsed;
             }
             else if (!string.IsNullOrEmpty(gender))
             {
+                // this.CaptionText = string.Format("Sorry face could not be identified");
                 this.CaptionText = roundedAge.ToString();
                 if (string.Compare(gender, "male", true) == 0)
                 {

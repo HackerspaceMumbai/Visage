@@ -312,6 +312,16 @@ namespace IntelligentKioskSample.Controls
                         await imageWithFace.IdentifyFacesAsync();
                     }
 
+                    ////if (imageWithFace.DetectedFaces.Count<Face>() <= 0)
+                    ////{
+                    ////    FaceIdentificationBorder faceUI = (FaceIdentificationBorder)this.hostGrid.Children.FirstOrDefault(e => e is FaceIdentificationBorder && (Guid)(e as FaceIdentificationBorder).Tag == face.FaceId);
+
+                    ////    if (faceUI != null)
+                    ////    {
+                    ////        faceUI.ShowCaptionMessage("Sorry could not identify attendee");
+                    ////    }
+                    ////}
+
                     if (this.ShowRecognitionResults)
                     {
                         foreach (Face face in imageWithFace.DetectedFaces)
@@ -328,7 +338,14 @@ namespace IntelligentKioskSample.Controls
                                 double age = this.DetectFaceAttributes ? face.FaceAttributes.Age : 0;
                                 double confidence = this.DetectFaceAttributes && faceIdIdentification != null ? faceIdIdentification.Confidence : 0;
 
-                                faceUI.ShowIdentificationData(age, gender, (uint)Math.Round(confidence * 100), name);
+                                if (name is null)
+                                {
+                                    faceUI.ShowCaptionMessage("Sorry could not identify attendee");
+                                }
+                                else
+                                {
+                                    faceUI.ShowIdentificationData(age, gender, (uint)Math.Round(confidence * 100), name);
+                                }
                             }
                         }
                     }

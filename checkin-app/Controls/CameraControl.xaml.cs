@@ -330,8 +330,9 @@ namespace IntelligentKioskSample.Controls
                             }
                             else
                             {
+                               
                                 // only age and gender available
-                                faceBorder.ShowIdentificationData(detectedFace.FaceAttributes.Age, detectedFace.FaceAttributes.Gender, 0, null, uniqueId: uniqueId);
+                                // faceBorder.ShowIdentificationData(detectedFace.FaceAttributes.Age, detectedFace.FaceAttributes.Gender, 0, null, uniqueId: uniqueId);
                             }
                         }
                         else if (identifiedPerson != null && identifiedPerson.Person != null)

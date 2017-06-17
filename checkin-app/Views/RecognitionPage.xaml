@@ -54,7 +54,7 @@
 
             <ctl:ImageWithFaceBorderUserControl BalloonBackground="#ECCF11" BalloonForeground="#D86C2A" Grid.Row="1" Grid.Column="1" x:Name="imageWithFacesControl" DetectFacesOnLoad="True" DetectFaceAttributes="True" ShowMultipleFaces="True" PerformRecognition="True" ShowRecognitionResults="True" DetectFaceLandmarks="{Binding ElementName=showFaceLandmarks, Path=IsChecked}"/>
 
-            <CheckBox IsChecked="true" x:Name="showFaceLandmarks" VerticalAlignment="Top" HorizontalAlignment="Center" Content="Detect face landmarks" Grid.Row="2" Grid.Column="1"/>
+            <CheckBox IsChecked="false" x:Name="showFaceLandmarks" VerticalAlignment="Top" HorizontalAlignment="Center" Content="Detect face landmarks" Grid.Row="2" Grid.Column="1"/>
 
         </Grid>
 
