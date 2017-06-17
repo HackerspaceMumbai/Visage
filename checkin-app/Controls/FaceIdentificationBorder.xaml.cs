@@ -164,7 +164,8 @@ namespace IntelligentKioskSample.Controls
 
             if (!string.IsNullOrEmpty(name))
             {
-                this.CaptionText = string.Format("{0}, {1} (Confidence Level - {2}%)", name, roundedAge, confidence);
+                // this.CaptionText = string.Format("You Have been Checked in {0}, {1} (Confidence Level - {2}%)", name, roundedAge, confidence);
+                this.CaptionText = string.Format("You Have been Checked in - {0}", name);
                 this.genderIcon.Visibility = Visibility.Collapsed;
             }
             else if (!string.IsNullOrEmpty(gender))
