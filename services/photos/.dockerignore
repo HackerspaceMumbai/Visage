@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+node_modules/
+dist/
+*.iml
+webpack-assets.json
+webpack-stats.json
+npm-debug.log
+.babel.json
+
+# docker
+.bash_history
+.env
+.npm
+.git
