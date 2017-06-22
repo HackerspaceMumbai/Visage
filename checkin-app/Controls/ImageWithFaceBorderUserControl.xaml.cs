@@ -345,28 +345,12 @@ namespace IntelligentKioskSample.Controls
                                 else
                                 {
                                     faceUI.ShowIdentificationData(age, gender, (uint)Math.Round(confidence * 100), name);
-                                    //Windows.Storage.StorageFolder storageFolder =
-                                    //Windows.Storage.ApplicationData.Current.LocalFolder;
-                                    //Windows.Storage.StorageFolder storageFolder =
-                                    //Windows.Storage.KnownFolders.DocumentsLibrary;
-                                    Windows.Storage.StorageFolder storageFolder = Windows.Storage.KnownFolders.PicturesLibrary;
-                                    //Windows.Storage.StorageFile sampleFile = await storageFolder.CreateFileAsync("june18event.txt", Windows.Storage.CreationCollisionOption.OpenIfExists);
-                                    // Do something with the new file.
+
+                                    // TODO Add code to mark attendee as checked in using <name>
+                                    // Windows.Storage.StorageFolder storageFolder = Windows.Storage.KnownFolders.PicturesLibrary;
                                     // Windows.Storage.StorageFile sampleFile = await storageFolder.GetFileAsync("june18event.txt");
-                                    //var stream = await sampleFile.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
-                                    Windows.Storage.StorageFile sampleFile =
-    await storageFolder.GetFileAsync("june18event.txt");
-                                    await Windows.Storage.FileIO.AppendTextAsync(sampleFile, "\n" + name + "Checked In at " + System.DateTime.Now);
-                                    //Windows.Storage.FileIO.WriteTextAsync(sampleFile, "Swift as a shadow");
-                                    //WriteLineAsync(name + "Checked In at " + System.DateTime.Now);
-                                    // StreamWriter eventFile = new StreamWriter("C:\\Users\\mabindra\\data\\eventBrite\\june18event.txt", append: true);
-                                    //treamWriter eventFile = new StreamWriter("C:\\Users\\mabindra\\data\\eventBrite\\june18event.txt",);
-                                    //entFile.WriteLine(name + "Checked In at " + System.DateTime.Now);
-                                    //using (FileStream fs = new FileStream("C:\\Users\\mabindra\\data\\eventBrite\\june18event.txt", FileMode.Append, FileAccess.Write))
-                                    //using (StreamWriter sw = new StreamWriter(fs))
-                                    //{
-                                    //   await sw.WriteLineAsync(name + "Checked In at " + System.DateTime.Now);
-                                    //}
+                                    // await Windows.Storage.FileIO.AppendTextAsync(sampleFile, "\n" + name + " |Checked In at| " + System.DateTime.Now);
+                                    
                                 }
                             }
                         }
