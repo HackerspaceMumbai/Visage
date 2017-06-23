@@ -1,6 +1,6 @@
 FROM node:7.2-alpine
 
-RUN mkdir -p /opt/app
+RUN useradd --user-group --create-home --shell /bin/false app && mkdir -p /opt/app
 
 # set our node environment, either development or production
 # defaults to production, compose overrides this to development on build and run
@@ -19,7 +19,10 @@ HEALTHCHECK CMD curl -fs http://localhost:$PORT/healthz || exit 1
 WORKDIR /opt
 COPY package.json /opt
 RUN npm install && npm cache clean --force
-ENV PATH /opt/node_modules/.bin:$PATH
+ENV PATH /opt/node_modules/.bin:$PATH APP=/opt/app
+
+RUN chown -R app $APP && chgrp -R app $APP
+USER app
 
 # copy in our source code last, as it changes the most
 WORKDIR /opt/app
