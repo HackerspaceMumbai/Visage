@@ -347,9 +347,10 @@ namespace IntelligentKioskSample.Controls
                                     faceUI.ShowIdentificationData(age, gender, (uint)Math.Round(confidence * 100), name);
 
                                     // TODO Add code to mark attendee as checked in using <name>
-                                    // Windows.Storage.StorageFolder storageFolder = Windows.Storage.KnownFolders.PicturesLibrary;
-                                    // Windows.Storage.StorageFile sampleFile = await storageFolder.GetFileAsync("june18event.txt");
-                                    // await Windows.Storage.FileIO.AppendTextAsync(sampleFile, "\n" + name + " |Checked In at| " + System.DateTime.Now);
+                                    Windows.Storage.StorageFolder storageFolder = Windows.Storage.KnownFolders.PicturesLibrary;
+                                    Windows.Storage.StorageFile sampleFile = await storageFolder.GetFileAsync("eventlog.txt");
+                                    await Windows.Storage.FileIO.AppendTextAsync(sampleFile, "\n" + name + " |Checked In at| " + System.DateTime.Now);
+
                                     
                                 }
                             }

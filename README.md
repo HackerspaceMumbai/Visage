@@ -51,6 +51,7 @@ The solution has 3 main components :
 ##### Installing and configuring the the UWP Checkin-app prior to checkin commencing
 * This application is a modified version of the [KIOSK APP](https://github.com/Microsoft/Cognitive-Samples-IntelligentKiosk)
 * The checkin-app solution can be loaded in visual studio 2015 or 2017. Once loaded the UWP app can be run
+* In default configuration checkins are logged into file eventlog.txt in the pictures folder, so this file needs to be created.
 * Once App is loaded we need to go Settings from the Menu and add the "FACE API Key"
 * Next from the Menu we need to go into FACE Identification setup from the menu. We should see the person group created for the event. On clicking the person group we should see the name of participants who have registered for the event. On the screen where we see the participants name we need to click the play icon to train the person group to recognize the faces of the registered participants. The training can also be done via the face API REST endpoints
 
