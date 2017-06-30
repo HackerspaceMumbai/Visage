@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import DropzoneComponent from 'react-dropzone-component';
+import queryString from 'query-string';
 // import queryString from  'query-string';
 
 export default class RegisterAttendeeFace extends React.Component {
@@ -16,9 +17,9 @@ export default class RegisterAttendeeFace extends React.Component {
             addRemoveLinks: false,
             params: {
                 // eventName: 'Azure-Cloud_Meetup',
-                eventName: (new URLSearchParams(this.props.location.search)).get('event_name'),
+                eventName: (new queryString.parse(this.props.location.search)).event_name,
                 // participantEmail: 'participant@outlook.com'
-                participantEmail: (new URLSearchParams(this.props.location.search)).get('participant_email')
+                participantEmail: (new queryString.parse(this.props.location.search)).participant_email
             }
         };
 
@@ -30,7 +31,7 @@ export default class RegisterAttendeeFace extends React.Component {
 
         // If you want to attach multiple callbacks, simply
         // create an array filled with all your callbacks.
-        this.callbackArray = [() => console.log('Hi!'), () => console.log('Ho!')];
+        this.callbackArray = [() => console.log('Callback received')];
 
         // Simple callbacks work too, of course
         this.callback = () => console.log('Hello!');
@@ -48,6 +49,6 @@ export default class RegisterAttendeeFace extends React.Component {
            // success: this.successCallback,
         }
 
-        return   <div> <h4>Meetup : {(new URLSearchParams(this.props.location.search)).get('event_name')} </h4> <h4>Attendee : {(new URLSearchParams(this.props.location.search)).get('participant_email')} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;
+        return   <div> <h4>Meetup : {(new queryString.parse(this.props.location.search)).event_name} </h4> <h4>Attendee : {(new queryString.parse(this.props.location.search)).participant_email} </h4> <DropzoneComponent config={config} eventHandlers={eventHandlers} djsConfig={djsConfig}  /></div>;
     }
 }
