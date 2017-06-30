@@ -338,7 +338,7 @@ namespace IntelligentKioskSample.Controls
                                 double age = this.DetectFaceAttributes ? face.FaceAttributes.Age : 0;
                                 double confidence = this.DetectFaceAttributes && faceIdIdentification != null ? faceIdIdentification.Confidence : 0;
 
-                                if (name is null)
+                                if (name == null)
                                 {
                                     faceUI.ShowCaptionMessage("Sorry could not identify attendee");
                                 }
@@ -350,8 +350,6 @@ namespace IntelligentKioskSample.Controls
                                     Windows.Storage.StorageFolder storageFolder = Windows.Storage.KnownFolders.PicturesLibrary;
                                     Windows.Storage.StorageFile sampleFile = await storageFolder.GetFileAsync("eventlog.txt");
                                     await Windows.Storage.FileIO.AppendTextAsync(sampleFile, "\n" + name + " |Checked In at| " + System.DateTime.Now);
-
-                                    
                                 }
                             }
                         }
