@@ -10,7 +10,7 @@ services:
     #command: ../node_modules/.bin/nodemon --debug=0.0.0.0:5858
     command: ../node_modules/.bin/nodemon --inspect=0.0.0.0:9229
     ports:
-      - "80:80"
+      - "80:8080"
       - "5858:5858"
       - "9229:9229"
     volumes:
