@@ -9,6 +9,8 @@
 *.userosscache
 *.sln.docstates
 
+.vscode/
+
 # Exclue .env file
 .env
 
