@@ -1,9 +1,8 @@
 module.exports = (app) => {
     const multer = require('multer');
-    require('dotenv-extended').load();
+
+    var meetupFaceManager = require('./MeetupFaceManager.js');
     //const bodyParser = require('body-parser');
-    var oxford = require('project-oxford'),
-        client = new oxford.Client(process.env.FACE_API_KEY);
 
 
     const storage = multer.memoryStorage();
@@ -17,7 +16,7 @@ module.exports = (app) => {
 
         }
 
-        var responseArgs ={};
+        var responseArgs = {};
 
         if (req.body) {
 
@@ -25,68 +24,71 @@ module.exports = (app) => {
             var bodyJSON = JSON.parse(bodyJSONString);
             var eventName = bodyJSON.eventName;
             var attendeeEmail = bodyJSON.participantEmail;
-            // console.log(bodyJSON);
             // console.log(bodyJSON.eventName);
             console.log(eventName);
-            // console
-
-            // Check if Meetup Group Exists
-            client.face.personGroup.get(eventName)
+            var attendeeExists = false;
+            var eventExists = false;
+            var personId = null;
+            // meetupFaceManager.EventExists()
+            meetupFaceManager.EventExists(eventName)
                 .then(function (response) {
                     console.log(response);
-                    console.log(JSON.parse(JSON.stringify(response)).personGroupId);
-                    console.log("Person Group Exists");
+                    eventExists = response.EventExists;
+                    if (eventExists) {
+                        meetupFaceManager.AttendeeExists(eventName, attendeeEmail)
+                            .then(function (response) {
+                                console.log(response);
+                                attendeeExists = response.PersonExists;
+                                if (attendeeExists) {
+                                    personId = response.PersonId;
+                                    meetupFaceManager.AddPersonFace(eventName, personId, req.file.buffer)
+                                        .then(function (response) {
+                                            console.log(response);
+                                            console.log('Face Added');
+                                            res.send({ responseText: 'Face Successfully Added' });
+                                        })
 
-                    var personId = '';
-                    client.face.person.create(eventName, attendeeEmail, attendeeEmail)
-                        .then(function (response) {
-                            console.log(response);
-                            console.log('person created');
-                            personId = JSON.parse(JSON.stringify(response)).personId;
-                            console.log(personId);
+                                }
+                                else {
+                                    meetupFaceManager.AddPerson(eventName, attendeeEmail)
+                                        .then(function (response) {
+                                            console.log(response);
+                                            if (response.PersonId != null) {
+                                                personId = response.PersonId;
+                                                meetupFaceManager.AddPersonFace(eventName, personId, req.file.buffer)
+                                                    .then(function (response) {
+                                                        console.log(response);
+                                                        console.log('Face Added');
+                                                        res.send({ responseText: 'Face Successfully Added' });
+                                                    })
+                                            }
+                                            else {
+                                                res.status(500).send('Could Not Create Add user to the event. Please verify details and try again.');
 
-                            client.face.person.addFace(eventName, personId, { data: req.file.buffer })
-                                .then(function (response) {
-                                    console.log(response);
-                                    // console.log(JSON.parse(JSON.stringify(response)).personGroupId);
-                                    console.log('Face Added');
-                                    responseArgs = {"status" : "success",  "responseText" : "Face Added"};
-                                    res.send({responseText : 'Face Successfully Added'});
-                                })
-                                // .catch(function (err) {
-                                //     responseArgs = {"status" : "failed"};
-                                //     console.log(err);
-                                //     console.log("Could Not add Face");
-                                //     responseArgs = {"status" : "failed",  "responseText" : "Could Not add Face"};
-                                // });
+                                            }
+                                        })
 
-                        })
-                        // .catch(function (err) {
-                        //     console.log(err);
-                        //     console.log("Could Not Create Person");
-                        //     responseArgs = {"status" : "failed",  "responseText" : "Could Not Create Person"};
+                                }
 
-                        // });
+                            })
 
+                    }
+                    else {
+                        res.status(500).send('Event name mentioned does not exist. Please verify');
+                    }
+                }
 
-                })
-                .catch(function (err) {
-                    console.log(err);
-                    console.log("No Such Meetup group");
-                    responseArgs = {"status" : "failed", "responseText" : "No Such Meetup group"};
-                    res.status(500).send('Face could not be added, please click on link sent in email and try again');
+                )
 
 
-                });
+                ;
 
 
-            // Add face for Person
 
+            
 
         }
 
-        
-         // You can send any response to the user here
     });
 
     app.get('/', function (req, res) {
