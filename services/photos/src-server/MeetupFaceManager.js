@@ -52,7 +52,7 @@ module.exports = {
             .catch(function (err) {
                 console.log(err);
                 console.log("Person  Does not Exists");
-                resolve({ PersonExists: false });
+                return({ PersonExists: false });
             });
 
 
