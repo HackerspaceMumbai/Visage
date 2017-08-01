@@ -1,4 +1,7 @@
+require('dotenv-extended').load();
+var path = require('path');
 module.exports = (app) => {
+    
     const multer = require('multer');
 
     var meetupFaceManager = require('./MeetupFaceManager.js');
@@ -91,7 +94,22 @@ module.exports = (app) => {
 
     });
 
-    app.get('/', function (req, res) {
-        res.sendFile('index.html');
+    app.get('/home', function (req, res) {
+        // res.sendFile('index.html');
+
+    
+        res.statusCode = 302;
+        res.setHeader("Location",  process.env.LOGIN_WITH_SERVICE_URI + "/eventbrite?success="+ process.env.APP_DOMAIN_NAME + "/success&failure= "+ process.env.APP_DOMAIN_NAME + "/failure");
+        res.end();
+
+    
+    });
+
+    app.get('/success', function (req, res) {
+        res.sendFile(path.resolve(__dirname+'/../index.html'));
+    });
+
+    app.get('/failure', function (req, res) {
+        res.sendFile('authenticationError.html');
     });
 }
