@@ -1,14 +1,16 @@
 const express = require('express')
 const path = require('path');
-const appConfigManager = require('./src-server/ApplicationConfigurationManager.js');
-
+const authenticationManager = require('./src-server/AuthenticationManager.js');
+const util = require('./src-server/Utils.js');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const app = express()
+const cookieParser = require('cookie-parser');
 
 app.set('port', process.env.PORT || 4000)
 app.use(express.static(__dirname))
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(morgan('common'));
 
 app.get('/healthz', function (req, res) {
@@ -18,32 +20,58 @@ app.get('/healthz', function (req, res) {
   res.send('I am happy and healthy\n');
 });
 
+
 app.get('/', function (req, res) {
 
-  if (appConfigManager.GetParticipantProfileByOAuth()) {
+
+  // If Event Name exists and eventbrite OAuth configured, and profile cookie not present
+  if ((!req.cookies.profile) && authenticationManager.GetParticipantProfileByOAuth() && util.ValueExists(req.query[util.GetEventIdUrlParamName()])) {
     console.log("Initiating OAuth exchange with eventbrite.. redirecting to login_with service");
     res.statusCode = 302;
-    res.setHeader("Location", appConfigManager.GetLoginWithOAuthUrl());
+    console.log(authenticationManager.GetExternalAuthenticationUrl(req.query[util.GetEventIdUrlParamName()]));
+    res.setHeader("Location", authenticationManager.GetExternalAuthenticationUrl(req.query[util.GetEventIdUrlParamName()]));
     res.end();
+
   }
-  else {
+
+  // If Eventbrite authentication not configured and valid url parameters provided, or Eventbrite authentication configured and valid profile token found and parameters provided
+  else if (util.ValueExists(req.query[util.GetEventIdUrlParamName()]) && util.ValueExists(req.query[util.GetParticipantIdUrlParamName()]) && (req.cookies.profile || !authenticationManager.GetParticipantProfileByOAuth())) {
     console.log("Fetching Meetup Id and Participant Id from querysting..");
     res.sendFile(path.resolve(__dirname + '/public/index.html'));
+  }
+
+  // If invalid parameters provided, return bad request
+  else {
+    console.log("Invalid Request.. Either incorrect query string parameters provided in request, or application not configured correctly");
+    // res.statusCode = 400;
+    res.status(400).send("HTTP 400 : Bad Request : Please check the Link and try again");
+
   }
 
 
 });
 
 // This will be called by the login_with service if OAuth exchange is successful
-app.get('/success', function (req, res) {
-  console.log("Oauth successful..");
-  res.sendFile(path.resolve(__dirname + '/public/index.html'));
+app.get('/success/:eventName', function (req, res) {
+  console.log("Oauth Response Received..");
+  console.log("Event Name:" + req.params.eventName);
+
+  if (req.cookies.profile) {
+    console.log("Oauth Successful");
+    // res.sendFile(path.resolve(__dirname + '/public/index.html'));
+    res.redirect(authenticationManager.GetPostAuthenticationSuccessRedirectionUrl(req.cookies.profile, req.params.eventName));
+  }
+  else {
+    console.log("Profile cookie not found after OAuth Exchange...");
+    res.redirect(authenticationManager.GetPostAuthenticationFailureRedirectionUrl());
+  }
+
 });
 
 // This will be called by the login_with service is OAuth exchange is unsuccessful
 app.get('/failure', function (req, res) {
   console.log("Oauth Failure..");
-  res.sendFile(path.resolve(__dirname + '/public/authenticationError.html'));
+  res.redirect(authenticationManager.GetPostAuthenticationFailureRedirectionUrl());
 });
 
 

@@ -5,14 +5,15 @@
   "main": "server.js",
   "scripts": {
     "test": "mocha",
-    "start": "webpack && nodemon server.js",
-    "build": "webpack --config webpack.config.js",
+    "start": "webpack -p && nodemon server.js",
+    "build": "webpack -p --config webpack.config.js",
     "copy-dropzone": "node build.js"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.15.0",
+    "cookie-parser": "^1.4.3",
     "dotenv-extended": "^2.0.1",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
