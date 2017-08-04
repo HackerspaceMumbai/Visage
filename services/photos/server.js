@@ -46,7 +46,7 @@ app.get('/', function (req, res) {
       break;
     }
     case util.ActionType.REDIRECT_SUCCESS: {
-      // If Event Name exists in param and Partcipant Id param does not exist, redirect to success route. This would happen if OAuth exchange happens but for some reason user has removed participant id from URL
+      // This is for an edge case. If Event Name exists in param and Partcipant Id param does not exist, redirect to success route. This would happen if OAuth exchange happens but for some reason user has removed participant id from URL
       console.log("Redirect to Success to fetch participant id from cookie");
       res.redirect(response.redirectUrl);
       break;
@@ -59,15 +59,11 @@ app.get('/', function (req, res) {
   }
   }
 
-  
-
-
-
 });
 
 // This will be called by the login_with service if OAuth exchange is successful
 app.get('/success/:eventName', function (req, res) {
-  
+
   console.log("Oauth Response Received..");
 
   if (req.cookies.profile) {
