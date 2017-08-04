@@ -11,7 +11,7 @@ function ResetAllEnvVariables() {
 
 const NON_DEFAULT_EVENT_PARAM_NAME="NotDefaultEvent";
 const NON_DEFAULT_PARTICIPANT_PARAM_NAME="NotDefaultEvent";
-const PROFILE_COOKIE={"username":"1110311111","name":"Mani Bindra","provider":"eventbrite"};
+const PROFILE_COOKIE="%7b%22username%22%3a%221110311111%22%2c%22name%22%3a%22Mani+Bindra%22%2c%22provider%22%3a%22eventbrite%22%7d";
 const PARTICIPANT_ID="1110311111"
 
 

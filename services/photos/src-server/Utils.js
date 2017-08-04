@@ -25,7 +25,7 @@ DEFAULT_PARTICIPANT_PARAMETER_NAME: "participant_email",
 },
 
 GetProfileIdFromProfileCookie: function(profileCookie){
-  return profileCookie.username;
+  return JSON.parse(unescape(profileCookie)).username;
 },
 
 ActionType: {

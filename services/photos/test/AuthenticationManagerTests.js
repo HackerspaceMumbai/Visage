@@ -16,7 +16,7 @@ const APP_DOMAIN_NAME = "https://www.testdomain.com";
 const EVENT_NAME = "acsmeetup";
 const PARTICIPANT_ID = "2341123423";
 const EXTERNAL_AUTHENTICATION_URL = "https://login.testdomain.com/eventbrite?success=https://www.testdomain.com/success/acsmeetup&failure=https://www.testdomain.com/failure";
-const PROFILE_COOKIE = { "username": "1110311111", "name": "Mani Bindra", "provider": "eventbrite" };
+const PROFILE_COOKIE = "%7b%22username%22%3a%221110311111%22%2c%22name%22%3a%22Mani+Bindra%22%2c%22provider%22%3a%22eventbrite%22%7d";
 const POST_AUTH_REDIRECTION_URL = "https://www.testdomain.com/?event_name=acsmeetup&participant_email=1110311111";
 
 
