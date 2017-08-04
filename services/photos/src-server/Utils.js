@@ -22,8 +22,16 @@ module.exports = {
 },
 
 GetProfileIdFromProfileCookie: function(profileCookie){
-  return "tempValue";
-}
+  return profileCookie.username;
+},
+
+ActionType: {
+
+        REDIRECT_OAUTH: 0,
+        RENDER_DEFAULT_FILE: 1,
+        SHOW_BAD_REQUEST_MESSAGE: 2,
+        REDIRECT_SUCCESS: 3
+    }
 
 
 

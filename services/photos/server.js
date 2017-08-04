@@ -23,38 +23,52 @@ app.get('/healthz', function (req, res) {
 
 app.get('/', function (req, res) {
 
+  var profileCookie = req.cookies.profile;
+  var externalAuthentication =  authenticationManager.GetParticipantProfileByOAuth();
+  var eventIdParameterName = util.GetEventIdUrlParamName();
+  var participantIdParameterName = util.GetParticipantIdUrlParamName();
+  var eventIdParameterValue = util.ValueExists(req.query[eventIdParameterName]) ? req.query[eventIdParameterName] : undefined;
+  var participantIdParameterValue = util.ValueExists(req.query[participantIdParameterName]) ? req.query[eventIdParameterName] : undefined ;  
 
-  // If Event Name exists and eventbrite OAuth configured, and profile cookie not present
-  if ((!req.cookies.profile) && authenticationManager.GetParticipantProfileByOAuth() && util.ValueExists(req.query[util.GetEventIdUrlParamName()])) {
-    console.log("Initiating OAuth exchange with eventbrite.. redirecting to login_with service");
-    res.statusCode = 302;
-    console.log(authenticationManager.GetExternalAuthenticationUrl(req.query[util.GetEventIdUrlParamName()]));
-    res.setHeader("Location", authenticationManager.GetExternalAuthenticationUrl(req.query[util.GetEventIdUrlParamName()]));
-    res.end();
+  var response = authenticationManager.GetNextAction(profileCookie,externalAuthentication,eventIdParameterValue, participantIdParameterValue);
 
+  switch(response.actionType){
+    case util.ActionType.REDIRECT_OAUTH: {
+      // If Event Name exists and eventbrite OAuth configured, and profile cookie not present
+      console.log("Initiating OAuth exchange with eventbrite.. redirecting to login_with service");
+      res.redirect(response.redirectUrl);
+      break;
+    }
+    case util.ActionType.RENDER_DEFAULT_FILE:{
+      // If Eventbrite authentication not configured and valid url parameters provided, or Eventbrite authentication configured and valid profile token found and parameters provided
+      console.log("Fetching Meetup Id and Participant Id from querysting");
+      res.sendFile(path.resolve(__dirname + '/public/index.html'));
+      break;
+    }
+    case util.ActionType.REDIRECT_SUCCESS: {
+      // If Event Name exists in param and Partcipant Id param does not exist, redirect to success route. This would happen if OAuth exchange happens but for some reason user has removed participant id from URL
+      console.log("Redirect to Success to fetch participant id from cookie");
+      res.redirect(response.redirectUrl);
+      break;
+    }
+    case util.ActionType.SHOW_BAD_REQUEST_MESSAGE: {
+      // If invalid parameters provided, return bad request
+      console.log("Invalid Request.. Either incorrect query string parameters provided in request, or application not configured correctly");
+      res.status(400).send("HTTP 400 : Bad Request : Please check the Link and try again");
+      break;
+  }
   }
 
-  // If Eventbrite authentication not configured and valid url parameters provided, or Eventbrite authentication configured and valid profile token found and parameters provided
-  else if (util.ValueExists(req.query[util.GetEventIdUrlParamName()]) && util.ValueExists(req.query[util.GetParticipantIdUrlParamName()]) && (req.cookies.profile || !authenticationManager.GetParticipantProfileByOAuth())) {
-    console.log("Fetching Meetup Id and Participant Id from querysting..");
-    res.sendFile(path.resolve(__dirname + '/public/index.html'));
-  }
+  
 
-  // If invalid parameters provided, return bad request
-  else {
-    console.log("Invalid Request.. Either incorrect query string parameters provided in request, or application not configured correctly");
-    // res.statusCode = 400;
-    res.status(400).send("HTTP 400 : Bad Request : Please check the Link and try again");
-
-  }
 
 
 });
 
 // This will be called by the login_with service if OAuth exchange is successful
 app.get('/success/:eventName', function (req, res) {
+  
   console.log("Oauth Response Received..");
-  console.log("Event Name:" + req.params.eventName);
 
   if (req.cookies.profile) {
     console.log("Oauth Successful");
