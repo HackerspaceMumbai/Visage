@@ -4,7 +4,7 @@ The project is a checkin solution for our meetups using face recognition technol
 
 
 
-### Solution Overview
+## Solution Overview
 ![Solution Overview](./images/solution-overview.png)
 
 The solution has 3 main components :
@@ -12,11 +12,9 @@ The solution has 3 main components :
 * Photo App : This NodeJS App is used by attendees to upload their photos for the event
 * Checkin App : This UWP app is used for Participant checkin at the event venue
 
-### Key setup and configuration steps
+## Key setup and configuration steps
 
-
-
-#### Create Face API person group for event
+### Create Face API person group for event
 * Person Group is the FACE API entity which logically corresponds to a event for which we want to checkin attendees. 
 * First we need to get Face API Key from Azure Portal. Follow steps shown in [Get Face API key from Azure portal](http://www.c-sharpcorner.com/article/how-to-create-microsoft-cognitive-service-face-api-in-azure-portal/) to get your free or standard tier FACE API key.
 * Now we create a person group for your event. The [FACE API reference](https://westus.dev.cognitive.microsoft.com/docs/services/563879b61984550e40cbbe8d/operations/563879b61984550f30395236) gives details of the RESTFUL FACE API. Code below shows how we can use curl to create a person group for our event. We need to substitute values for "yourmeetupgroupid" , "YourFaceAPISubscriptionKey" , "yourmeetupname" and "other-meetup-meta-data"
@@ -28,10 +26,7 @@ The solution has 3 main components :
     }'yo
     ```
 
-
-
-
-#### Setup the nodejs/react based visage photo app
+### Setup the nodejs/react based visage photo app
 The attendees use this application to upload their photos. The services/photo folder is the root folder for this application. The application can optionally be configured for eventbrite authentication.
 
 
@@ -88,9 +83,7 @@ To run all tests you can execute command below. Note the Face API is needed for 
 
 
 
-
-
-#### Installing and configuring the the UWP Checkin-app prior to checkin commencing
+### Installing and configuring the the UWP Checkin-app prior to checkin commencing
 * This application is a modified version of the [KIOSK APP](https://github.com/Microsoft/Cognitive-Samples-IntelligentKiosk)
 * The checkin-app solution can be loaded in visual studio 2015 or 2017. Once loaded the UWP app can be run
 * In default configuration checkins are logged into file eventlog.txt in the pictures folder, so this file needs to be created.
