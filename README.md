@@ -54,7 +54,11 @@ To run all tests you can execute command below. Note the Face API is needed for 
 * The docker container image for this application is built each time there is a new merge in the https://github.com/maniSbindra/Visage repositories develop branch, and all automated tests pass (gulp test). You will find the latest image at https://hub.docker.com/r/maninderjit/visage/tags/ 
 * You can the docker container image can be run as follows (you will need to replace values for face api key, app domain name and the login with service url):
   ```sh
-  docker run -d -p 8080 -e FACE_API_KEY=<your face api key> -e APP_DOMAIN_NAME="https://www.your-domain.com" -e LOGIN_WITH_SERVICE_URI="https://login.your-domain.com"    maninderjit/visage:1057
+  docker run -d -p 8080 
+  -e FACE_API_KEY=<your face api key> 
+  -e APP_DOMAIN_NAME="https://www.your-domain.com" 
+  -e LOGIN_WITH_SERVICE_URI="https://login.your-domain.com"    
+  maninderjit/visage:1057
   ```
 
 
@@ -65,7 +69,7 @@ To run all tests you can execute command below. Note the Face API is needed for 
     ```
 * If eventbrite authentication is configured then participant_email or id does not need to be provided, the participant id is automatically fetched from eventbrite. The link in this case will in the format 
   ```sh
-  https://YourAppFQDN/?event_name=yourmeetupgroupid. 
+  https://YourAppFQDN/?event_name=yourmeetupgroupid
   ```
     User would be redirected to eventbrite and after the oauth flow is complete the participant id will be known.
 * The rendered page will look like
