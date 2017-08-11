@@ -3,27 +3,33 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
             xmlns:b="clr-namespace:Visage.Behaviors;assembly:Visage"
             x:Class="Visage.Pages.MasterPage"
-            Padding="0,30,0,0"
             Title="Navigation"
-            BackgroundColor="{StaticResource VisageGray}"
             Icon="icon_hamburger.png">
     
 	<ContentPage.Content>
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="2.5*"/>
+                <RowDefinition Height="4*"/>
                 <RowDefinition Height="10*"/>
             </Grid.RowDefinitions>
 
             <StackLayout x:Name="ProfileSection" 
                          BackgroundColor="{StaticResource VisageDarkColor}"
                          Grid.Row="0"
-                         Padding="20">
+                         Padding="30, 50">
 
-                <Label Text="Panda" FontAttributes="Bold" TextColor="White" />
+                <Image Source="{Binding Profile.Thumbnail}" 
+                        HeightRequest="60"
+                        WidthRequest="60"
+                        HorizontalOptions="Start"/>
 
-                <Label Text="panda@zoo.com" TextColor="White"/>
+                <Label Text="{Binding Profile.FullName}"
+                        FontAttributes="Bold" 
+                        TextColor="White" />
+
+                <Label Text="{Binding Profile.Email}" 
+                        TextColor="White"/>
                 
             </StackLayout>
             
@@ -33,10 +39,10 @@
                         SeparatorVisibility="None"
                         ItemsSource="{Binding MasterPageItems}"
                         Grid.Row="1"
-                        Margin="20, 0">
+                        Margin="15, 0">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextCell Text="{Binding Title}" TextColor="White" /> 
+                        <TextCell Text="{Binding Title}" TextColor="Black" /> 
                     </DataTemplate>
                 </ListView.ItemTemplate>
 

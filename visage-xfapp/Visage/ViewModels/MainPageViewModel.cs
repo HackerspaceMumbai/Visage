@@ -7,11 +7,6 @@ namespace Visage.ViewModels
 {
     public class MainPageViewModel : BaseViewModel
     {
-        public bool IsBusy
-        {
-            get;
-            set;
-        }
         
         public ICommand NavigateCommand
         {

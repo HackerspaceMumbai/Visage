@@ -41,6 +41,9 @@
     <EmbeddedResource Include="Pages\MainPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Include="Pages\TermsOfUsePage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
@@ -66,6 +69,14 @@
     <Compile Include="Behaviors\BaseBehavior.cs" />
     <Compile Include="Behaviors\EventToCommandBehavior.cs" />
     <Compile Include="Models\EventItem.cs" />
+    <Compile Include="Pages\TermsOfUsePage.xaml.cs">
+      <DependentUpon>TermsOfUsePage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\TermsOfUsePageViewModel.cs" />
+    <Compile Include="Services\DialogService.cs" />
+    <Compile Include="Helpers\Actions.cs" />
+    <Compile Include="Helpers\AppHelper.cs" />
+    <Compile Include="Models\Profile.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Xamarin.Forms.Core">
@@ -86,6 +97,8 @@
     <Folder Include="ViewModels\" />
     <Folder Include="Models\" />
     <Folder Include="Behaviors\" />
+    <Folder Include="Services\" />
+    <Folder Include="Helpers\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <Import Project="..\packages\Xamarin.Forms.2.3.4.231\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+Xamarin.iOS10+xamarinmac20\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.2.3.4.231\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+Xamarin.iOS10+xamarinmac20\Xamarin.Forms.targets')" />

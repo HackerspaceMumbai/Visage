@@ -15,6 +15,12 @@ namespace Visage.ViewModels
             set;
         }
 
+        public Profile Profile
+        {
+            get;
+            set;
+        }
+
         //public ICommand ItemSelectedCommand
         //{
         //    get;
@@ -26,6 +32,8 @@ namespace Visage.ViewModels
             LoadMasterPageItems();
 
             //ItemSelectedCommand = new Command<string>(ExecuteItemSelected);
+
+            GetProfile();
         }
 
         void LoadMasterPageItems()
@@ -50,5 +58,16 @@ namespace Visage.ViewModels
         //{
             
         //}
+
+        void GetProfile()
+        {
+            Profile = new Profile
+            {
+                Thumbnail = "https://appmatticresourcegrou959.blob.core.windows.net/images/ic_account_circle.png",
+                Email = "gorilla@zoo.com",
+                FullName = "Gorilla",
+                Rating = 3.5
+            };
+        }
     }
 }

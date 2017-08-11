@@ -1,4 +1,5 @@
-﻿using Xamarin.Forms;
+﻿using Visage.Pages;
+using Xamarin.Forms;
 
 namespace Visage
 {
@@ -8,7 +9,7 @@ namespace Visage
         {
             InitializeComponent();
 
-            MainPage = new Pages.MainPage();
+            MainPage = new NavigationPage(new TermsOfUsePage());
         }
 
         protected override void OnStart()
