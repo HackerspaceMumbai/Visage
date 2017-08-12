@@ -23,7 +23,7 @@ The solution has 3 main components :
     curl -X PUT   https://westus.api.cognitive.microsoft.com/face/v1.0/persongroups/yourmeetupgroupid   -H 'cache-control: no-cache'   -H 'content-type: application/json'   -H 'ocp-apim-subscription-key: YourFaceAPISubscriptionKey'     -d '{
         "name":"yourmeetupname",
         "userData":"other-meetup-meta-data"
-    }'yo
+    }'
     ```
 
 ### Setup the nodejs/react based visage photo app
