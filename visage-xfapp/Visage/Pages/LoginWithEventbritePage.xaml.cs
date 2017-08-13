@@ -5,13 +5,13 @@ using Xamarin.Forms;
 
 namespace Visage.Pages
 {
-    public partial class ProfilePage : ContentPage
+    public partial class LoginWithEventbritePage : ContentPage
     {
-        public ProfilePage()
+        public LoginWithEventbritePage()
         {
             InitializeComponent();
 
-            BindingContext = new ProfilePageViewModel
+            BindingContext = new LoginWithEventbriteViewModel
             {
                 Navigation = Navigation
             };

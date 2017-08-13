@@ -15,6 +15,14 @@ namespace Visage.ViewModels
 			get { return isBusy; }
 			set { isBusy = value; OnPropertyChanged(); }
 		}
+
+        string title;
+
+        public string Title
+        {
+            get { return title; }
+            set { title = value; OnPropertyChanged(); }
+        }
         
         public INavigation Navigation { get; set; }
 

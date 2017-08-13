@@ -1,4 +1,7 @@
-﻿using Visage.Pages;
+﻿using System;
+using System.Diagnostics;
+using Visage.Pages;
+using Visage.Services;
 using Xamarin.Forms;
 
 namespace Visage
@@ -11,6 +14,22 @@ namespace Visage
 
             MainPage = new NavigationPage(new TermsOfUsePage());
         }
+
+		public static bool isConnected()
+		{
+			try
+			{
+				return DependencyService
+								 .Get<INetworkService>()
+								 .IsConnected();
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(ex.Message);
+
+				return false;
+			}
+		}
 
         protected override void OnStart()
         {

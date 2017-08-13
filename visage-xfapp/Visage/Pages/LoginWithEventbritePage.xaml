@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
-            x:Class="Visage.Pages.ProfilePage"
-            Title="Profile">
+            x:Class="Visage.Pages.LoginWithEventbritePage"
+            Title="Login with Eventbrite">
 
     <ContentPage.Content>
 
@@ -12,25 +12,41 @@
                  AbsoluteLayout.LayoutFlags="All">
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="10*" />
+                    <RowDefinition Height="5*" />
+                    <RowDefinition Height="5*" />
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackLayout Grid.Row="0">
-                    
-                    <Label Text="Fullname" FontAttributes="Bold" />
-                    <Label Text="{Binding Profile.FullName}"/>
+                <Label Grid.Row="0" VerticalOptions="End" HorizontalOptions="Center" FontSize="16">
+                      <Label.FormattedText>
+                        <FormattedString>
+                          <Span Text="Login with" />
+                          <Span Text=" Eventbrite " FontAttributes="Italic, Bold" />
+                          <Span Text="to continue using"/>
+                          <Span Text=" Visage" FontAttributes="Italic, Bold" />
+                        </FormattedString>
+                      </Label.FormattedText>
+                </Label>
 
-                    <Label Text="Email" FontAttributes="Bold" Margin="0, 12, 0, 0" />
-                    <Label Text="{Binding Profile.Email}" />
+                <StackLayout Grid.Row="1" Margin="0, 24">
+
+                    <Entry Placeholder="Email" Text="{Binding Email}" />
+
+                    <Entry Placeholder="Password" Text="{Binding Password}" />
                     
                 </StackLayout>
 
-                <Button Grid.Row="1"
-                        x:Name="ButtonAccept"
-                        Text="Login to Eventbrite"
-                        Command="{Binding AcceptCommand}"
+                <Button Grid.Row="2"
+                        x:Name="ButtonLogin"
+                        Text="Login"
+                        Command="{Binding LoginCommand}"
                         Style="{StaticResource VisageButton}" />
+
+                <Button Grid.Row="3"
+                        x:Name="ButtonCancel"
+                        Text="Cancel"
+                        Command="{Binding CancelCommand}" />
                 
             </Grid>
 
@@ -56,5 +72,4 @@
         </AbsoluteLayout>
         
     </ContentPage.Content>
-    
 </ContentPage>

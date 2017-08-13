@@ -32,7 +32,7 @@ namespace Visage.ViewModels
 
 		void ExecuteAcceptCommand()
 		{
-            Application.Current.MainPage = new MainPage();
+            Application.Current.MainPage = new LoginWithEventbritePage();
 		}
 
 		async void ExecuteCancelCommand()

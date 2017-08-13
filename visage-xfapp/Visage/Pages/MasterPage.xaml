@@ -16,8 +16,13 @@
 
             <StackLayout x:Name="ProfileSection" 
                          BackgroundColor="{StaticResource VisageDarkColor}"
-                         Grid.Row="0"
-                         Padding="30, 50">
+                         Grid.Row="0">
+                <StackLayout.Padding>
+                    <OnPlatform x:TypeArguments="Thickness">
+                        <On Platform="Android, WinPhone">30, 50</On>
+                        <On Platform="iOS">30, 40</On>
+                    </OnPlatform>
+                </StackLayout.Padding>
 
                 <Image Source="{Binding Profile.Thumbnail}" 
                         HeightRequest="60"
