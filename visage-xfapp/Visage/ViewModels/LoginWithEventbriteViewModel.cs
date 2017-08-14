@@ -36,9 +36,10 @@ namespace Visage.ViewModels
             Application.Current.MainPage = new MainPage();
 		}
 
-		async void ExecuteCancelCommand()
+		void ExecuteCancelCommand()
 		{
-            await Navigation.PopAsync();
+            //TODO: Handle cancel click
+            //await Navigation.PopAsync();
 		}
     }
 }
