@@ -74,7 +74,7 @@
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="Behaviors\BaseBehavior.cs" />
     <Compile Include="Behaviors\EventToCommandBehavior.cs" />
-    <Compile Include="Models\EventItem.cs" />
+    <Compile Include="Models\Event.cs" />
     <Compile Include="Pages\TermsOfUsePage.xaml.cs">
       <DependentUpon>TermsOfUsePage.xaml</DependentUpon>
     </Compile>
@@ -93,6 +93,8 @@
       <DependentUpon>LoginWithEventbritePage.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\LoginWithEventbriteViewModel.cs" />
+    <Compile Include="ViewModels\EventsTabItemPageViewModel.cs" />
+    <Compile Include="Converters\RSVPVisibilityConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Pages\" />
@@ -101,6 +103,7 @@
     <Folder Include="Behaviors\" />
     <Folder Include="Services\" />
     <Folder Include="Helpers\" />
+    <Folder Include="Converters\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Xamarin.Forms.Core">

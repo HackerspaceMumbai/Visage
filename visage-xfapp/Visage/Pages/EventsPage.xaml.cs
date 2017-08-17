@@ -17,8 +17,8 @@ namespace Visage.Pages
             };
 
             //TODO: set children via viewmodel
-            Children.Add(new EventsTabItemPage { Title="Upcoming" });
-            Children.Add(new EventsTabItemPage { Title="Completed" });
+            Children.Add(new EventsTabItemPage("Upcoming"));
+            Children.Add(new EventsTabItemPage("Completed"));
         }
     }
 }
