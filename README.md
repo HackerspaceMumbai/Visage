@@ -1,16 +1,29 @@
-# Visage
-The project is a checkin solution for our meetups using face recognition technology. 
+<div align="center">    
+<h1>Visage</h1>
+Meetup Checkins done right      
+</div>
 
+<hr1>
 
+[![PRs Welcome][prs-badge]][prs]
+
+## The problem
+We run the largest and longest running community meetup in Bombay. While our meetups are free, we maintain strict RSVP etiquette and any missed checkins would adversely affect the attendees for future meetups. Also the biggest bottleneck for the checkins was the organizer himself since only his mobile app could be used for checking in attendees. 
+
+## The solution
+
+Simple: let the attendees self checkin. 
+So the geeks that we were, we decided to use our super powers to build a solution that incorporates some exciting and powerful technologies including amongst others: Face Recognition, microservices based architecture and the latest front end technologies like React, Next.js, Graphql etc 
 
 
 ### Solution Overview
 ![Solution Overview](./images/solution-overview.png)
 
-The solution has 3 main components :
-* FACE API : Microsoft Face API is used to register faces against attendees, and to identify attendees during check in
-* Photo App : This NodeJS App is used by attendees to upload their photos for the event
-* Checkin App : This UWP app is used for Participant checkin at the event venue
+The solution has 4 main components :
+* FACE API : The visage of every registrant is stored in the Microsoft Face API and then is used to make a determination during event checkins if there is a match for the face 
+* Photo App : This is a containerized NodeJS App that exposed an API that uploads attendees photos into the Face API
+* Checkin App : This UWP app which is expected to run on a desktop or tablet where the attendee peers into 
+* Attendee App : The Xamarin app where folks can checkin into individual session
 
 #### Key setup and configuration steps
 
@@ -80,8 +93,8 @@ The solution has 3 main components :
         
     }
 ```
-  
-
+[prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square  
+[prs]: http://makeapullrequest.com
 
 
 
