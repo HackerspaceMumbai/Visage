@@ -12,8 +12,8 @@
                  AbsoluteLayout.LayoutFlags="All">
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="5*" />
-                    <RowDefinition Height="5*" />
+                    <RowDefinition Height="4*" />
+                    <RowDefinition Height="4*" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>

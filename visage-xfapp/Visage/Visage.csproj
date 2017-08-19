@@ -50,6 +50,15 @@
     <EmbeddedResource Include="Pages\LoginWithEventbritePage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Include="Pages\EventDetailsPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\EventSummaryPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\EventSessionsPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
@@ -95,6 +104,21 @@
     <Compile Include="ViewModels\LoginWithEventbriteViewModel.cs" />
     <Compile Include="ViewModels\EventsTabItemPageViewModel.cs" />
     <Compile Include="Converters\RSVPVisibilityConverter.cs" />
+    <Compile Include="Behaviors\ListViewSelectedItemBehavior.cs" />
+    <Compile Include="Converters\SelectedItemEventArgsToSelectedItemConverter.cs" />
+    <Compile Include="Pages\EventDetailsPage.xaml.cs">
+      <DependentUpon>EventDetailsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\EventSummaryPageViewModel.cs" />
+    <Compile Include="Converters\CheckInVisibilityConverter.cs" />
+    <Compile Include="Pages\EventSummaryPage.xaml.cs">
+      <DependentUpon>EventSummaryPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\EventDetailsPageViewModel.cs" />
+    <Compile Include="Pages\EventSessionsPage.xaml.cs">
+      <DependentUpon>EventSessionsPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\EventSessionsPageViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Pages\" />

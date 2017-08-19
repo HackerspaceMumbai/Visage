@@ -11,9 +11,11 @@ namespace Visage.Models
 
 		public string organizer_name { get; set; }
 
-        public string starts { get; set; }
+        public DateTime starts { get; set; }
 
-        public Venue venue { get; set; }
+		public DateTime ends { get; set; }
+
+		public Venue venue { get; set; }
 
         public string rsvp { get; set; }
     }
@@ -30,9 +32,9 @@ namespace Visage.Models
 		
         public string organizer_name { get; set; }
 
-		public string starts { get; set; }
+        public DateTime starts { get; set; }
 		
-        public string ends { get; set; }
+        public DateTime ends { get; set; }
 		
         public string contact { get; set; }
 		
@@ -106,9 +108,9 @@ namespace Visage.Models
 		
         public string url { get; set; }
 		
-        public string starts { get; set; }
+        public DateTime starts { get; set; }
 		
-        public string ends { get; set; }
+        public DateTime ends { get; set; }
 		
         public List<string> terms { get; set; }
 	}

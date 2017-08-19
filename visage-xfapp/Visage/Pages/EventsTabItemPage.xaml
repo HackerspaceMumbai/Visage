@@ -3,16 +3,19 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
             x:Class="Visage.Pages.EventsTabItemPage"
             xmlns:converters="clr-namespace:Visage.Converters;assembly:Visage"
+            xmlns:behaviors="clr-namespace:Visage.Behaviors;assembly:Visage"
             Title="{Binding Title}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:RSVPVisibilityConverter x:Key="RSVPVisibility" />
+            <converters:SelectedItemEventArgsToSelectedItemConverter x:Key="SelectedItemConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
     
 	<ContentPage.Content>
-        <ListView ItemsSource="{Binding Events}"
+        <ListView x:Name="EventsListView"
+                  ItemsSource="{Binding Events}"
                   IsPullToRefreshEnabled="true"
                   IsRefreshing="{Binding IsBusy}"
                   HasUnevenRows="true"
@@ -44,7 +47,7 @@
                                        HorizontalOptions="StartAndExpand"
                                        VerticalOptions="Center" />
 
-                                <Label Text="{Binding starts}"
+                                <Label Text="{Binding starts, StringFormat='{0:d}'}"
                                        HorizontalOptions="End"
                                        VerticalOptions="Center"  />
                                  
@@ -59,6 +62,13 @@
                     
                 </DataTemplate>
             </ListView.ItemTemplate>
+
+            <ListView.Behaviors>
+                <behaviors:ListViewSelectedItemBehavior
+                                                  Command="{Binding EventSelectedCommand}"
+                                                  Converter="{StaticResource SelectedItemConverter}"  />
+            </ListView.Behaviors>
+            
         </ListView>
 	</ContentPage.Content>
 </ContentPage>
