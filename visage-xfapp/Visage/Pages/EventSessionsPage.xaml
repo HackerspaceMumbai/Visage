@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+            x:Class="Visage.Pages.EventSessionsPage"
+            xmlns:converters="clr-namespace:Visage.Converters;assembly:Visage"
+            xmlns:behaviors="clr-namespace:Visage.Behaviors;assembly:Visage"
+            Title="Sessions">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:SelectedItemEventArgsToSelectedItemConverter x:Key="SelectedItemConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
+    <ContentPage.Content>
+
+        <AbsoluteLayout>
+
+            <StackLayout Padding="12" 
+                          AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
+                          AbsoluteLayout.LayoutFlags="All">
+
+                <ListView 
+                      ItemsSource="{Binding Sessions}"
+                      HasUnevenRows="true" >
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextCell Text="{Binding name}" Detail="{Binding starts, StringFormat='Scheduled at: {0:t}'}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+
+                 <ListView.Behaviors>
+                    <behaviors:ListViewSelectedItemBehavior
+                                                  Command="{Binding SessionSelectedCommand}"
+                                                  Converter="{StaticResource SelectedItemConverter}"  />
+                </ListView.Behaviors>
+               
+            </ListView>
+                
+            </StackLayout>
+
+            <!--Acivity indicator overlay-->
+            
+            <ContentView
+                 AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
+                 AbsoluteLayout.LayoutFlags="All"
+                 IsVisible="{Binding IsBusy}"
+                 BackgroundColor="#C0808080"
+                 Padding="10, 0">
+
+                <ActivityIndicator  
+                        WidthRequest="50" 
+                        HeightRequest="50" 
+                        IsRunning="{Binding IsBusy}"
+                        IsVisible="{Binding IsBusy}"
+                        HorizontalOptions="CenterAndExpand" 
+                        VerticalOptions="CenterAndExpand"/>
+                
+            </ContentView>
+            
+        </AbsoluteLayout>
+        
+    </ContentPage.Content>
+    
+</ContentPage>
