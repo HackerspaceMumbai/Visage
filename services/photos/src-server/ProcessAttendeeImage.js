@@ -1,4 +1,6 @@
+require('dotenv-extended').load();
 module.exports = (app) => {
+    
     const multer = require('multer');
 
     var meetupFaceManager = require('./MeetupFaceManager.js');
@@ -91,7 +93,5 @@ module.exports = (app) => {
 
     });
 
-    app.get('/', function (req, res) {
-        res.sendFile('index.html');
-    });
+
 }

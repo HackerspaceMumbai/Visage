@@ -3,21 +3,21 @@
 	<Application.Resources>
         <ResourceDictionary>
             <Color x:Key="VisageDarkColor">#512DA8</Color>
-            <Color x:Key="VisageLightColor">#D1C4E9</Color>
-            <Color x:Key="VisageAscentColor">#03A9F4</Color>
-            <Color x:Key="VisageGray">#3a3f47</Color>
+            <Color x:Key="VisageLightColor">#673AB7</Color>
+            <Color x:Key="VisageAscentColor">#448AFF</Color>
+            <Color x:Key="VisageGrey">#78909c</Color>
 
             <Style x:Key="BaseButtonStyle" TargetType="Button">
                 <Setter Property="HorizontalOptions" Value="FillAndExpand" />
             </Style>
 
-            <Style x:Key="PurpleButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-                <Setter Property="BackgroundColor" Value="{StaticResource VisageDarkColor}" />
+            <Style x:Key="VisageButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+                <Setter Property="BackgroundColor" Value="{StaticResource VisageAscentColor}" />
                 <Setter Property="TextColor" Value="White" />
             </Style>
 
-            <Style x:Key="PurpleTextButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-                <Setter Property="TextColor" Value="{StaticResource VisageDarkColor}" />
+            <Style x:Key="VisageTextButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+                <Setter Property="TextColor" Value="{StaticResource VisageAscentColor}" />
             </Style>
 
         </ResourceDictionary>

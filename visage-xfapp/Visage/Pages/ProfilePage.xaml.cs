@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using Visage.ViewModels;
 using Xamarin.Forms;
 
 namespace Visage.Pages
@@ -10,6 +10,11 @@ namespace Visage.Pages
         public ProfilePage()
         {
             InitializeComponent();
+
+            BindingContext = new ProfilePageViewModel
+            {
+                Navigation = Navigation
+            };
         }
     }
 }

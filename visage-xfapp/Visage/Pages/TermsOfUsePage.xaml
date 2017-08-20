@@ -27,7 +27,7 @@
                         x:Name="ButtonAccept"
                         Text="Accept"
                         Command="{Binding AcceptCommand}"
-                        Style="{StaticResource PurpleButton}" />
+                        Style="{StaticResource VisageButton}" />
 
                 <Button Grid.Row="2"
                         x:Name="ButtonCancel"

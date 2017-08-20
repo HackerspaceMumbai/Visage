@@ -1,6 +1,5 @@
 var assert = require("assert");
 var oxford = require('project-oxford');
-require('dotenv-extended').load();
 var meetupFaceManager = require('../src-server/MeetupFaceManager.js');
 
 var returnValue = null;
