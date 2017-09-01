@@ -14,8 +14,8 @@
       "request": "attach",
       "port": 9229,
       "address": "localhost",
-      "localRoot": "${workspaceRoot}",
-      "remoteRoot": "/usr/src/app"
+      "localRoot": "${workspaceRoot}/services/photos",
+      "remoteRoot": "/opt/app"
     },
     {
       "name": "Chrome",
