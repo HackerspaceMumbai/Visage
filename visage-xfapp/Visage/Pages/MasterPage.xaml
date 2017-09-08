@@ -10,8 +10,9 @@
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="4*"/>
-                <RowDefinition Height="10*"/>
+                <RowDefinition Height="7*"/>
+                <RowDefinition Height="3.5*"/>
+                <RowDefinition Height="15*"/>
             </Grid.RowDefinitions>
 
             <StackLayout x:Name="ProfileSection" 
@@ -39,7 +40,7 @@
             </StackLayout>
             
             <ListView x:Name="MenuItemsListView" 
-                        VerticalOptions="FillAndExpand" 
+                        VerticalOptions="Start" 
                         BackgroundColor="Transparent"
                         SeparatorVisibility="None"
                         ItemsSource="{Binding MasterPageItems}"
@@ -50,13 +51,24 @@
                         <TextCell Text="{Binding Title}" TextColor="Black" /> 
                     </DataTemplate>
                 </ListView.ItemTemplate>
-
-                <!--<ListView.Behaviors>
-                    <b:EventToCommandBehavior EventName="ItemTapped"
-                                              Command="{Binding ItemSelectedCommand}" />
-                </ListView.Behaviors>-->
                 
             </ListView>
+
+            <Label x:Name="Logout" 
+                   Text="Logout"
+                   VerticalOptions="Start"
+                   Grid.Row="2">
+                <Label.Margin>
+                    <OnPlatform x:TypeArguments="Thickness">
+                        <On Platform="Android, WinPhone">30, 50</On>
+                        <On Platform="iOS">30, 40</On>
+                    </OnPlatform>
+                </Label.Margin>
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer
+                        Command="{Binding LogoutCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
         
         </Grid>
         

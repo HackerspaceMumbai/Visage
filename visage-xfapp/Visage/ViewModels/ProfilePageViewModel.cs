@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Threading.Tasks;
+using System.Windows.Input;
 using Visage.Models;
+using Visage.Pages;
+using Xamarin.Forms;
 
 namespace Visage.ViewModels
 {
@@ -18,13 +22,15 @@ namespace Visage.ViewModels
 
 		void GetProfile()
 		{
-			Profile = new Profile
-			{
-				Thumbnail = "https://appmatticresourcegrou959.blob.core.windows.net/images/ic_account_circle.png",
-				Email = "gorilla@zoo.com",
-				FullName = "Gorilla",
-				Rating = 3.5
-			};
-		}
+            var profile = App.VisageDatabase.GetProfile().Result;
+
+            Profile = new Profile
+            {
+                Thumbnail = profile.Thumbnail,
+                Email = profile.Email,
+                FullName = profile.FullName,
+                Rating = profile.Rating
+            };
+        }
     }
 }

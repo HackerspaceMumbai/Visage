@@ -1,8 +1,17 @@
 ﻿using System;
+using SQLite;
+
 namespace Visage.Models
 {
     public class Profile
     {
+        [PrimaryKey, AutoIncrement]
+        public int Id
+        {
+            get;
+            set;
+        }
+
         public string Thumbnail
         {
             get;

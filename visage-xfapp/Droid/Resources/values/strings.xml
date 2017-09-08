@@ -1,4 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">visage</string>
+	<string name="auth0_domain">indcoder.auth0.com</string>
+    <string name="auth0_client_id">LmyPloWc6iTqUqZ0iOsXEc2XjcGAulen</string>
 </resources>
