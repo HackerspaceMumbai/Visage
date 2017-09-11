@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: visage-deploy
+spec:
+  replicas: 3
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: visage
+    spec:
+      containers:
+      - name: visage-pod
+        image: maninderjit/visage:1057
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visage-ext-svc
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8080
+  selector:
+    app: visage
