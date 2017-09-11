@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: visage-pod
-        image: maninderjit/visage:1057
+        image: @@REPOSITORY_NAME@@:@@BUILD_BUILDID@@
         ports:
         - containerPort: 8080
 ---
