@@ -6,13 +6,10 @@ services:
       context: ./services/photos
       args:
         - NODE_ENV=development
-    # you can use legacy debug config or new inspect
-    # command: ../node_modules/.bin/nodemon --debug=[::]:5858
-    command: ../node_modules/.bin/nodemon --inspect=[::]:9229
+    command: nodemon --inspect=[::]:9229
 
     ports:
       - "8080:8080"
-      - "5858:5858"
       - "9229:9229"
     volumes:
       - ./services/photos:/opt/app
