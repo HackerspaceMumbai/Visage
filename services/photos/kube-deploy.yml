@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: visage-deploy
 spec:
-  replicas: 3
+  replicas: 5
   minReadySeconds: 10
   strategy:
     type: RollingUpdate
