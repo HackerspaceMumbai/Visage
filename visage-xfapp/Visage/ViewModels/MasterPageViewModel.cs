@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Input;
 using Visage.Models;
 using Visage.Pages;
+using Visage.Services;
 using Xamarin.Forms;
 
 namespace Visage.ViewModels
@@ -21,19 +22,19 @@ namespace Visage.ViewModels
             set;
         }
 
-        //public ICommand ItemSelectedCommand
-        //{
-        //    get;
-        //    set;
-        //}
+        public ICommand LogoutCommand
+        {
+            get;
+            set;
+        }
 
         public MasterPageViewModel()
         {
             LoadMasterPageItems();
 
-            //ItemSelectedCommand = new Command<string>(ExecuteItemSelected);
-
             GetProfile();
+
+            LogoutCommand = new Command(ExecuteLogoutCommand);
         }
 
         void LoadMasterPageItems()
@@ -42,7 +43,7 @@ namespace Visage.ViewModels
 
 			masterPageItems.Add(new MasterPageItem
 			{
-				Title = "You",
+				Title = "Profile",
 				TargetType = typeof(ProfilePage)
 			});
 			masterPageItems.Add(new MasterPageItem
@@ -54,20 +55,33 @@ namespace Visage.ViewModels
             MasterPageItems = masterPageItems;
         }
 
-        //public void ExecuteItemSelected(MasterPageItem selectedItem)
-        //{
-            
-        //}
-
         void GetProfile()
         {
-            Profile = new Profile
-            {
-                Thumbnail = "https://appmatticresourcegrou959.blob.core.windows.net/images/ic_account_circle.png",
-                Email = "gorilla@zoo.com",
-                FullName = "Gorilla",
-                Rating = 3.5
-            };
+            var profile = App.VisageDatabase.GetProfile().Result;
+
+			Profile = new Profile
+			{
+				Thumbnail = profile.Thumbnail,
+				Email = profile.Email,
+				FullName = profile.FullName,
+				Rating = profile.Rating
+			};
         }
+
+        async void ExecuteLogoutCommand()
+        {
+            (Application.Current.MainPage as MainPage).IsPresented = false;
+
+            var result = await _dialogService.ShowMessage("Visage", "Sure, you want to logout?", "Yes", "Cancel");
+
+            if(result) // if user selected yes
+            {
+                var profile = await App.VisageDatabase.GetProfile();
+                await App.VisageDatabase.DeleteItemAsync(profile);
+
+                DependencyService.Get<IAuth0Service>().LoginViaAuth0();
+            }
+        }
+
     }
 }

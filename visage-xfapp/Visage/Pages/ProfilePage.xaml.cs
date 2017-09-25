@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Visage.Models;
 using Visage.ViewModels;
 using Xamarin.Forms;
 

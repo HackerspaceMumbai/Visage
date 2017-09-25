@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Visage.Models
 {
@@ -11,7 +12,7 @@ namespace Visage.Models
 
 		public string organizer_name { get; set; }
 
-        public string starts { get; set; }
+        public DateTime starts { get; set; }
 
         public Venue venue { get; set; }
 
@@ -30,9 +31,9 @@ namespace Visage.Models
 		
         public string organizer_name { get; set; }
 
-		public string starts { get; set; }
+        public DateTime starts { get; set; }
 		
-        public string ends { get; set; }
+        public DateTime ends { get; set; }
 		
         public string contact { get; set; }
 		
@@ -106,10 +107,33 @@ namespace Visage.Models
 		
         public string url { get; set; }
 		
-        public string starts { get; set; }
+        public DateTime starts { get; set; }
 		
-        public string ends { get; set; }
+        public DateTime ends { get; set; }
 		
         public List<string> terms { get; set; }
+
+        public string schedule
+        {
+            get { return starts.ToString("t") + " to " + ends.ToString("t") ; }
+        }
+
+        public string speakersaslist
+        {
+            get
+            {
+                var speakersStringBuilder = new StringBuilder();
+
+                for (int i = 0; i < speakers.Count; i++)
+                {
+                    speakersStringBuilder.Append(speakers[i].name);
+
+                    if (i < (speakers.Count-1))
+                        speakersStringBuilder.Append(", ");
+                }
+
+                return speakersStringBuilder.ToString();
+            }
+        }
 	}
 }

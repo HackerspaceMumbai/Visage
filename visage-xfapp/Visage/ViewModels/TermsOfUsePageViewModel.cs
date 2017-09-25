@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows.Input;
 using Visage.Helpers;
 using Visage.Pages;
+using Visage.Services;
 using Xamarin.Forms;
 
 namespace Visage.ViewModels
@@ -32,7 +33,9 @@ namespace Visage.ViewModels
 
 		void ExecuteAcceptCommand()
 		{
-            Application.Current.MainPage = new LoginWithEventbritePage();
+            //Application.Current.MainPage = new LoginWithEventbritePage();
+
+            DependencyService.Get<IAuth0Service>().LoginViaAuth0();
 		}
 
 		async void ExecuteCancelCommand()
@@ -46,7 +49,10 @@ namespace Visage.ViewModels
 			{
 				IsBusy = true;
 
-				// process the terms of use here
+                var isLoggedIn = await App.VisageDatabase.ProfileExists();
+
+                if (isLoggedIn)
+                    Application.Current.MainPage = new MainPage();
 			}
 			catch (Exception ex)
 			{

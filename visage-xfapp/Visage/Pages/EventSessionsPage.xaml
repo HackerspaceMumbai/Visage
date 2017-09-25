@@ -20,12 +20,27 @@
                           AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
                           AbsoluteLayout.LayoutFlags="All">
 
-                <ListView 
+            <ListView 
                       ItemsSource="{Binding Sessions}"
                       HasUnevenRows="true" >
+                    
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextCell Text="{Binding name}" Detail="{Binding starts, StringFormat='Scheduled at: {0:t}'}"/>
+                        <ViewCell>
+                                
+                            <StackLayout Margin="8">
+                                    
+                                <Label Text="{Binding name}" 
+                                       FontAttributes="Bold" />
+
+                                <Label Text="{Binding speakersaslist}" 
+                                       Margin="0, 2, 0, 0" />
+
+                                <Label Text="{Binding schedule}" />
+
+                            </StackLayout>
+                                
+                        </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
 

@@ -2,7 +2,9 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
             x:Class="Visage.Pages.TermsOfUsePage"
-            Title="Terms of use">
+            Title="Terms of use"
+            NavigationPage.BackButtonTitle="Back">
+    
 
     <ContentPage.Content>
 
@@ -26,12 +28,14 @@
                 <Button Grid.Row="1"
                         x:Name="ButtonAccept"
                         Text="Accept"
+                        HeightRequest="35"
                         Command="{Binding AcceptCommand}"
                         Style="{StaticResource VisageButton}" />
 
                 <Button Grid.Row="2"
                         x:Name="ButtonCancel"
                         Text="Cancel"
+                        HeightRequest="35"
                         Command="{Binding CancelCommand}" />
                 
             </Grid>
