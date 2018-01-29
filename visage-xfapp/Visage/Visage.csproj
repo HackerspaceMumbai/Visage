@@ -115,6 +115,7 @@
     <Compile Include="Services\IAuth0Service.cs" />
     <Compile Include="Services\IFileHelper.cs" />
     <Compile Include="Data\VisageDatabase.cs" />
+    <Compile Include="Services\IPlatformFileManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Pages\" />

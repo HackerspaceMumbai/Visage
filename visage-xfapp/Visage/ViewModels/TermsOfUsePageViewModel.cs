@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows.Input;
 using Visage.Helpers;
 using Visage.Pages;
@@ -53,14 +54,23 @@ namespace Visage.ViewModels
 
                 if (isLoggedIn)
                     Application.Current.MainPage = new MainPage();
+
+                var termsOfUserHtmlFile = DependencyService.Get<IPlatformFileManager>().GetHtmlContentAsString("terms_of_use.html");
+
+                if (!string.IsNullOrEmpty(termsOfUserHtmlFile))
+                {
+                    EulaText = new HtmlWebViewSource { Html = termsOfUserHtmlFile };
+                }
+                else
+                {
+                    await _dialogService.ShowMessage(AppHelper.ApplicationName, "Unable to read terms of use", Actions.Close);
+                }
 			}
 			catch (Exception ex)
 			{
 				Debug.WriteLine(ex.Message);
 
                 await _dialogService.ShowMessage(AppHelper.ApplicationName, "Unable to read terms of use", Actions.Close);
-
-				await Navigation.PopAsync();
 			}
 			finally
 			{
