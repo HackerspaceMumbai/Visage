@@ -8,12 +8,14 @@ Meetup Checkins done right
 [![PRs Welcome][prs-badge]][prs]
 
 ## The problem
-We run the largest and longest running community meetup in Bombay. While our meetups are free, we maintain strict RSVP etiquette and any missed checkins would adversely affect the attendees for future meetups. Also the biggest bottleneck for the checkins was the organizer himself since only his mobile app could be used for checking in attendees. 
+We are the largest Open Source Software[OSS] community with its longest running(> 7 years) tech meetup in Bombay. One of the biggest friction in our meetup management is attendee check-ins; it is wholly manual and error prone.
 
 ## The solution
 
-Simple: let the attendees self checkin. 
-So the geeks that we were, we decided to use our super powers to build a solution that incorporates some exciting and powerful technologies including amongst others: Face Recognition, microservices based architecture and the latest front end technologies like React, Next.js, Graphql etc 
+Simple: let the attendees self check-in and the check-in process be totally frictionless.
+
+We were so inspired by the awesome technologies showcased at the MS Build'17 and Microsoft MVP Summit that
+we decided to incorporate a few of them in our solution which will   be a melange of Microsoft and OSS [Microsoft :heart: OSS ] and obviously hosted on Azure: Face Recognition, Xamar  in, UWP, AKS, Typescript, React, Next.js, Graphql etc
 
 
 ## Solution Overview
