@@ -15,7 +15,7 @@ We are the largest Open Source Software[OSS] community with its longest running(
 Simple: let the attendees self check-in and the check-in process be totally frictionless.
 
 We were so inspired by the awesome technologies showcased at the MS Build'17 and Microsoft MVP Summit that
-we decided to incorporate a few of them in our solution which will   be a melange of Microsoft and OSS [Microsoft :heart: OSS ] and obviously hosted on Azure: Face Recognition, Xamar  in, UWP, AKS, Typescript, React, Next.js, Graphql etc
+we decided to incorporate a few of them in our solution which will comprise of Microsoft and OSS technologies [Microsoft :heart: s OSS ] and obviously hosted on Azure: Face Recognition, Xamarin, UWP, AKS, Typescript, React, Next.js, Graphql etc
 
 
 ## Solution Overview
