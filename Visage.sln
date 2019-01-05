@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MobileApps", "MobileApps", "{B1444FC4-DFEE-422C-BC81-CFDD6D40E859}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebApps", "WebApps", "{6722421E-6426-4262-8F44-557C40E9D79D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{F35A7FEA-7C11-474A-82E5-549966D4DF47}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Checkins.API", "Checkins.API\Checkins.API.csproj", "{05A7C010-C93B-4881-B6A3-510DB16E8988}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Checkins.API", "Checkins.API", "{87B5968D-1DC0-473A-9B88-10B1810E936D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{91883382-668D-4AA8-A54A-FD8425A716D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Checkins.UnitTests", "Checkins.UnitTests\Checkins.UnitTests.csproj", "{61947BEF-FD71-4D46-868F-10F510FA65CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05A7C010-C93B-4881-B6A3-510DB16E8988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05A7C010-C93B-4881-B6A3-510DB16E8988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05A7C010-C93B-4881-B6A3-510DB16E8988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05A7C010-C93B-4881-B6A3-510DB16E8988}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61947BEF-FD71-4D46-868F-10F510FA65CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61947BEF-FD71-4D46-868F-10F510FA65CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61947BEF-FD71-4D46-868F-10F510FA65CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61947BEF-FD71-4D46-868F-10F510FA65CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{05A7C010-C93B-4881-B6A3-510DB16E8988} = {87B5968D-1DC0-473A-9B88-10B1810E936D}
+		{87B5968D-1DC0-473A-9B88-10B1810E936D} = {F35A7FEA-7C11-474A-82E5-549966D4DF47}
+		{91883382-668D-4AA8-A54A-FD8425A716D6} = {87B5968D-1DC0-473A-9B88-10B1810E936D}
+		{61947BEF-FD71-4D46-868F-10F510FA65CD} = {91883382-668D-4AA8-A54A-FD8425A716D6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6DFD8D43-B55A-46A9-8FC2-22BACFF0AE1F}
+	EndGlobalSection
+EndGlobal
