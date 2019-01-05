@@ -24,12 +24,6 @@ namespace Checkins.API
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>();
-
-        private static async Task getEventRegistrants()
-        {
-            var stringTask = restClient.GetStringAsync("https://www.eventbriteapi.com/v3/events/53008188920/attendees/?token=UAAN7EXKMVJYKGI4LJ6E");
-            var msg = await stringTask;
-            Console.Write(msg);
-        }
+        
     }
 }
