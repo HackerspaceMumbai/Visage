@@ -23,6 +23,18 @@ namespace Checkins.API
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                    {
+                        var builtConfig = config.Build();
+                        config.AddAzureKeyVault(
+                            $"https://{builtConfig["Vault"]}.vault.azure.net/",
+                            builtConfig["ClientId"],
+                            builtConfig["ClientSecret"]
+                       );
+
+                    }
+                    
+                )
                 .UseStartup<Startup>();
         
     }
