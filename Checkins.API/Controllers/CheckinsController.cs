@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Checkins.API.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]")]
     [ApiController]
     public class CheckinsController : ControllerBase
@@ -19,39 +20,44 @@ namespace Checkins.API.Controllers
             eventbriteClient = _eventbriteClient;
         }
 
-        // GET: api/Checkins
-        [HttpGet("{id}")]
-        public async Task<List<Attendee>> GetAsync(string id, [FromQuery] string attStatus="")
+
+        // GET: api/Checkins/5
+        [HttpGet]
+        public string Get()
         {
+            return "value";
+        }
+
+
+        // GET: api/Checkins/5
+
+        [HttpGet("{id}", Name = "Get")]
+        public async Task<ActionResult<List<Attendee>>> GetAsyncByEventId(string id, [FromQuery] string attStatus = "")
+        {
+            string validStatus = "all checkedin noshow";
+            if( !String.IsNullOrEmpty(attStatus) && !validStatus.Contains(attStatus))
+            {
+                return BadRequest();
+            }
 
             List<Attendee> result = await eventbriteClient.GetAttendees(id);
-
-            //if (String.IsNullOrEmpty(attStatus))
-            //{
-
-            //    return result;
-            //}
 
             switch (attStatus)
             {
                 case "checkedin":
-                    return result.Where(a => a.checked_in.Equals(true)).ToList<Attendee>();
+                    return Ok(result.Where(a => a.checked_in.Equals(true)).ToList<Attendee>());
                   
 
                 case "noshow":
-                    return result.Where(a => a.checked_in.Equals(false)).ToList<Attendee>();
+                    return Ok(result.Where(a => a.checked_in.Equals(false)).ToList<Attendee>());
+
+                case "all":
+                    return Ok(result);
 
                 default:
-                    return result;
+                    return BadRequest();
             }
 
-        }
-
-        // GET: api/Checkins/5
-        [HttpGet("{id}", Name = "Get")]
-        public string Get(int id)
-        {
-            return "value";
         }
 
         // POST: api/Checkins
