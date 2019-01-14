@@ -2,8 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using System;
+using System.Linq;
 
 namespace Checkins.API
 {
@@ -22,7 +21,6 @@ namespace Checkins.API
         {
             Configuration = configuration;
             httpClient.BaseAddress = new System.Uri(Configuration["BaseURI"]);
-            //httpClient.BaseAddress = new System.Uri("http://eventbriteapi.com/");
             httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
             _client = httpClient;
         }

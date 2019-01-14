@@ -16,104 +16,11 @@ namespace Checkins.API
         public bool has_more_items { get; set; }
     }
 
-    public class BasePrice
-    {
-        public string display { get; set; }
-        public string currency { get; set; }
-        public int value { get; set; }
-        public string major_value { get; set; }
-    }
-
-    public class EventbriteFee
-    {
-        public string display { get; set; }
-        public string currency { get; set; }
-        public int value { get; set; }
-        public string major_value { get; set; }
-    }
-
-    public class Gross
-    {
-        public string display { get; set; }
-        public string currency { get; set; }
-        public int value { get; set; }
-        public string major_value { get; set; }
-    }
-
-    public class PaymentFee
-    {
-        public string display { get; set; }
-        public string currency { get; set; }
-        public int value { get; set; }
-        public string major_value { get; set; }
-    }
-
-    public class Tax
-    {
-        public string display { get; set; }
-        public string currency { get; set; }
-        public int value { get; set; }
-        public string major_value { get; set; }
-    }
-
-    public class Costs
-    {
-        public BasePrice base_price { get; set; }
-        public EventbriteFee eventbrite_fee { get; set; }
-        public Gross gross { get; set; }
-        public PaymentFee payment_fee { get; set; }
-        public Tax tax { get; set; }
-    }
-
-    public class Home
-    {
-        public string country { get; set; }
-        public string city { get; set; }
-        public string region { get; set; }
-        public string postal_code { get; set; }
-        public string address_1 { get; set; }
-        public string address_2 { get; set; }
-    }
-
-    public class Ship
-    {
-    }
-
-    public class Work
-    {
-        public string city { get; set; }
-        public string postal_code { get; set; }
-        public string address_1 { get; set; }
-        public string address_2 { get; set; }
-        public string country { get; set; }
-        public string region { get; set; }
-    }
-
-    public class Bill
-    {
-    }
-
-    public class Fulfillment
-    {
-    }
-
-    public class Addresses
-    {
-        public Home home { get; set; }
-        public Ship ship { get; set; }
-        public Work work { get; set; }
-        public Bill bill { get; set; }
-        public Fulfillment fulfillment { get; set; }
-    }
-
+      
     public class Profile
     {
         public string first_name { get; set; }
         public string last_name { get; set; }
-        public Addresses addresses { get; set; }
-        public string company { get; set; }
-        public string cell_phone { get; set; }
-        public string email { get; set; }
         public string name { get; set; }
         public string website { get; set; }
     }
@@ -140,7 +47,7 @@ namespace Checkins.API
     public class Attendee
     {
         public object team { get; set; }
-        public Costs costs { get; set; }
+        
         public string resource_uri { get; set; }
         public string id { get; set; }
         public DateTime changed { get; set; }
