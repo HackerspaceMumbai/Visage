@@ -23,13 +23,19 @@ namespace Checkins.API
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                .ConfigureAppConfiguration((context, config) =>
+                    {
+                        var builtConfig = config.Build();
+                        config.AddAzureKeyVault(
+                            $"https://{builtConfig["Vault"]}.vault.azure.net/",
+                            builtConfig["ClientId"],
+                            builtConfig["ClientSecret"]
+                       );
 
-        private static async Task getEventRegistrants()
-        {
-            var stringTask = restClient.GetStringAsync("https://www.eventbriteapi.com/v3/events/53008188920/attendees/?token=UAAN7EXKMVJYKGI4LJ6E");
-            var msg = await stringTask;
-            Console.Write(msg);
-        }
+                    }
+                    
+                )
+                .UseStartup<Startup>();
+        
     }
 }

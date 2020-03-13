@@ -36,9 +36,11 @@ namespace Checkins.API
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                
             }
             else
             {
+                
                 app.UseHsts();
             }
 

@@ -6,6 +6,7 @@ using Checkins.API;
 using Bogus;
 using System;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Checkins.UnitTests
 {
@@ -30,11 +31,11 @@ namespace Checkins.UnitTests
             var checkinsController = new Checkins.API.Controllers.CheckinsController(_eventbriteClient.Object);
 
             //Act
-            var result =  await checkinsController.GetAsync("test");
+            var Okresult =  await checkinsController.GetAsyncByEventId("test", "all") ;
             
             //Assert
-            var attendees = Assert.IsType<List<Attendee>>(result);
-            Assert.Equal(expectedNumberofAttendees, attendees.Count);
+            var attendees = Assert.IsType<OkObjectResult>(Okresult.Result);
+            Assert.Equal(expectedNumberofAttendees, (attendees.Value as List<Attendee>).Count) ;
 
         } 
 
@@ -50,11 +51,11 @@ namespace Checkins.UnitTests
             var checkinsController = new Checkins.API.Controllers.CheckinsController(_eventbriteClient.Object);
 
             //Act
-            var result = await checkinsController.GetAsync("test", "checkedin");
+            var Okresult = await checkinsController.GetAsyncByEventId("test", "checkedin");
 
             //Assert
-            var attendees = Assert.IsType<List<Attendee>>(result);
-            Assert.Equal(expected_checkedin_attendees, attendees.Count);
+            var attendees = Assert.IsType<OkObjectResult>(Okresult.Result);
+            Assert.Equal(expected_checkedin_attendees, (attendees.Value as List<Attendee>).Count);
 
         }
 
@@ -70,11 +71,29 @@ namespace Checkins.UnitTests
             var checkinsController = new Checkins.API.Controllers.CheckinsController(_eventbriteClient.Object);
 
             //Act
-            var result = await checkinsController.GetAsync("test", "noshow");
+            var Okresult = await checkinsController.GetAsyncByEventId("test", "noshow");
 
             //Assert
-            var attendees = Assert.IsType<List<Attendee>>(result);
-            Assert.Equal(expected_noshow_attendees, attendees.Count);
+            var attendees = Assert.IsType<OkObjectResult>(Okresult.Result);
+            Assert.Equal(expected_noshow_attendees, (attendees.Value as List<Attendee>).Count);
+
+        }
+
+
+        [Fact]
+        public async Task Get_WrongAttStatus_Failure()
+        {
+            //Arrange
+            _eventbriteClient.Setup(x => x.GetAttendees(It.IsAny<string>()))
+                                          .Returns(Task.FromResult(getFakeEventbriteResonse().attendees));
+
+            var checkinsController = new Checkins.API.Controllers.CheckinsController(_eventbriteClient.Object);
+
+            //Act
+            var Okresult = await checkinsController.GetAsyncByEventId("test", "inValidStatus");
+
+            //Assert
+            Assert.IsType<BadRequestResult>(Okresult.Result);
 
         }
 
