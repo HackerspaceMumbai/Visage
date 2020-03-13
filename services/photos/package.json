@@ -17,7 +17,7 @@
     "dotenv-extended": "^2.0.1",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
-    "morgan": "^1.8.2",
+    "morgan": "^1.9.1",
     "multer": "^1.3.0",
     "path": "^0.12.7",
     "project-oxford": "^1.8.0",
