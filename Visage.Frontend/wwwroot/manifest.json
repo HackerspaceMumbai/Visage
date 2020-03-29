@@ -1,6 +1,6 @@
 {
-  "name": "Frontend",
-  "short_name": "Frontend",
+  "name": "Visage.Frontend",
+  "short_name": "Visage.Frontend",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
