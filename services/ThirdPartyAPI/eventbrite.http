@@ -1,0 +1,11 @@
+@baseURL = www.eventbriteapi.com/v3
+
+# @name InitialOwnedEvents
+GET https://{{baseURL}}/users/me/owned_events HTTP/1.1
+Authorization: Bearer {{bearer}}
+
+###
+
+# @name SubsequentOwnedEvents
+GET https://{{baseURL}}/users/me/owned_events?continuation={{InitialOwnedEvents.response.body.pagination.continuation}} HTTP/1.1
+Authorization: Bearer {{bearer}}
