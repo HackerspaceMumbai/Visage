@@ -293,3 +293,6 @@ __pycache__/
 
 # Exclude solution overview Ppt 
 solution-overview.pptx
+
+# Exclude work timing
+codealike.json
