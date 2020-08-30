@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+            x:Class="Visage.Pages.ProfilePage"
+            Title="Profile">
+
+    <ContentPage.Content>
+
+        <AbsoluteLayout>
+
+            <Grid Padding="12" AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
+                 AbsoluteLayout.LayoutFlags="All">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="10*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackLayout Grid.Row="0">
+                    
+                    <Label Text="Fullname" FontAttributes="Bold" />
+                    <Label Text="{Binding Profile.FullName}"/>
+
+                    <Label Text="Email" FontAttributes="Bold" Margin="0, 12, 0, 0" />
+                    <Label Text="{Binding Profile.Email}" />
+                    
+                </StackLayout>
+
+                <Button Grid.Row="1"
+                        x:Name="ButtonAccept"
+                        Text="Login to Eventbrite"
+                        Command="{Binding AcceptCommand}"
+                        Style="{StaticResource VisageButton}" />
+                
+            </Grid>
+
+            <!--Acivity indicator overlay-->
+            
+            <ContentView
+                 AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
+                 AbsoluteLayout.LayoutFlags="All"
+                 IsVisible="{Binding IsBusy}"
+                 BackgroundColor="#C0808080"
+                 Padding="10, 0">
+
+                <ActivityIndicator  
+                        WidthRequest="50" 
+                        HeightRequest="50" 
+                        IsRunning="{Binding IsBusy}"
+                        IsVisible="{Binding IsBusy}"
+                        HorizontalOptions="CenterAndExpand" 
+                        VerticalOptions="CenterAndExpand"/>
+                
+            </ContentView>
+            
+        </AbsoluteLayout>
+        
+    </ContentPage.Content>
+    
+</ContentPage>

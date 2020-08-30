@@ -11,17 +11,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{F3
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Checkins.API", "Checkins.API\Checkins.API.csproj", "{05A7C010-C93B-4881-B6A3-510DB16E8988}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Checkins", "Checkins", "{87B5968D-1DC0-473A-9B88-10B1810E936D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Checkins.API", "Checkins.API", "{87B5968D-1DC0-473A-9B88-10B1810E936D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{91883382-668D-4AA8-A54A-FD8425A716D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Checkins.UnitTests", "Checkins.UnitTests\Checkins.UnitTests.csproj", "{61947BEF-FD71-4D46-868F-10F510FA65CD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Visage.Frontend", "Visage.Frontend\Visage.Frontend.csproj", "{9646C966-1E9D-4729-A739-69286FCC9C28}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Spec", "Visage.Spec\Visage.Spec.csproj", "{C6EF36FA-4D92-4D85-B282-A12C61972CC7}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Karyakaram", "Karyakaram", "{822E3099-B552-4CCC-A66E-A87056EBA4E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +37,6 @@ Global
 		{9646C966-1E9D-4729-A739-69286FCC9C28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9646C966-1E9D-4729-A739-69286FCC9C28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9646C966-1E9D-4729-A739-69286FCC9C28}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C6EF36FA-4D92-4D85-B282-A12C61972CC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C6EF36FA-4D92-4D85-B282-A12C61972CC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C6EF36FA-4D92-4D85-B282-A12C61972CC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C6EF36FA-4D92-4D85-B282-A12C61972CC7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,7 +46,6 @@ Global
 		{87B5968D-1DC0-473A-9B88-10B1810E936D} = {F35A7FEA-7C11-474A-82E5-549966D4DF47}
 		{91883382-668D-4AA8-A54A-FD8425A716D6} = {87B5968D-1DC0-473A-9B88-10B1810E936D}
 		{61947BEF-FD71-4D46-868F-10F510FA65CD} = {91883382-668D-4AA8-A54A-FD8425A716D6}
-		{822E3099-B552-4CCC-A66E-A87056EBA4E1} = {F35A7FEA-7C11-474A-82E5-549966D4DF47}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6DFD8D43-B55A-46A9-8FC2-22BACFF0AE1F}

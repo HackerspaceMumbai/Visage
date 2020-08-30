@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+            x:Class="Visage.Pages.EventsTabItemPage"
+            xmlns:converters="clr-namespace:Visage.Converters;assembly:Visage"
+            Title="{Binding Title}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:RSVPVisibilityConverter x:Key="RSVPVisibility" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
+	<ContentPage.Content>
+        <ListView ItemsSource="{Binding Events}"
+                  IsPullToRefreshEnabled="true"
+                  IsRefreshing="{Binding IsBusy}"
+                  HasUnevenRows="true"
+                  RowHeight="-1" >
+            <ListView.ItemTemplate>
+                <DataTemplate>
+
+                    <ViewCell>
+
+                        <Grid Margin="12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+
+                            <Label Grid.Row="0"
+                                   Text="{Binding name}"
+                                   FontAttributes="Bold"/>
+
+                            <Label Grid.Row="1"
+                                   Text="{Binding venue.address_string}" />
+
+                            <StackLayout Grid.Row="2"
+                                         Orientation="Horizontal">
+
+                                <Label Text="{Binding organizer_name}"
+                                       HorizontalOptions="StartAndExpand"
+                                       VerticalOptions="Center" />
+
+                                <Label Text="{Binding starts}"
+                                       HorizontalOptions="End"
+                                       VerticalOptions="Center"  />
+                                 
+                            </StackLayout>
+
+                            <Label  Grid.Row="3"
+                                    Text="{Binding rsvp}"
+                                    IsVisible="{Binding rsvp, Converter={StaticResource RSVPVisibility}}" />
+
+                        </Grid>
+                    </ViewCell>
+                    
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+	</ContentPage.Content>
+</ContentPage>
