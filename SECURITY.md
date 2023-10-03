@@ -9,7 +9,7 @@ If you know of a publicly disclosed security vulnerability for Visage, please IM
 
 ## Reporting a Vulnerability
 
-To report a vulnerability or a security-related issue, please email the private address community@hackmum.in with the details of the vulnerability. The email will be fielded by the Hackerspace Mumbai Security Team. Emails will be addressed within 3 business days, including a detailed plan to investigate the issue and any potential workarounds to perform in the meantime. Do not report non-security-impacting bugs through this channel. Use GitHub issues instead.
+To report a vulnerability or a security-related issue, please email the private address community@hackmum.in with the details of the vulnerability. The email will be fielded by the Hackerspace Mumbai Security Team. Emails will be addressed within 3 business days, including a detailed plan to investigate the issue and any potential workarounds to perform in the meantime. Do not report non-security-impacting bugs through this channel. Use the repository's [GitHub issues](https://github.com/HackerspaceMumbai/Visage/issues) instead.
 
 ### Proposed Email Content
 
