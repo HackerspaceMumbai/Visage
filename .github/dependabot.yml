@@ -1,0 +1,19 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "nuget" # See documentation for possible values
+    directory: "/WebApp" # Location of package manifests
+    schedule:
+      interval: "daily" #Keeping this daily till 2023-end
+		open-pull-requests-limit: 2
+
+	- package-ecosystem: "npm" #Tailwind in a Blazor WASM C# project
+ 		directory: "/WebApp"
+	  schedule: 
+	 		interval: "daily"
+		open-pull-requests-limit: 5
+
