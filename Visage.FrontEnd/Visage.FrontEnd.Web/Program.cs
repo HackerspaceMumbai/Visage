@@ -1,8 +1,20 @@
 using Visage.FrontEnd.Shared.Services;
 using Visage.FrontEnd.Web.Components;
 using Visage.FrontEnd.Web.Services;
+using Auth0.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAuth0WebAppAuthentication(options =>
+        {
+            builder.Configuration.Bind("Auth0", options);
+        });
+        
+builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -13,6 +25,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -30,6 +45,25 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
+{
+    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
+            .WithRedirectUri(returnUrl)
+            .Build();
+
+    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+});
+
+app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
+{
+    var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
+            .WithRedirectUri("/")
+            .Build();
+
+    await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
