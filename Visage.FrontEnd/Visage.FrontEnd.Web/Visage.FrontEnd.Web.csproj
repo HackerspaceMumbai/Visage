@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\Visage.ServiceDefaults\Visage.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Visage.FrontEnd.Web.Client\Visage.FrontEnd.Web.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0-rc.2.24474.3" />
+    <ProjectReference Include="..\..\Visage.AppHost\Visage.AppHost.csproj" />
   </ItemGroup>
 
 </Project>

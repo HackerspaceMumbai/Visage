@@ -1,0 +1,60 @@
+@code {
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public string CoverPicture { get; set; }
+
+    [Parameter]
+    public DateTime Date { get; set; }
+
+    [Parameter]
+    public string Venue { get; set; }
+
+    [Parameter]
+    public int? AttendeesPercentage { get; set; }
+}
+
+<div class="event-card">
+    <img src="@CoverPicture" alt="@Title" class="event-cover" />
+    <div class="event-details">
+        <h3>@Title</h3>
+        <p>@Date.ToString("MMMM dd, yyyy")</p>
+        <p>@Venue</p>
+    </div>
+    @if (AttendeesPercentage.HasValue)
+    {
+        <div class="event-badge">
+            @AttendeesPercentage% Attended
+        </div>
+    }
+</div>
+
+<style>
+    .event-card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .event-cover {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .event-details {
+        padding: 16px;
+    }
+
+    .event-badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background-color: #ff6347;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+</style>
