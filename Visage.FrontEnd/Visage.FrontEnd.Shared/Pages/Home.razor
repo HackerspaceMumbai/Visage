@@ -1,6 +1,9 @@
-﻿@page "/"
+@page "/"
 @using Visage.FrontEnd.Shared.Services
+@using Visage.FrontEnd.Shared.Models
+@using Visage.FrontEnd.Shared.Components
 @inject IFormFactor FormFactor
+@inject IEventService EventService
 
 <PageTitle>Home</PageTitle>
 
@@ -17,7 +20,41 @@ Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
 <button class="btn btn-ghost">Ghost</button>
 <button class="btn btn-link">Link</button>
 
+<h2>Upcoming Events</h2>
+@if (upcomingEvents == null || !upcomingEvents.Any())
+{
+    <p>No upcoming events. <a href="/create-event">Create a new event</a></p>
+}
+else
+{
+    @foreach (var event in upcomingEvents)
+    {
+        <EventCard Title="@event.Title" CoverPicture="@event.CoverPicture" Date="@event.Date" Venue="@event.Venue" />
+    }
+}
+
+<h2>Past Events</h2>
+@if (pastEvents == null || !pastEvents.Any())
+{
+    <p>No past events.</p>
+}
+else
+{
+    @foreach (var event in pastEvents)
+    {
+        <EventCard Title="@event.Title" CoverPicture="@event.CoverPicture" Date="@event.Date" Venue="@event.Venue" AttendeesPercentage="@event.AttendeesPercentage" />
+    }
+}
+
 @code {
     private string factor => FormFactor.GetFormFactor();
     private string platform => FormFactor.GetPlatform();
+    private List<Event> upcomingEvents;
+    private List<Event> pastEvents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        upcomingEvents = await EventService.GetUpcomingEvents();
+        pastEvents = await EventService.GetPastEvents();
+    }
 }
