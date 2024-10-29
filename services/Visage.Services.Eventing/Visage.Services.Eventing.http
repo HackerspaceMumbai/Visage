@@ -1,0 +1,18 @@
+@Visage.Services.Eventing_HostAddress = https://localhost:7156
+
+GET {{Visage.Services.Eventing_HostAddress}}/events
+Accept: application/json
+
+###
+
+POST {{Visage.Services.Eventing_HostAddress}}/events
+Content-Type: application/json
+
+{  
+  
+  "title": ".NET Conf 2024 - Recap",
+  "startDate":"2024-11-28",
+  "startTime": "15:00",
+  "endDate": "2024-11-28",
+  "location": "Microsoft Mumbai"
+}

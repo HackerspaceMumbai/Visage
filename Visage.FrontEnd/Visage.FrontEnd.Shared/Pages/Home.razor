@@ -1,12 +1,48 @@
-﻿@page "/"
+@page "/"
 @using Visage.FrontEnd.Shared.Services
+@using Visage.FrontEnd.Shared.Models
+@using Visage.FrontEnd.Shared.Components
 @inject IFormFactor FormFactor
+@inject IEventService EventService
 
 <PageTitle>Home</PageTitle>
+
+<div class="flex justify-between mb-4">
+<h2 class="text-2xl font-extrabold mb-4">Upcoming Events</h2>
+<a class="link link-primary"> +Create new event</a>
+</div>
+@if (upcomingEvents == null || !upcomingEvents.Any())
+{
+    <p>No upcoming events. <a href="/create-event">Create a new event</a></p>
+}
+else
+{
+    <ul class="grid w-full gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
+
+    @foreach (var upcomingEvent in upcomingEvents)
+    {
+        <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPictureFileName" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
+    }
+    </ul>
+}
+
+<h2>Past Events</h2>
+@if (pastEvents == null || !pastEvents.Any())
+{
+    <p>No past events.</p>
+}
+else
+{
+    @foreach (var pastEvent in pastEvents)
+    {
+        <EventCard Title="@pastEvent.Title" CoverPicture="@pastEvent.CoverPictureFileName" Date="@pastEvent.StartDate" Venue="@pastEvent.Location" AttendeesPercentage="@pastEvent.AttendeesPercentage" />
+    }
+}
 
 <h1 class="text-3xl font-bold underline">
     Hello world! Its me!!!
 </h1>
+
 Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
 
 <button class="btn">Button</button>
@@ -17,7 +53,17 @@ Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
 <button class="btn btn-ghost">Ghost</button>
 <button class="btn btn-link">Link</button>
 
+
+
 @code {
     private string factor => FormFactor.GetFormFactor();
     private string platform => FormFactor.GetPlatform();
+    private List<Event> upcomingEvents = null;
+    private List<Event> pastEvents = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        upcomingEvents = await EventService.GetUpcomingEvents();
+        pastEvents = await EventService.GetPastEvents();
+    }
 }

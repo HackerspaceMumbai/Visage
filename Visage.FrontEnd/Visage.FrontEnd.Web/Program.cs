@@ -6,14 +6,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAuth0WebAppAuthentication(options =>
-        {
-            builder.Configuration.Bind("Auth0", options);
-        });
-        
+{
+    builder.Configuration.Bind("Auth0", options);
+});
+
 builder.AddServiceDefaults();
 
 // Add services to the container.
@@ -24,10 +23,13 @@ builder.Services.AddRazorComponents()
 // Add device-specific services used by the Visage.FrontEnd.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+// Register the IEventService and EventService in the dependency injection container
+builder.Services.AddHttpClient<IEventService, EventService>( client =>
+                client.BaseAddress = new("https+http://event-api"));
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
