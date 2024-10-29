@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\services\Visage.Services.Eventing\Visage.Services.Eventing.csproj" />
     <ProjectReference Include="..\Visage.FrontEnd\Visage.FrontEnd.Web\Visage.FrontEnd.Web.csproj" />
   </ItemGroup>
 

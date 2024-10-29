@@ -24,7 +24,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 // Register the IEventService and EventService in the dependency injection container
-builder.Services.AddSingleton<IEventService, EventService>();
+builder.Services.AddHttpClient<IEventService, EventService>( client =>
+                client.BaseAddress = new("https+http://event-api"));
 
 var app = builder.Build();
 

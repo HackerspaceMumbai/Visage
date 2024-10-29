@@ -6,7 +6,7 @@
     public string CoverPicture { get; set; }
 
     [Parameter]
-    public DateTime Date { get; set; }
+    public DateOnly Date { get; set; }
 
     [Parameter]
     public string Venue { get; set; }
@@ -15,46 +15,15 @@
     public int? AttendeesPercentage { get; set; }
 }
 
-<div class="event-card">
-    <img src="@CoverPicture" alt="@Title" class="event-cover" />
-    <div class="event-details">
-        <h3>@Title</h3>
-        <p>@Date.ToString("MMMM dd, yyyy")</p>
-        <p>@Venue</p>
-    </div>
-    @if (AttendeesPercentage.HasValue)
-    {
-        <div class="event-badge">
-            @AttendeesPercentage% Attended
+<li class="card card-compact w-96 bg-base-100 shadow-xl hover:shadow-primary">
+    <figure class="relative w-full max-h-[240px]">
+        <img src="https://picsum.photos/400" alt="Event Cover picture of @Title" />
+    </figure>
+    <div class="card-body">
+        <h2 class="card-title justify-start">@Title</h2>
+        <p>@Date at @Venue</p>
+        <div class="card-actions">
+            <button class="btn btn-primary btn-block">Activate</button>
         </div>
-    }
-</div>
-
-<style>
-    .event-card {
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 16px;
-    }
-
-    .event-cover {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .event-details {
-        padding: 16px;
-    }
-
-    .event-badge {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        background-color: #ff6347;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-    }
-</style>
+    </div>
+</li>
