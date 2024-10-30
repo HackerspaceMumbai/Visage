@@ -1,0 +1,82 @@
+@code {
+    private string communityEmail = "community@hackerspacemumbai.com";
+    private string[] socialMediaLinks = new string[]
+    {
+        "https://www.linkedin.com/in/hackerspacemumbai",
+        "https://twitter.com/hackerspacemumbai",
+        "https://www.facebook.com/hackerspacemumbai",
+        "https://www.youtube.com/hackerspacemumbai",
+        "https://mastodon.social/@hackerspacemumbai",
+        "https://bsky.app/profile/hackerspacemumbai.bsky.social"
+    };
+}
+
+<footer class="footer p-10 bg-base-200 text-base-content">
+    <div>
+        <span class="footer-title">Contact Us</span>
+        <p>Email: <a href="mailto:@communityEmail">@communityEmail</a></p>
+    </div>
+    <div>
+        <span class="footer-title">Follow Us</span>
+        <div class="grid grid-flow-col gap-4">
+            <a href="@socialMediaLinks[0]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-3.5 19h-2.5v-6.5h2.5v6.5zm-1.25-7.5c-.828 0-1.5-.672-1.5-1.5s.672-1.5 1.5-1.5 1.5.672 1.5 1.5-.672 1.5-1.5 1.5zm6.25 7.5h-2.5v-3.5c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5v3.5h-2.5v-6.5h2.5v.75c.828-.828 2.172-1.25 3.5-1.25 2.485 0 4.5 2.015 4.5 4.5v2.5z"/>
+                </svg>
+            </a>
+            <a href="@socialMediaLinks[1]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-2.717 0-4.92 2.203-4.92 4.92 0 .386.043.762.127 1.124-4.087-.205-7.713-2.164-10.141-5.144-.423.725-.666 1.562-.666 2.457 0 1.694.863 3.188 2.175 4.065-.802-.026-1.556-.246-2.214-.616v.062c0 2.366 1.684 4.342 3.918 4.788-.41.111-.843.171-1.287.171-.315 0-.623-.031-.923-.088.623 1.943 2.432 3.355 4.576 3.395-1.676 1.314-3.791 2.098-6.086 2.098-.395 0-.785-.023-1.17-.068 2.168 1.39 4.743 2.202 7.514 2.202 9.025 0 13.965-7.478 13.965-13.965 0-.213-.005-.426-.014-.637.961-.694 1.797-1.562 2.457-2.549z"/>
+                </svg>
+            </a>
+            <a href="@socialMediaLinks[2]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .732.593 1.324 1.325 1.324h11.495v-9.294h-3.125v-3.622h3.125v-2.672c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.715-1.794 1.763v2.313h3.587l-.467 3.622h-3.12v9.294h6.116c.732 0 1.325-.592 1.325-1.324v-21.351c0-.732-.593-1.325-1.325-1.325z"/>
+                </svg>
+            </a>
+            <a href="@socialMediaLinks[3]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M19.615 3.184c-1.2-.9-2.5-1.5-4.1-1.5-3.2 0-5.8 2.6-5.8 5.8 0 .5.1 1 .2 1.5-4.8-.2-9.1-2.5-12-5.9-.5.8-.8 1.7-.8 2.7 0 1.9 1 3.5 2.5 4.5-.9 0-1.7-.3-2.4-.7v.1c0 2.7 1.9 4.9 4.4 5.4-.5.1-1 .2-1.5.2-.4 0-.7 0-1-.1.7 2.2 2.7 3.8 5.1 3.8-1.9 1.5-4.3 2.4-6.9 2.4-.4 0-.8 0-1.2-.1 2.5 1.6 5.5 2.5 8.7 2.5 10.4 0 16.1-8.6 16.1-16.1v-.7c1.1-.8 2-1.8 2.7-2.9-.9.4-1.9.7-2.9.8 1-.6 1.8-1.5 2.2-2.6-.9.5-1.9.9-3 .9z"/>
+                </svg>
+            </a>
+            <a href="@socialMediaLinks[4]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 22c-5.514 0-10-4.486-10-10s4.486-10 10-10 10 4.486 10 10-4.486 10-10 10zm-1-15h-2v2h2v-2zm0 4h-2v6h2v-6zm4-4h-2v2h2v-2zm0 4h-2v6h2v-6z"/>
+                </svg>
+            </a>
+            <a href="@socialMediaLinks[5]" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
+                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 22c-5.514 0-10-4.486-10-10s4.486-10 10-10 10 4.486 10 10-4.486 10-10 10zm-1-15h-2v2h2v-2zm0 4h-2v6h2v-6zm4-4h-2v2h2v-2zm0 4h-2v6h2v-6z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <div>
+        <span class="footer-title">Newsletter Signup</span>
+        <form>
+            <input type="email" placeholder="Enter your email" class="input input-bordered w-full max-w-xs" />
+            <button class="btn btn-primary mt-2">Subscribe</button>
+        </form>
+    </div>
+    <div>
+        <span class="footer-title">Community Features</span>
+        <ul>
+            <li>Workshops</li>
+            <li>Meetups</li>
+            <li>Hackathons</li>
+            <li>Collaborative Projects</li>
+        </ul>
+    </div>
+    <div>
+        <span class="footer-title">Legal Disclaimers</span>
+        <p>All information provided is for educational purposes only.</p>
+    </div>
+    <div>
+        <span class="footer-title">Copyright Information</span>
+        <p>© 2024 Hackerspace Mumbai. All rights reserved.</p>
+    </div>
+    <div>
+        <span class="footer-title">Call to Action</span>
+        <p>Join our community, volunteer, or contribute to make a difference!</p>
+    </div>
+</footer>
