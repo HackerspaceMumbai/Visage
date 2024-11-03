@@ -22,5 +22,11 @@ namespace Visage.FrontEnd.Shared.Services
             return await httpClient.GetFromJsonAsync<List<Event>>("/events") ?? [];
 
         }
+
+        public async Task CreateEvent(Event newEvent)
+        {
+            // Send a POST request to the backend to create a new event
+            await httpClient.PostAsJsonAsync("/events", newEvent);
+        }
     }
 }
