@@ -4,7 +4,6 @@ using StrictId;
 
 namespace Visage.FrontEnd.Shared.Models;
 
-
 public class Event
 {
     [Required]
@@ -32,14 +31,14 @@ public class Event
 
     public string? Location { get; set; }
 
-
-
     public string? CoverPictureLocation { get; set; }
 
     public string? CoverPictureFileName { get; set; }
 
-
     public int? AttendeesPercentage { get; set; }
 
-}
+    // New properties
+    public string? Hashtag { get; set; }
 
+    public string? Theme { get; set; }
+}
