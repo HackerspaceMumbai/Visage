@@ -42,25 +42,4 @@ public class Event
     public string? Hashtag { get; set; }
 
     public string? Theme { get; set; }
-
-}
-
-public class Session
-{
-    [Required]
-    public string Name { get; set; } = string.Empty;
-
-    [Required]
-    public string Type { get; set; } = string.Empty;
-
-    public string? Description { get; set; }
-
-    [Required]
-    public DateOnly Date { get; set; }
-
-    [Required]
-    public TimeOnly StartTime { get; set; }
-
-    [Required]
-    public TimeOnly EndTime { get; set; }
 }
