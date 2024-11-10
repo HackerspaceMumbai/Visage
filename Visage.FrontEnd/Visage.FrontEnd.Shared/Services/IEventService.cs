@@ -8,5 +8,7 @@ namespace Visage.FrontEnd.Shared.Services
     {
         Task<List<Event>> GetUpcomingEvents();
         Task<List<Event>> GetPastEvents();
+
+        Task ScheduleEvent(Event newEvent);
     }
 }

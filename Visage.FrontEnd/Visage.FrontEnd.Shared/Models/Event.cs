@@ -27,6 +27,7 @@ public class Event
     [Required]
     public DateOnly EndDate { get; set; }
 
+    [Required]
     public TimeOnly EndTime { get; set; }
 
     public string? Location { get; set; }
@@ -42,7 +43,6 @@ public class Event
 
     public string? Theme { get; set; }
 
-    public List<Session>? Sessions { get; set; }
 }
 
 public class Session
