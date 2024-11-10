@@ -95,6 +95,17 @@
             </label>
         </div>
 
+        <div class="sm:col-span-full">
+            <label for="coverPicture" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Cover Picture</span>
+                    <span class="badge badge-info">Optional</span>
+                </div>
+                <InputFile id="coverPicture" OnChange="HandleFileSelected" class="block input input-bordered focus:input-primary"/>
+                <small class="text-gray-500">Max size: 5MB. Allowed formats: JPG, PNG.</small>
+            </label>
+        </div>
+
         <button type="submit" class="mt-4 sm:col-span-2 btn btn-primary ">Schedule Event</button>
         <button type="reset" class="mt-4 sm:col-span-2 btn btn-secondary hover:input-primary" @onclick="@ClearForm" >Clear</button>
 
@@ -115,6 +126,8 @@
 
     private bool displayValidationErrors =>
         editContext?.GetValidationMessages().Any() == true;
+
+    private IBrowserFile? selectedFile;
 
     protected override void OnInitialized()
     {
@@ -146,7 +159,15 @@
         }
     }
 
-
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        if (selectedFile != null)
+        {
+            var cloudinaryUrl = await EventService.UploadCoverPicture(selectedFile);
+            newEvent.CoverPictureLocation = cloudinaryUrl;
+        }
+    }
 
     private async Task HandleValidSubmit()
     {
