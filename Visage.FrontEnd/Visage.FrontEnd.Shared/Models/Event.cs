@@ -27,6 +27,7 @@ public class Event
     [Required]
     public DateOnly EndDate { get; set; }
 
+    [Required]
     public TimeOnly EndTime { get; set; }
 
     public string? Location { get; set; }

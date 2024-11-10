@@ -1,0 +1,170 @@
+@page "/schedule-event"
+@using Visage.FrontEnd.Shared.Models
+@using Visage.FrontEnd.Shared.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject IEventService EventService
+@implements IDisposable
+
+<h3 class="text-2xl font-bold">Schedule Your New Event</h3>
+
+<EditForm EditContext="editContext" FormName="ScheduleNewEvent" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary/>
+
+    <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+        <div class="sm:col-span-4">
+
+            <label for="title" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Title of the Event</span>
+                </div>
+                <InputText id="title" class="block input input-bordered focus:input-primary" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
+            </label>
+
+        </div>
+
+        <div class="sm:col-span-2">
+            <label for="hashtag" class="form-control ">
+                <div class="label">
+                    <span class="label-text font-bold">Hashtag of the Event</span>
+                </div>
+                <div class="join w-full max-w-xs">
+                    <div class="flex join-item input input-bordered items-center bg-base-200">#</div>
+                    <InputText id="hashtag" class="block input input-bordered focus:input-primary" @bind-Value="newEvent.Hashtag" placeholder="Rule the social media" />
+                </div>
+            </label>
+        </div>
+
+        <div class="sm:col-start-1 sm:col-span-2">
+            <label for="startdate" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Start Date</span>
+                </div>
+                <InputDate id="start_date" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.StartDate" class="block input input-bordered focus:input-primary" />          
+            </label>
+        </div>
+        <div class="sm:col-start-3 sm:col-span-2">
+            <label for="starttime" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Start Date</span>
+                </div>
+                <InputDate id="starttime" Type="InputDateType.Time"
+                min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="input input-bordered focus:input-primary" />  
+            </label>
+        </div>
+
+        <div class="sm:row-start-3 sm:col-start-1 sm:col-span-2">
+            <label for="enddate" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">End Date</span>
+                </div>
+                <InputDate id="enddate" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.EndDate" class="block input input-bordered focus:input-primary" />          
+            </label>
+        </div>
+        <div class="sm:row-start-3 sm:col-span-2">
+            <label for="endtime" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">End Time</span>
+                </div>
+                <InputDate id="endtime" Type="InputDateType.Time"
+                min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="input input-bordered focus:input-primary" />  
+            </label>
+        </div>
+
+        <div class="sm:col-span-full">
+            <label for="description" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Description</span>
+                    <span class="badge badge-info">Optional</span>
+
+                </div>
+                <InputTextArea id="description" name="description" placeholder="Tell us all about it!" @bind-Value="newEvent.Description" class="block input input-bordered focus:input-primary"/>
+            </label>
+        </div>
+
+        <div class="sm:col-span-full">
+            <label for="location" class="form-control">
+                <div class="label">
+                    <span class="label-text font-bold">Venue</span>
+                </div>
+                <div class="flex items-center gap-2">
+                <InputText id="location" name="location" placeholder="Put in the awesome location" @bind-Value="newEvent.Location" class="block input input-bordered focus:input-primary grow focus:input-primary"/>
+               
+                </div>
+
+            </label>
+        </div>
+
+        <button type="submit" class="mt-4 sm:col-span-2 btn btn-primary ">Schedule Event</button>
+        <button type="reset" class="mt-4 sm:col-span-2 btn btn-secondary hover:input-primary" @onclick="@ClearForm" >Clear</button>
+
+
+    </div>
+
+
+
+</EditForm>
+
+
+@code {
+
+    [SupplyParameterFromForm(FormName = "ScheduleNewEvent")]
+    private Event? newEvent { get; set; }
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+
+    private bool displayValidationErrors =>
+        editContext?.GetValidationMessages().Any() == true;
+
+    protected override void OnInitialized()
+    {
+        newEvent = new Event()
+        {
+            StartDate = DateOnly.FromDateTime(DateTime.Now),
+            StartTime = TimeOnly.FromDateTime(DateTime.Now),
+            EndDate = DateOnly.FromDateTime(DateTime.Now),
+            EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1))
+        };
+        editContext = new EditContext(newEvent);
+        editContext.SetFieldCssClassProvider(new DaisyUIInputError());
+
+        editContext.OnValidationRequested += HandleValidationRequested;
+        messageStore = new(editContext);
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
+    {
+        messageStore?.Clear();
+
+        if (newEvent != null && editContext is not null)
+        {
+            if (newEvent.EndDate < newEvent.StartDate || 
+                (newEvent.EndDate == newEvent.StartDate && newEvent.EndTime <= newEvent.StartTime))
+            {
+                messageStore?.Add(editContext.Field(nameof(newEvent.EndDate)), "End date and time must be after start date and time.");
+            }
+        }
+    }
+
+
+
+    private async Task HandleValidSubmit()
+    {
+        await EventService.ScheduleEvent(newEvent);
+        // Redirect to home page or show success message
+    }
+
+
+    public void Dispose()
+    {
+        if (editContext is not null)
+        {
+            editContext.OnValidationRequested -= HandleValidationRequested;
+        }
+    }
+
+    private void ClearForm()
+    {
+        newEvent = new();
+    }
+}

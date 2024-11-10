@@ -7,7 +7,6 @@ Accept: application/json
 
 POST {{Visage.Services.Eventing_HostAddress}}/events
 Content-Type: application/json
-
 {  
   
   "title": ".NET Conf 2024 - Recap",

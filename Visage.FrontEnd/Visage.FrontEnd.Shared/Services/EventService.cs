@@ -23,7 +23,7 @@ namespace Visage.FrontEnd.Shared.Services
 
         }
 
-        public async Task CreateEvent(Event newEvent)
+        public async Task ScheduleEvent(Event newEvent)
         {
             // Send a POST request to the backend to create a new event
             await httpClient.PostAsJsonAsync("/events", newEvent);
