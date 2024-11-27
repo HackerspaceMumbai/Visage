@@ -27,6 +27,10 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddHttpClient<IEventService, EventService>( client =>
                 client.BaseAddress = new("https+http://event-api"));
 
+// Register the ICloudinaryImageSigningService and CloudinaryImageSigningService in the dependency injection container
+builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSigningService>(client =>
+    client.BaseAddress = new Uri("https+http://cloudinary-image-signing"));
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
@@ -75,3 +79,4 @@ app.MapRazorComponents<App>()
         typeof(Visage.FrontEnd.Web.Client._Imports).Assembly);
 
 app.Run();
+

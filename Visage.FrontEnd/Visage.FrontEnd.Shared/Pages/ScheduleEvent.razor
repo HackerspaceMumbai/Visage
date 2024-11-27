@@ -3,121 +3,156 @@
 @using Visage.FrontEnd.Shared.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject IEventService EventService
-@implements IDisposable
+@inject ICloudinaryImageSigningService CloudinaryService
+@inject NavigationManager NavigationManager
+@using System.Text
 
 <h3 class="text-2xl font-bold">Schedule Your New Event</h3>
 
 <EditForm EditContext="editContext" FormName="ScheduleNewEvent" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary/>
 
-    <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
-        <div class="sm:col-span-4">
-
-            <label for="title" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Title of the Event</span>
-                </div>
-                <InputText id="title" class="block input input-bordered focus:input-primary" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
-            </label>
-
-        </div>
-
-        <div class="sm:col-span-2">
-            <label for="hashtag" class="form-control ">
-                <div class="label">
-                    <span class="label-text font-bold">Hashtag of the Event</span>
-                </div>
-                <div class="join w-full max-w-xs">
-                    <div class="flex join-item input input-bordered items-center bg-base-200">#</div>
-                    <InputText id="hashtag" class="block input input-bordered focus:input-primary" @bind-Value="newEvent.Hashtag" placeholder="Rule the social media" />
-                </div>
-            </label>
-        </div>
-
-        <div class="sm:col-start-1 sm:col-span-2">
-            <label for="startdate" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Start Date</span>
-                </div>
-                <InputDate id="start_date" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.StartDate" class="block input input-bordered focus:input-primary" />          
-            </label>
-        </div>
-        <div class="sm:col-start-3 sm:col-span-2">
-            <label for="starttime" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Start Date</span>
-                </div>
-                <InputDate id="starttime" Type="InputDateType.Time"
-                min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="input input-bordered focus:input-primary" />  
-            </label>
-        </div>
-
-        <div class="sm:row-start-3 sm:col-start-1 sm:col-span-2">
-            <label for="enddate" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">End Date</span>
-                </div>
-                <InputDate id="enddate" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.EndDate" class="block input input-bordered focus:input-primary" />          
-            </label>
-        </div>
-        <div class="sm:row-start-3 sm:col-span-2">
-            <label for="endtime" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">End Time</span>
-                </div>
-                <InputDate id="endtime" Type="InputDateType.Time"
-                min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="input input-bordered focus:input-primary" />  
-            </label>
-        </div>
-
-        <div class="sm:col-span-full">
-            <label for="description" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Description</span>
-                    <span class="badge badge-info">Optional</span>
-
-                </div>
-                <InputTextArea id="description" name="description" placeholder="Tell us all about it!" @bind-Value="newEvent.Description" class="block input input-bordered focus:input-primary"/>
-            </label>
-        </div>
-
-        <div class="sm:col-span-full">
-            <label for="location" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Venue</span>
-                </div>
-                <div class="flex items-center gap-2">
-                <InputText id="location" name="location" placeholder="Put in the awesome location" @bind-Value="newEvent.Location" class="block input input-bordered focus:input-primary grow focus:input-primary"/>
-               
-                </div>
-
-            </label>
-        </div>
-
-        <div class="sm:col-span-full">
-            <label for="coverPicture" class="form-control">
-                <div class="label">
-                    <span class="label-text font-bold">Cover Picture</span>
-                    <span class="badge badge-info">Optional</span>
-                </div>
-                <InputFile id="coverPicture" OnChange="HandleFileSelected" class="block input input-bordered focus:input-primary"/>
-                <small class="text-gray-500">Max size: 5MB. Allowed formats: JPG, PNG.</small>
-            </label>
-        </div>
-
-        <button type="submit" class="mt-4 sm:col-span-2 btn btn-primary ">Schedule Event</button>
-        <button type="reset" class="mt-4 sm:col-span-2 btn btn-secondary hover:input-primary" @onclick="@ClearForm" >Clear</button>
-
-
+    <div class="input-error">
+        <DataAnnotationsValidator />
+   
+        <ValidationSummary />
     </div>
+    
+
+    <fieldset disabled="@disabled">
+
+        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+            <div class="sm:col-span-4">
+
+                <label for="title" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Title of the Event</span>
+                    </div>
+                    <InputText id="title" class="block input input-bordered focus:input-primary" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
+                </label>
+
+            </div>
+
+            <div class="sm:col-span-2">
+                <label for="hashtag" class="form-control ">
+                    <div class="label">
+                        <span class="label-text font-bold">Hashtag of the Event</span>
+                    </div>
+                    <div class="join w-full max-w-xs">
+                        <div class="flex join-item input input-bordered items-center bg-base-200">#</div>
+                        <InputText id="hashtag" class="block input input-bordered focus:input-primary" @bind-Value="newEvent.Hashtag" placeholder="Rule the social media" />
+                    </div>
+                </label>
+            </div>
+
+            <div class="sm:col-start-1 sm:col-span-2">
+                <label for="startdate" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Start Date</span>
+                    </div>
+                    <InputDate id="start_date" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.StartDate" class="block input input-bordered focus:input-primary" />
+                </label>
+            </div>
+            <div class="sm:col-start-3 sm:col-span-2">
+                <label for="starttime" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Start Date</span>
+                    </div>
+                    <InputDate id="starttime" Type="InputDateType.Time"
+                    min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="input input-bordered focus:input-primary" />
+                </label>
+            </div>
+
+            <div class="sm:row-start-3 sm:col-start-1 sm:col-span-2">
+                <label for="enddate" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">End Date</span>
+                    </div>
+                    <InputDate id="enddate" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.EndDate" class="block input input-bordered focus:input-primary" />
+                </label>
+            </div>
+            <div class="sm:row-start-3 sm:col-span-2">
+                <label for="endtime" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">End Time</span>
+                    </div>
+                    <InputDate id="endtime" Type="InputDateType.Time"
+                    min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="input input-bordered focus:input-primary" />
+                </label>
+            </div>
+
+            <div class="sm:col-span-full">
+                <label for="description" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Description</span>
+                        <span class="badge badge-info">Optional</span>
+
+                    </div>
+                    <InputTextArea id="description" name="description" placeholder="Tell us all about it!" @bind-Value="newEvent.Description" class="block input input-bordered focus:input-primary"/>
+                </label>
+            </div>
+
+            <div class="sm:col-span-full">
+                <label for="location" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Venue</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <InputText id="location" name="location" placeholder="Put in the awesome location" @bind-Value="newEvent.Location" class="block input input-bordered focus:input-primary grow focus:input-primary"/>
+
+                    </div>
+
+                </label>
+            </div>
+
+            <div class="sm:col-span-full">
+                <label for="coverPicture" class="form-control">
+                    <div class="label">
+                        <span class="label-text font-bold">Cover Picture</span>
+                        <span class="badge badge-info">Optional</span>
+                    </div>
+                    <InputFile id="coverPicture" OnChange="UploadSelectedFile" class="block input input-bordered focus:input-primary"/>
+                    <small class="text-gray-500">Max size: 5MB. Allowed formats: JPG, PNG.</small>
+                </label>
+
+                @if (isUploading)
+                {
+                    <div class="flex items-center gap-2">
+                        <span class="loading loading-spinner loading-lg"></span>
+                        <span>Uploading...</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(uploadStatusMessage))
+                {
+                    <div class="mt-2 text-sm text-gray-600">@uploadStatusMessage</div>
+                }
+            </div>
+
+            <button type="submit" class="mt-4 sm:col-span-2 btn btn-primary ">Schedule Event</button>
+            <button type="reset" class="mt-4 sm:col-span-2 btn btn-secondary hover:input-primary" @onclick="@ClearForm" >Clear</button>
 
 
+        </div>
+
+    </fieldset>
 
 </EditForm>
 
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-4">
+        @successMessage
+    </div>
+}
 
 @code {
+
+    private bool disabled = true; //for rendermode
+
+    //for Image Upload
+    private bool isUploading = false;
+    private string? uploadStatusMessage;
+    private string? successMessage;
+
 
     [SupplyParameterFromForm(FormName = "ScheduleNewEvent")]
     private Event? newEvent { get; set; }
@@ -143,6 +178,11 @@
 
         editContext.OnValidationRequested += HandleValidationRequested;
         messageStore = new(editContext);
+
+        if (RendererInfo.IsInteractive)
+        {
+            disabled = false;
+        }
     }
 
     private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
@@ -151,7 +191,15 @@
 
         if (newEvent != null && editContext is not null)
         {
-            if (newEvent.EndDate < newEvent.StartDate || 
+            var now = DateTime.Now;
+            var eventStartDateTime = new DateTime(newEvent.StartDate.Year, newEvent.StartDate.Month, newEvent.StartDate.Day, newEvent.StartTime.Hour, newEvent.StartTime.Minute, newEvent.StartTime.Second);
+
+            if (eventStartDateTime < now.AddHours(1))
+            {
+                messageStore?.Add(editContext.Field(nameof(newEvent.StartTime)), "Event must be scheduled at least one hour into the future.");
+            }
+
+            if (newEvent.EndDate < newEvent.StartDate ||
                 (newEvent.EndDate == newEvent.StartDate && newEvent.EndTime <= newEvent.StartTime))
             {
                 messageStore?.Add(editContext.Field(nameof(newEvent.EndDate)), "End date and time must be after start date and time.");
@@ -159,20 +207,82 @@
         }
     }
 
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    private async Task UploadSelectedFile(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
         if (selectedFile != null)
         {
-            var cloudinaryUrl = await EventService.UploadCoverPicture(selectedFile);
-            newEvent.CoverPictureLocation = cloudinaryUrl;
+            isUploading = true;
+            uploadStatusMessage = null;
+
+            var uploadParams = await CloudinaryService.SignUploadAsync();
+            Console.WriteLine($"Upload Params Signature: {uploadParams.signature} and timestamp: {uploadParams.timestamp}");
+
+            var CloudinaryApiKey = Environment.GetEnvironmentVariable("Cloudinary__ApiKey");
+            var cloudName = Environment.GetEnvironmentVariable("Cloudinary__CloudName");
+
+            Console.WriteLine($"Cloudinary API Key: {CloudinaryApiKey} and Cloud name: {cloudName}");
+
+            using (var cloudinaryAPI =  new HttpClient())
+            {
+                using (MultipartFormDataContent formImage = new("CloudinaryUpload"))
+                {
+
+                        var apiKeyContent = new StringContent(CloudinaryApiKey!.Trim(), Encoding.UTF8);
+                        formImage.Add(apiKeyContent, @"""api_key""");
+
+                        var signatureContent = new StringContent(uploadParams.signature.Trim(), Encoding.UTF8);
+                        signatureContent?.Headers?.ContentDisposition?.Parameters.Clear();
+                        formImage.Add(signatureContent!, @"""signature""");
+
+                        var timestampContent = new StringContent(uploadParams.timestamp.ToString().Trim(), Encoding.UTF8);
+                        formImage.Add(timestampContent, @"""timestamp""");
+
+
+                        var imageContent = new StreamContent(selectedFile.OpenReadStream());
+                        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                        formImage.Add(imageContent, "file", selectedFile.Name);
+
+                        var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.cloudinary.com/v1_1/{cloudName}/auto/upload");
+                        request.Content = formImage;
+
+                        Console.WriteLine($"Request URL: {request.RequestUri}");
+                        Console.WriteLine($"Request Method: {request.Method}");
+                        Console.WriteLine($"Request Content: {await request.Content.ReadAsStringAsync()}");
+
+                        using var response = await cloudinaryAPI.SendAsync(request);
+                        {
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var cloudinaryUrl = await response.Content.ReadAsStringAsync();
+                                newEvent!.CoverPictureLocation = cloudinaryUrl;
+                                uploadStatusMessage = "Image uploaded successfully!";
+                            }
+                            else
+                            {
+                                var errorContent = await response.Content.ReadAsStringAsync();
+                                Console.WriteLine($"Error uploading image: {response.StatusCode}, {errorContent}");
+                                uploadStatusMessage = "Error uploading image. Please try again.";
+                            }
+
+                            isUploading = false;
+                        }
+                }
+   
+
+
+            
+            }
         }
     }
 
     private async Task HandleValidSubmit()
     {
-        await EventService.ScheduleEvent(newEvent);
-        // Redirect to home page or show success message
+        await EventService.ScheduleEvent(newEvent!);
+        successMessage = "Event scheduled successfully!";
+        StateHasChanged();
+        await Task.Delay(3000);
+        NavigationManager.NavigateTo("/");
     }
 
 

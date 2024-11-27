@@ -32,6 +32,8 @@ namespace Visage.FrontEnd.Shared.Services
             await httpClient.PostAsJsonAsync("/events", newEvent);
         }
 
+
+
         public async Task<string> UploadCoverPicture(IBrowserFile file)
         {
             var content = new MultipartFormDataContent();

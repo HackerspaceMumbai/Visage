@@ -12,6 +12,6 @@ namespace Visage.FrontEnd.Shared.Services
 
         Task ScheduleEvent(Event newEvent);
 
-        Task<string> UploadCoverPicture(IBrowserFile file);
+
     }
 }
