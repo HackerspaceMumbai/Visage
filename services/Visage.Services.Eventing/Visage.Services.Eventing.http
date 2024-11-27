@@ -1,4 +1,5 @@
 @Visage.Services.Eventing_HostAddress = https://localhost:7156
+@CloudinarySigningImage = https://localhost:62315
 
 GET {{Visage.Services.Eventing_HostAddress}}/events
 Accept: application/json
@@ -15,3 +16,5 @@ Content-Type: application/json
   "endDate": "2024-11-28",
   "location": "Microsoft Mumbai"
 }
+
+POST {{CloudinarySigningImage}}/sign

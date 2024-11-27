@@ -9,8 +9,16 @@
 <PageTitle>Home</PageTitle>
 
 <div class="flex justify-between mb-4">
-<h2 class="text-2xl font-extrabold mb-4">Upcoming Events</h2>
-<NavLink class="link link-primary" href="/schedule-event" Match="NavLinkMatch.All"> +Schedule new event</NavLink>
+    <h2 class="text-2xl font-extrabold mb-4">Upcoming Events</h2>
+
+    @if(AssignedRenderMode is null)
+    {
+        <a class="link link-primary" href="/schedule-event" Match="NavLinkMatch.All"> ++Schedule new event</a>
+    }
+
+    else{
+        <NavLink class="link link-primary" href="/schedule-event" Match="NavLinkMatch.All"> +Schedule new event</NavLink>
+    }
 </div>
 @if (upcomingEvents == null || !upcomingEvents.Any())
 {
@@ -20,10 +28,10 @@ else
 {
     <ul class="grid w-full gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
 
-    @foreach (var upcomingEvent in upcomingEvents)
-    {
-        <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPictureFileName" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
-    }
+        @foreach (var upcomingEvent in upcomingEvents)
+        {
+            <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPictureFileName" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
+        }
     </ul>
 }
 
@@ -57,6 +65,7 @@ Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
 
 
 @code {
+
     private string factor => FormFactor.GetFormFactor();
     private string platform => FormFactor.GetPlatform();
     private List<Event> upcomingEvents = null;
@@ -66,5 +75,9 @@ Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
     {
         upcomingEvents = await EventService.GetUpcomingEvents();
         pastEvents = await EventService.GetPastEvents();
+
+        Console.WriteLine("OnInitializedcalled");
+
+      
     }
 }

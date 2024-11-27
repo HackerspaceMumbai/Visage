@@ -42,4 +42,7 @@ public class Event
     public string? Hashtag { get; set; }
 
     public string? Theme { get; set; }
+
+    // New property for cover picture URL
+    public string? CoverPicture { get; set; }
 }

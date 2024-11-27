@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Visage.FrontEnd.Shared.Models;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Visage.FrontEnd.Shared.Services
 {
@@ -10,5 +11,7 @@ namespace Visage.FrontEnd.Shared.Services
         Task<List<Event>> GetPastEvents();
 
         Task ScheduleEvent(Event newEvent);
+
+
     }
 }
