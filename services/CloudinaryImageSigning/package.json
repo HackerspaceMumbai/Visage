@@ -24,7 +24,7 @@
     "@opentelemetry/sdk-node": "^0.51.0",
     "cloudinary": "^1.21.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
+    "express": "^4.21.2",
     "node-fetch": "^3.3.2",
     "pug": "^3.0.3",
     "redis": "^4.6.13"
