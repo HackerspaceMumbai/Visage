@@ -1,0 +1,6 @@
+@Visage.Services.Registrations_HostAddress = http://localhost:5226
+
+GET {{Visage.Services.Registrations_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

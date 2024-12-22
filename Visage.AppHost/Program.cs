@@ -14,6 +14,12 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 
 #endregion
 
+#region RegistrationAPI
+
+var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api");
+
+#endregion
+
 #region CloudinaryImageSigning
 
 string cloudinaryCloudName = builder.Configuration["Cloudinary:CloudName"] ?? throw new Exception("Cloudinary CloudName required");
@@ -51,6 +57,8 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
                                                         .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
                                                         .WithReference(EventAPI)
                                                         .WaitFor(EventAPI)
+                                                        .WithReference(registrationAPI)
+                                                        .WaitFor(registrationAPI)
                                                         .WithReference(cloudinaryImageSigning)
                                                         .WaitFor(cloudinaryImageSigning)
                                                         .WithExternalHttpEndpoints();
