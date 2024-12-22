@@ -28,7 +28,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
             {
-                options.WithTitle("Visage API")
+                options.WithTitle("Visage Event API")
                        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
             }
     );

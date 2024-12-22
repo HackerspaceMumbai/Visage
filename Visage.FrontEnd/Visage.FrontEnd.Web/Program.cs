@@ -25,11 +25,16 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 // Register the IEventService and EventService in the dependency injection container
 builder.Services.AddHttpClient<IEventService, EventService>( client =>
-                client.BaseAddress = new("https+http://event-api"));
+                client.BaseAddress = new Uri("https+http://event-api"));
 
 // Register the ICloudinaryImageSigningService and CloudinaryImageSigningService in the dependency injection container
 builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSigningService>(client =>
     client.BaseAddress = new Uri("https+http://cloudinary-image-signing"));
+
+// Register the IRegistrationService and RegistrationService in the dependency injection container
+builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
+    client.BaseAddress = new Uri("https+http://registrations-api"));
+
 
 var app = builder.Build();
 
