@@ -13,14 +13,14 @@ module.exports = {
                     ...require("daisyui/src/theming/themes")["light"],
                     "primary": "facc15",
                     "secondary": "003366",
-                    "error": "d32f2f"
 
                 },
 
                 dark: {
                     ...require("daisyui/src/theming/themes")["dark"],
                     "primary": "facc15",
-                    "secondary": "00bcd4"
+                    "primary-content": "111111",
+                    "secondary": "ffffff"
 
                 },
 

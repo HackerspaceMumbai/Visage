@@ -1,467 +1,570 @@
 @page "/event-registration"
+@inject IRegistrationService RegistrationService
+@inject NavigationManager NavigationManager
+
 
 <PageTitle>Event Registration</PageTitle>
 
-<h3 class="text-2xl font-bold">Event Registration</h3>
+<h3 class="text-2xl font-extrabold">Event Registration</h3>
 
-<EditForm EditContext="editContext" OnValidSubmit="HandleValidSubmit">
-    <div class="input-error">
+<EditForm EditContext="editContext" FormName="NewRegistration" OnValidSubmit="HandleValidSubmit">
+    <div class="text-error">
         <DataAnnotationsValidator />
         <ValidationSummary />
     </div>
 
     <fieldset disabled="@disabled">
-        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
-            <div class="sm:col-span-4">
-                <label for="firstName" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">First Name</span>
+        <div class="collapse collapse-arrow mt-4 ">
+            <input type="checkbox" class="peer"/>
+            <div class="collapse-title bg-primary text-primary-content peer-checked:text-secondary-content">
+                <h4 class="text-xl font-bold">Personal Information</h4>
+                <div class="text-sm">Ensure all information is as per the Government ID you will choose below </div>
+             </div>
+            <div class="collapse-content peer-checked:border-primary peer-checked:border-8  ">
+                <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 ">
+                    <div class="sm:col-span-4">
+                        <label for="govtId" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Govt ID</span>
+                            </div>
+                            <InputSelect id="govtId" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtId">
+                                <option value="">Select Govt ID</option>
+                                <option value="Aadhaar">Aadhaar</option>
+                                <option value="PAN">PAN</option>
+                                <option value="Passport">Passport</option>
+                                <option value="Voter ID">Voter ID</option>
+                                <option value="Driving License">Driving License</option>
+                            </InputSelect>
+                        </label>
                     </div>
-                    <InputText id="firstName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.FirstName" placeholder="Enter your first name" />
-                </label>
-            </div>
-            <div class="sm:col-span-2">
-                <label for="middleName" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Middle Name (Optional)</span>
+                    <div class="sm:col-span-2">
+                        <label for="govtIdLast4Digits" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Last 4 Digits of Govt ID</span>
+                            </div>
+                            <InputText id="govtIdLast4Digits" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtIdLast4Digits" placeholder="Enter last 4 digits" />
+                        </label>
                     </div>
-                    <InputText id="middleName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MiddleName" placeholder="Enter your middle name" />
-                </label>
-            </div>
-            <div class="sm:col-span-4">
-                <label for="lastName" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Last Name</span>
+                    <div class="sm:col-span-4">
+                        <label for="firstName" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">First Name</span>
+                            </div>
+                            <InputText id="firstName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.FirstName" placeholder="Enter your first name" />
+                        </label>
                     </div>
-                    <InputText id="lastName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LastName" placeholder="Enter your last name" />
-                </label>
-            </div>
-            <div class="sm:col-span-full">
-                <label for="address" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Address</span>
-                    </div>
-                    <InputTextArea id="address" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Address" placeholder="Enter your address" />
-                </label>
-            </div>
-            <div class="sm:col-span-4">
-                <label for="email" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Email</span>
-                    </div>
-                    <InputText id="email" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Email" placeholder="Enter your email" />
-                </label>
-            </div>
-            <div class="sm:col-span-2">
-                <label for="mobileNumber" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Mobile Number</span>
-                    </div>
-                    <InputText id="mobileNumber" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MobileNumber" placeholder="Enter your mobile number" />
-                </label>
-            </div>
-            <div class="sm:col-span-4">
-                <label for="govtId" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Govt ID</span>
-                    </div>
-                    <InputSelect id="govtId" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtId">
-                        <option value="">Select Govt ID</option>
-                        <option value="Aadhaar">Aadhaar</option>
-                        <option value="PAN">PAN</option>
-                        <option value="Passport">Passport</option>
-                        <option value="Voter ID">Voter ID</option>
-                        <option value="Driving License">Driving License</option>
-                    </InputSelect>
-                </label>
-            </div>
-            <div class="sm:col-span-2">
-                <label for="govtIdLast4Digits" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Last 4 Digits of Govt ID</span>
-                    </div>
-                    <InputText id="govtIdLast4Digits" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtIdLast4Digits" placeholder="Enter last 4 digits" />
-                </label>
-            </div>
-            <div class="sm:col-span-full">
-                <label for="occupationStatus" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Occupation Status</span>
-                    </div>
-                    <InputSelect id="occupationStatus" class="block input input-bordered focus:input-primary" @bind-Value="registrant.OccupationStatus" @onchange="HandleOccupationStatusChange">
-                        <option value="">Select Occupation Status</option>
-                        <option value="Working Professional">Working Professional</option>
-                        <option value="Student">Student</option>
-                    </InputSelect>
-                </label>
-            </div>
-            @if (registrant.OccupationStatus == "Working Professional")
-            {
-                <div class="sm:col-span-4">
-                    <label for="companyName" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Company Name</span>
-                        </div>
-                        <InputText id="companyName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.CompanyName" placeholder="Enter your company name" />
-                    </label>
-                </div>
-                <div class="sm:col-span-4">
-                    <label for="linkedInProfile" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">LinkedIn Profile</span>
-                        </div>
-                        <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
-                    </label>
-                </div>
-                <div class="sm:col-span-4">
-                    <label for="gitHubProfile" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">GitHub Profile (Optional)</span>
-                        </div>
-                        <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
-                    </label>
-                </div>
-            }
-            @if (registrant.OccupationStatus == "Student")
-            {
-                <div class="sm:col-span-4">
-                    <label for="educationalInstituteName" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Educational Institute Name</span>
-                        </div>
-                        <InputText id="educationalInstituteName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.EducationalInstituteName" placeholder="Enter your educational institute name" />
-                    </label>
-                </div>
-                <div class="sm:col-span-4">
-                    <label for="linkedInProfile" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">LinkedIn Profile (Optional)</span>
-                        </div>
-                        <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
-                    </label>
-                </div>
-                <div class="sm:col-span-4">
-                    <label for="gitHubProfile" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">GitHub Profile</span>
-                        </div>
-                        <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
-                    </label>
-                </div>
-            }
-        </div>
+                    <div class="sm:col-span-2">
+                        <label for="middleName" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Middle Name</span>
+                                <span class="badge badge-info">Optional</span>
 
-        <div class="mt-10">
-            <h4 class="text-xl font-bold">Accessible, Inclusiveness, Diversity and Equity</h4>
-            <div class="mt-4">
-                <label for="genderIdentity" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Gender Identity</span>
+                            </div>
+                            <InputText id="middleName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MiddleName" placeholder="Enter your middle name" />
+                        </label>
                     </div>
-                    <InputSelect id="genderIdentity" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GenderIdentity">
-                        <option value="">Select Gender Identity</option>
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
-                        <option value="Non-binary">Non-binary</option>
-                        <option value="Transgender">Transgender</option>
-                        <option value="Prefer to self-describe">Prefer to self-describe</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.GenderIdentity == "Prefer to self-describe")
-                {
-                    <label for="selfDescribeGender" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                    <div class="sm:col-span-4">
+                        <label for="lastName" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Last Name</span>
+                            </div>
+                            <InputText id="lastName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LastName" placeholder="Enter your last name" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-full">
+                        <label for="addressLine1" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Address Line 1</span>
+                            </div>
+                            <InputText id="addressLine1" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine1" placeholder="Enter address line 1" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-full">
+                        <label for="addressLine2" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Address Line 2</span>
+                            </div>
+                            <InputText id="addressLine2" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine2" placeholder="Enter address line 2" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="city" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">City</span>
+                            </div>
+                            <InputText id="city" class="block input input-bordered focus:input-primary" @bind-Value="registrant.City" placeholder="Enter city" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="state" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">State</span>
+                            </div>
+                            <InputText id="state" class="block input input-bordered focus:input-primary" @bind-Value="registrant.State" placeholder="Enter state" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="postalCode" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Postal Code</span>
+                            </div>
+                            <InputText id="postalCode" class="block input input-bordered focus:input-primary" @bind-Value="registrant.PostalCode" placeholder="Enter postal code" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label for="email" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Email</span>
+                            </div>
+                            <InputText id="email" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Email" placeholder="Enter your email" />
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="mobileNumber" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Mobile Number</span>
+                            </div>
+                            <InputText id="mobileNumber" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MobileNumber" placeholder="Enter your mobile number" />
+                        </label>
+                    </div>
+
+                    <div class="sm:col-span-full">
+                        <label for="occupationStatus" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Occupation Status</span>
+                            </div>
+                            <InputSelect id="occupationStatus" class="block input input-bordered focus:input-primary" @bind-Value="registrant.OccupationStatus" @onchange="HandleOccupationStatusChange">
+                                <option value="">Select Occupation Status</option>
+                                <option value="Working Professional">Working Professional</option>
+                                <option value="Student">Student</option>
+                            </InputSelect>
+                        </label>
+                    </div>
+                    @if (registrant.OccupationStatus == "Working Professional")
+                    {
+                        <div class="sm:col-span-4">
+                            <label for="companyName" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Company Name</span>
+                                </div>
+                                <InputText id="companyName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.CompanyName" placeholder="Enter your company name" />
+                            </label>
                         </div>
-                        <InputText id="selfDescribeGender" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeGender" placeholder="Enter your gender identity" />
-                    </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="ageRange" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Age Range</span>
-                    </div>
-                    <InputSelect id="ageRange" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AgeRange">
-                        <option value="">Select Age Range</option>
-                        <option value="Under 18">Under 18</option>
-                        <option value="18–24">18–24</option>
-                        <option value="25–34">25–34</option>
-                        <option value="35–44">35–44</option>
-                        <option value="45–54">45–54</option>
-                        <option value="55–64">55–64</option>
-                        <option value="65+">65+</option>
-                    </InputSelect>
-                </label>
-            </div>
-            <div class="mt-4">
-                <label for="ethnicity" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Ethnicity/Cultural Background</span>
-                    </div>
-                    <InputSelect id="ethnicity" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Ethnicity">
-                        <option value="">Select Ethnicity/Cultural Background</option>
-                        <option value="Marathi">Marathi</option>
-                        <option value="Gujarati">Gujarati</option>
-                        <option value="Hindi-speaking communities">Hindi-speaking communities</option>
-                        <option value="Bengali">Bengali</option>
-                        <option value="Tamil">Tamil</option>
-                        <option value="Telugu">Telugu</option>
-                        <option value="Kannada">Kannada</option>
-                        <option value="Malayali">Malayali</option>
-                        <option value="Punjabi">Punjabi</option>
-                        <option value="Sindhi">Sindhi</option>
-                        <option value="Parsi/Zoroastrian">Parsi/Zoroastrian</option>
-                        <option value="Konkani">Konkani</option>
-                        <option value="Anglo-Indian">Anglo-Indian</option>
-                        <option value="Assamese">Assamese</option>
-                        <option value="Odia">Odia</option>
-                        <option value="Rajasthani">Rajasthani</option>
-                        <option value="Bihari">Bihari</option>
-                        <option value="Manipuri">Manipuri</option>
-                        <option value="Kashmiri">Kashmiri</option>
-                        <option value="Nepali">Nepali</option>
-                        <option value="Tribal/Adivasi communities">Tribal/Adivasi communities</option>
-                        <option value="Bhil">Bhil</option>
-                        <option value="Gond">Gond</option>
-                        <option value="Santhal">Santhal</option>
-                        <option value="Warli">Warli</option>
-                        <option value="Others from the Indian subcontinent">Others from the Indian subcontinent</option>
-                        <option value="Pakistani">Pakistani</option>
-                        <option value="Bangladeshi">Bangladeshi</option>
-                        <option value="Sri Lankan">Sri Lankan</option>
-                        <option value="International Origin">International Origin</option>
-                        <option value="African">African</option>
-                        <option value="East Asian">East Asian</option>
-                        <option value="European">European</option>
-                        <option value="Middle Eastern">Middle Eastern</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer to self-describe">Prefer to self-describe</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.Ethnicity == "Other" || registrant.Ethnicity == "Prefer to self-describe")
-                {
-                    <label for="selfDescribeEthnicity" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                        <div class="sm:col-span-4">
+                            <label for="linkedInProfile" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">LinkedIn Profile</span>
+                                </div>
+                                <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
+                            </label>
                         </div>
-                        <InputText id="selfDescribeEthnicity" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeEthnicity" placeholder="Enter your ethnicity/cultural background" />
-                    </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="languageProficiency" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Language Proficiency</span>
-                    </div>
-                    <InputSelect id="languageProficiency" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LanguageProficiency">
-                        <option value="">Select Language Proficiency</option>
-                        <option value="Hindi">Hindi</option>
-                        <option value="Marathi">Marathi</option>
-                        <option value="English">English</option>
-                        <option value="Gujarati">Gujarati</option>
-                        <option value="Bengali">Bengali</option>
-                        <option value="Tamil">Tamil</option>
-                        <option value="Telugu">Telugu</option>
-                        <option value="Kannada">Kannada</option>
-                        <option value="Urdu">Urdu</option>
-                        <option value="Prefer to self-describe">Prefer to self-describe</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.LanguageProficiency == "Prefer to self-describe")
-                {
-                    <label for="selfDescribeLanguage" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                        <div class="sm:col-span-4">
+                            <label for="gitHubProfile" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">GitHub Profile (Optional)</span>
+                                </div>
+                                <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
+                            </label>
                         </div>
-                        <InputText id="selfDescribeLanguage" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeLanguage" placeholder="Enter your language proficiency" />
-                    </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="educationalBackground" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Educational Background</span>
-                    </div>
-                    <InputSelect id="educationalBackground" class="block input input-bordered focus:input-primary" @bind-Value="registrant.EducationalBackground">
-                        <option value="">Select Educational Background</option>
-                        <option value="High school or equivalent">High school or equivalent</option>
-                        <option value="Bachelor's degree">Bachelor's degree</option>
-                        <option value="Master's degree">Master's degree</option>
-                        <option value="Doctorate">Doctorate</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.EducationalBackground == "Other")
-                {
-                    <label for="selfDescribeEducation" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                    }
+                    @if (registrant.OccupationStatus == "Student")
+                    {
+                        <div class="sm:col-span-4">
+                            <label for="educationalInstituteName" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Educational Institute Name</span>
+                                </div>
+                                <InputText id="educationalInstituteName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.EducationalInstituteName" placeholder="Enter your educational institute name" />
+                            </label>
                         </div>
-                        <InputText id="selfDescribeEducation" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeEducation" placeholder="Enter your educational background" />
-                    </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="disability" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Disability and Accessibility Needs</span>
-                    </div>
-                    <InputSelect id="disability" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Disability">
-                        <option value="">Select Disability and Accessibility Needs</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.Disability == "Yes")
-                {
-                    <label for="disabilityDetails" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                        <div class="sm:col-span-4">
+                            <label for="linkedInProfile" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">LinkedIn Profile (Optional)</span>
+                                </div>
+                                <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
+                            </label>
                         </div>
-                        <InputText id="disabilityDetails" class="block input input-bordered focus:input-primary" @bind-Value="registrant.DisabilityDetails" placeholder="Enter your disability and accessibility needs" />
-                    </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="dietaryRequirements" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Dietary Requirements</span>
-                    </div>
-                    <InputSelect id="dietaryRequirements" class="block input input-bordered focus:input-primary" @bind-Value="registrant.DietaryRequirements">
-                        <option value="">Select Dietary Requirements</option>
-                        <option value="Vegetarian">Vegetarian</option>
-                        <option value="Vegan">Vegan</option>
-                        <option value="Halal">Halal</option>
-                        <option value="Jain">Jain</option>
-                        <option value="Gluten-free">Gluten-free</option>
-                        <option value="Lactose-free">Lactose-free</option>
-                        <option value="Nut allergies">Nut allergies</option>
-                        <option value="Other">Other</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.DietaryRequirements == "Other")
-                {
-                    <label for="selfDescribeDietary" class="form-control">
-                        <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                        <div class="sm:col-span-4">
+                            <label for="gitHubProfile" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">GitHub Profile</span>
+                                </div>
+                                <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
+                            </label>
                         </div>
-                        <InputText id="selfDescribeDietary" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeDietary" placeholder="Enter your dietary requirements" />
-                    </label>
-                }
+                    }
+                </div>
+
             </div>
-            <div class="mt-4">
-                <label for="lgbtqIdentity" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">LGBTQ+ Identity</span>
-                    </div>
-                    <InputSelect id="lgbtqIdentity" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LgbtqIdentity">
-                        <option value="">Select LGBTQ+ Identity</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </InputSelect>
-                </label>
+        </div>
+        <div class="collapse collapse-arrow mt-4 ">
+            <input type="checkbox" class="peer"/>
+            <div class="collapse-title bg-primary  text-primary-content peer-checked:text-secondary-content">
+                <h4 class="text-xl font-bold">Accessible, Inclusiveness, Diversity and Equity</h4>
+                <div class="text-sm">We are committed to creating an inclusive community that celebrates diversity. The following questions are optional and will help us ensure that our events are welcoming and accessible to all. Your responses will remain confidential.
+                </div>
             </div>
-            <div class="mt-4">
-                <label for="parentalStatus" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Parental/Guardian Status</span>
-                    </div>
-                    <InputSelect id="parentalStatus" class="block input input-bordered focus:input-primary" @bind-Value="registrant.ParentalStatus">
-                        <option value="">Select Parental/Guardian Status</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                    </InputSelect>
-                </label>
-            </div>
-            <div class="mt-4">
-                <label for="firstTimeAttendee" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">First-Time Attendee</span>
-                    </div>
-                    <InputSelect id="firstTimeAttendee" class="block input input-bordered focus:input-primary" @bind-Value="registrant.FirstTimeAttendee">
-                        <option value="">Select First-Time Attendee</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                    </InputSelect>
-                </label>
-            </div>
-            <div class="mt-4">
-                <label for="howDidYouHear" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">How Did You Hear About Us?</span>
-                    </div>
-                    <InputSelect id="howDidYouHear" class="block input input-bordered focus:input-primary" @bind-Value="registrant.HowDidYouHear">
-                        <option value="">Select How Did You Hear About Us?</option>
-                        <option value="Social media">Social media</option>
-                        <option value="Word of mouth">Word of mouth</option>
-                        <option value="Community forums">Community forums</option>
-                        <option value="Email newsletter">Email newsletter</option>
-                        <option value="Other">Other</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.HowDidYouHear == "Other")
-                {
-                    <label for="selfDescribeHowDidYouHear" class="form-control">
+            <div class="collapse-content peer-checked:border-primary peer-checked:border-8">
+                <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+                    <div class="sm:col-span-2">
+                    <label for="genderIdentity" class="form-control">
                         <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                            <span class="label-text font-bold">Gender Identity</span>
                         </div>
-                        <InputText id="selfDescribeHowDidYouHear" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeHowDidYouHear" placeholder="Enter how you heard about us" />
+                            <InputSelect id="genderIdentity" class="block input input-bordered focus:input-primary" placeholder="Select Gender Identity" @bind-Value="registrant.GenderIdentity">
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Transgender">Transgender</option>
+                            <option value="Prefer to self-describe">Prefer to self-describe</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </InputSelect>
                     </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="areasOfInterest" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Areas of Interest</span>
+                    @if (registrant.GenderIdentity == "Prefer to self-describe")
+                    {
+                        <label for="selfDescribeGender" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Please specify</span>
+                            </div>
+                            <InputText id="selfDescribeGender" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeGender" placeholder="Enter your gender identity" />
+                        </label>
+                    }
+
+                 </div>
+                    <div class="sm:col-span-2">
+                        <label for="ageRange" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Age Range</span>
+                            </div>
+                            <InputSelect id="ageRange" class="block input input-bordered focus:input-primary" placeholder="Select Age Range" @bind-Value="registrant.AgeRange">
+                                <option value="Under 18">Under 18</option>
+                                <option value="18–24">18–24</option>
+                                <option value="25–34">25–34</option>
+                                <option value="35–44">35–44</option>
+                                <option value="45–54">45–54</option>
+                                <option value="55–64">55–64</option>
+                                <option value="65+">65+</option>
+                            </InputSelect>
+                        </label>
                     </div>
-                    <InputSelect id="areasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AreasOfInterest">
-                        <option value="">Select Areas of Interest</option>
-                        <option value="Software Development">Software Development</option>
-                        <option value="Open Source Contributions">Open Source Contributions</option>
-                        <option value="Data Science">Data Science</option>
-                        <option value="Artificial Intelligence">Artificial Intelligence</option>
-                        <option value="Web Development">Web Development</option>
-                        <option value="Mobile Development">Mobile Development</option>
-                        <option value="DevOps">DevOps</option>
-                        <option value="Other">Other</option>
-                    </InputSelect>
-                </label>
-                @if (registrant.AreasOfInterest == "Other")
-                {
-                    <label for="selfDescribeAreasOfInterest" class="form-control">
+                    <div class="sm:col-span-2">
+                        <label for="ethnicity" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Ethnicity/Cultural Background</span>
+                            </div>
+                            <InputSelect id="ethnicity" class="block input input-bordered focus:input-primary" placeholder="Select Ethnicity/Cultural Background" @bind-Value="registrant.Ethnicity">
+                                <option value="Marathi">Marathi</option>
+                                <option value="Gujarati">Gujarati</option>
+                                <option value="Hindi-speaking communities">Hindi-speaking communities</option>
+                                <option value="Bengali">Bengali</option>
+                                <option value="Tamil">Tamil</option>
+                                <option value="Telugu">Telugu</option>
+                                <option value="Kannada">Kannada</option>
+                                <option value="Malayali">Malayali</option>
+                                <option value="Punjabi">Punjabi</option>
+                                <option value="Sindhi">Sindhi</option>
+                                <option value="Parsi/Zoroastrian">Parsi/Zoroastrian</option>
+                                <option value="Konkani">Konkani</option>
+                                <option value="Anglo-Indian">Anglo-Indian</option>
+                                <option value="Assamese">Assamese</option>
+                                <option value="Odia">Odia</option>
+                                <option value="Rajasthani">Rajasthani</option>
+                                <option value="Bihari">Bihari</option>
+                                <option value="Manipuri">Manipuri</option>
+                                <option value="Kashmiri">Kashmiri</option>
+                                <option value="Nepali">Nepali</option>
+                                <option value="Tribal/Adivasi communities">Tribal/Adivasi communities</option>
+                                <option value="Bhil">Bhil</option>
+                                <option value="Gond">Gond</option>
+                                <option value="Santhal">Santhal</option>
+                                <option value="Warli">Warli</option>
+                                <option value="Others from the Indian subcontinent">Others from the Indian subcontinent</option>
+                                <option value="Pakistani">Pakistani</option>
+                                <option value="Bangladeshi">Bangladeshi</option>
+                                <option value="Sri Lankan">Sri Lankan</option>
+                                <option value="International Origin">International Origin</option>
+                                <option value="African">African</option>
+                                <option value="East Asian">East Asian</option>
+                                <option value="European">European</option>
+                                <option value="Middle Eastern">Middle Eastern</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer to self-describe">Prefer to self-describe</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.Ethnicity == "Other" || registrant.Ethnicity == "Prefer to self-describe")
+                        {
+                            <label for="selfDescribeEthnicity" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeEthnicity" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeEthnicity" placeholder="Enter your ethnicity/cultural background" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="languageProficiency" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Language Proficiency</span>
+                            </div>
+                            <InputSelect id="languageProficiency" class="block input input-bordered focus:input-primary" placeholder="Select Language Proficiency" @bind-Value="registrant.LanguageProficiency">
+                                <option value="Hindi">Hindi</option>
+                                <option value="Marathi">Marathi</option>
+                                <option value="English">English</option>
+                                <option value="Gujarati">Gujarati</option>
+                                <option value="Bengali">Bengali</option>
+                                <option value="Tamil">Tamil</option>
+                                <option value="Telugu">Telugu</option>
+                                <option value="Kannada">Kannada</option>
+                                <option value="Urdu">Urdu</option>
+                                <option value="Prefer to self-describe">Prefer to self-describe</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.LanguageProficiency == "Prefer to self-describe")
+                        {
+                            <label for="selfDescribeLanguage" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeLanguage" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeLanguage" placeholder="Enter your language proficiency" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="educationalBackground" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Educational Background</span>
+                            </div>
+                            <InputSelect id="educationalBackground" class="block input input-bordered focus:input-primary" placeholder="Select Educational Background" @bind-Value="registrant.EducationalBackground">
+                                <option value="High school or equivalent">High school or equivalent</option>
+                                <option value="Bachelor's degree">Bachelor's degree</option>
+                                <option value="Master's degree">Master's degree</option>
+                                <option value="Doctorate">Doctorate</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.EducationalBackground == "Other")
+                        {
+                            <label for="selfDescribeEducation" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeEducation" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeEducation" placeholder="Enter your educational background" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="disability" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Disability and Accessibility Needs</span>
+                            </div>
+                            <InputSelect id="disability" class="block input input-bordered focus:input-primary" placeholder="Select Disability and Accessibility Needs" @bind-Value="registrant.Disability">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.Disability == "Yes")
+                        {
+                            <label for="disabilityDetails" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="disabilityDetails" class="block input input-bordered focus:input-primary" @bind-Value="registrant.DisabilityDetails" placeholder="Enter your disability and accessibility needs" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="dietaryRequirements" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Dietary Requirements</span>
+                            </div>
+                            <InputSelect id="dietaryRequirements" class="block input input-bordered focus:input-primary" placeholder="Select Dietary Requirements" @bind-Value="registrant.DietaryRequirements">
+                                <option value="Vegetarian">Vegetarian</option>
+                                <option value="Vegan">Vegan</option>
+                                <option value="Halal">Halal</option>
+                                <option value="Jain">Jain</option>
+                                <option value="Gluten-free">Gluten-free</option>
+                                <option value="Lactose-free">Lactose-free</option>
+                                <option value="Nut allergies">Nut allergies</option>
+                                <option value="Other">Other</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.DietaryRequirements == "Other")
+                        {
+                            <label for="selfDescribeDietary" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeDietary" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeDietary" placeholder="Enter your dietary requirements" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="lgbtqIdentity" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">LGBTQ+ Identity</span>
+                            </div>
+                            <InputSelect id="lgbtqIdentity" class="block input input-bordered focus:input-primary" placeholder="Select LGBTQ+ Identity" @bind-Value="registrant.LgbtqIdentity">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </InputSelect>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="parentalStatus" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Parental/Guardian Status</span>
+                            </div>
+                            <InputSelect id="parentalStatus" class="block input input-bordered focus:input-primary" placeholder="Select Parental/Guardian Status" @bind-Value="registrant.ParentalStatus">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </InputSelect>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="firstTimeAttendee" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">First-Time Attendee</span>
+                            </div>
+                            <InputSelect id="firstTimeAttendee" class="block input input-bordered focus:input-primary" placeholder="Select if you are first time attendee" @bind-Value="registrant.FirstTimeAttendee">
+                                <option value="111">Yes</option>
+                                <option value="222">No</option>
+                            </InputSelect>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="howDidYouHear" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">How Did You Hear About Us?</span>
+                            </div>
+                            <InputSelect id="howDidYouHear" class="block input input-bordered focus:input-primary" @bind-Value="registrant.HowDidYouHear">
+                                <option value="Social media">Social media</option>
+                                <option value="Word of mouth">Word of mouth</option>
+                                <option value="Community forums">Community forums</option>
+                                <option value="Email newsletter">Email newsletter</option>
+                                <option value="Other">Other</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.HowDidYouHear == "Other")
+                        {
+                            <label for="selfDescribeHowDidYouHear" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeHowDidYouHear" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeHowDidYouHear" placeholder="Enter how you heard about us" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="areasOfInterest" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Areas of Interest</span>
+                            </div>
+                            <InputSelect id="areasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AreasOfInterest">
+                                <option value="Software Development">Software Development</option>
+                                <option value="Open Source Contributions">Open Source Contributions</option>
+                                <option value="Data Science">Data Science</option>
+                                <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Mobile Development">Mobile Development</option>
+                                <option value="DevOps">DevOps</option>
+                                <option value="Other">Other</option>
+                            </InputSelect>
+                        </label>
+                        @if (registrant.AreasOfInterest == "Other")
+                        {
+                            <label for="selfDescribeAreasOfInterest" class="form-control">
+                                <div class="label">
+                                    <span class="label-text font-bold">Please specify</span>
+                                </div>
+                                <InputText id="selfDescribeAreasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeAreasOfInterest" placeholder="Enter your areas of interest" />
+                            </label>
+                        }
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="volunteerOpportunities" class="form-control">
+                            <div class="label">
+                                <span class="label-text font-bold">Volunteer Opportunities</span>
+                            </div>
+                            <InputSelect id="volunteerOpportunities" class="block input input-bordered focus:input-primary" @bind-Value="registrant.VolunteerOpportunities">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                                <option value="Maybe later">Maybe later</option>
+                            </InputSelect>
+                        </label>
+                    </div>
+                    <div class="sm:col-span-2">
+                    <label for="additionalSupport" class="form-control">
                         <div class="label">
-                            <span class="label-text font-bold">Please specify</span>
+                            <span class="label-text font-bold">Additional Support</span>
                         </div>
-                        <InputText id="selfDescribeAreasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeAreasOfInterest" placeholder="Enter your areas of interest" />
+                        <InputTextArea id="additionalSupport" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AdditionalSupport" placeholder="Enter any additional support you need" />
                     </label>
-                }
-            </div>
-            <div class="mt-4">
-                <label for="volunteerOpportunities" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Volunteer Opportunities</span>
-                    </div>
-                    <InputSelect id="volunteerOpportunities" class="block input input-bordered focus:input-primary" @bind-Value="registrant.VolunteerOpportunities">
-                        <option value="">Select Volunteer Opportunities</option>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                        <option value="Maybe later">Maybe later</option>
-                    </InputSelect>
-                </label>
-            </div>
-            <div class="mt-4">
-                <label for="additionalSupport" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Additional Support</span>
-                    </div>
-                    <InputTextArea id="additionalSupport" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AdditionalSupport" placeholder="Enter any additional support you need" />
-                </label>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="religion" class="form-control">
+                        <div class="label">
+                            <span class="label-text font-bold">Religion</span>
+                        </div>
+                        <InputSelect id="religion" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Religion">
+                            <option value="Hinduism">Hinduism</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Christianity">Christianity</option>
+                            <option value="Sikhism">Sikhism</option>
+                            <option value="Buddhism">Buddhism</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                    </label>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="caste" class="form-control">
+                        <div class="label">
+                            <span class="label-text font-bold">Caste</span>
+                        </div>
+                        <InputSelect id="caste" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Caste">
+                            <option value="Brahmin">Brahmin</option>
+                            <option value="Maratha">Maratha</option>
+                            <option value="Kunbi">Kunbi</option>
+                            <option value="Dhangar">Dhangar</option>
+                            <option value="Mali">Mali</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                    </label>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="neighborhood" class="form-control">
+                        <div class="label">
+                            <span class="label-text font-bold">Neighborhood</span>
+                        </div>
+                        <InputSelect id="neighborhood" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Neighborhood">
+                            <option value="Andheri">Andheri</option>
+                            <option value="Bandra">Bandra</option>
+                            <option value="Borivali">Borivali</option>
+                            <option value="Dadar">Dadar</option>
+                            <option value="Juhu">Juhu</option>
+                            <option value="Malad">Malad</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                    </label>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="modeOfTransportation" class="form-control">
+                        <div class="label">
+                            <span class="label-text font-bold">Mode of Transportation</span>
+                        </div>
+                        <InputSelect id="modeOfTransportation" class="block input input-bordered focus:input-primary" @bind-Value="registrant.ModeOfTransportation">
+                            <option value="Local train">Local train</option>
+                            <option value="Bus">Bus</option>
+                            <option value="Car">Car</option>
+                            <option value="Walking">Walking</option>
+                        </InputSelect>
+                    </label>
+                </div>
+                </div>
             </div>
         </div>
 
@@ -471,6 +574,8 @@
 </EditForm>
 
 @if (!string.IsNullOrEmpty(successMessage))
+
+
 {
     <div class="alert alert-success mt-4">
         @successMessage
@@ -478,15 +583,21 @@
 }
 
 @code {
+
+
+
     private bool disabled = true;
     private string? successMessage;
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
 
-    private Registrant registrant = new();
+
+    [SupplyParameterFromForm(FormName = "ScheduleNewRegistration")]
+    private Registrant? registrant { get; set; }
 
     protected override void OnInitialized()
     {
+        registrant = new Registrant();
         editContext = new EditContext(registrant);
         editContext.SetFieldCssClassProvider(new DaisyUIInputError());
         editContext.OnValidationRequested += HandleValidationRequested;
@@ -505,11 +616,21 @@
 
     private async Task HandleValidSubmit()
     {
-        // Handle form submission logic here
-        successMessage = "Registration successful!";
+        var isSuccess = await RegistrationService.RegisterAsync(registrant!);
+        if (isSuccess)
+        {
+            successMessage = "Registration successful!";
+        }
+        else
+        {
+            successMessage = "Registration failed. Please try again.";
+        }
         StateHasChanged();
         await Task.Delay(3000);
         ClearForm();
+        NavigationManager.NavigateTo("/");
+
+
     }
 
     private void ClearForm()
@@ -525,7 +646,7 @@
         var selectedValue = e.Value?.ToString();
         if (selectedValue == "Working Professional")
         {
-            registrant.CompanyName = string.Empty;
+            registrant.CompanyName = string.Empty;      
             registrant.LinkedInProfile = string.Empty;
             registrant.GitHubProfile = string.Empty;
         }
@@ -545,42 +666,4 @@
         }
     }
 
-    private class Registrant
-    {
-        public string FirstName { get; set; } = string.Empty;
-        public string MiddleName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string MobileNumber { get; set; } = string.Empty;
-        public string GovtId { get; set; } = string.Empty;
-        public string GovtIdLast4Digits { get; set; } = string.Empty;
-        public string OccupationStatus { get; set; } = string.Empty;
-        public string CompanyName { get; set; } = string.Empty;
-        public string LinkedInProfile { get; set; } = string.Empty;
-        public string GitHubProfile { get; set; } = string.Empty;
-        public string EducationalInstituteName { get; set; } = string.Empty;
-        public string GenderIdentity { get; set; } = string.Empty;
-        public string SelfDescribeGender { get; set; } = string.Empty;
-        public string AgeRange { get; set; } = string.Empty;
-        public string Ethnicity { get; set; } = string.Empty;
-        public string SelfDescribeEthnicity { get; set; } = string.Empty;
-        public string LanguageProficiency { get; set; } = string.Empty;
-        public string SelfDescribeLanguage { get; set; } = string.Empty;
-        public string EducationalBackground { get; set; } = string.Empty;
-        public string SelfDescribeEducation { get; set; } = string.Empty;
-        public string Disability { get; set; } = string.Empty;
-        public string DisabilityDetails { get; set; } = string.Empty;
-        public string DietaryRequirements { get; set; } = string.Empty;
-        public string SelfDescribeDietary { get; set; } = string.Empty;
-        public string LgbtqIdentity { get; set; } = string.Empty;
-        public string ParentalStatus { get; set; } = string.Empty;
-        public string FirstTimeAttendee { get; set; } = string.Empty;
-        public string HowDidYouHear { get; set; } = string.Empty;
-        public string SelfDescribeHowDidYouHear { get; set; } = string.Empty;
-        public string AreasOfInterest { get; set; } = string.Empty;
-        public string SelfDescribeAreasOfInterest { get; set; } = string.Empty;
-        public string VolunteerOpportunities { get; set; } = string.Empty;
-        public string AdditionalSupport { get; set; } = string.Empty;
-    }
 }
