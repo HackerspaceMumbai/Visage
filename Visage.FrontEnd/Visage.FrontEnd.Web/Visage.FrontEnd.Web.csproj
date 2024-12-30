@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -9,9 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.4.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0-rc.2.24474.3" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.20.0" />
     <ProjectReference Include="..\..\Visage.ServiceDefaults\Visage.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Visage.FrontEnd.Web.Client\Visage.FrontEnd.Web.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0-rc.2.24474.3" />
+    <ProjectReference Include="..\..\tests\Visage.Tests.EndToEnd\Visage.Tests.EndToEnd.csproj" />
   </ItemGroup>
 
 </Project>

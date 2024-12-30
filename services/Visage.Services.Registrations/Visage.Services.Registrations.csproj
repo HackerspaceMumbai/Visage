@@ -8,6 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageReference Include="TUnit" Version="1.0.0" />
+    <PackageReference Include="FluentAssertions" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\tests\Visage.Tests.Integration\Visage.Tests.Integration.csproj" />
   </ItemGroup>
 
 </Project>
