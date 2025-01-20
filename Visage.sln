@@ -25,6 +25,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Services.Eventing", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Services.Registrations", "Visage.Services.Registrations\Visage.Services.Registrations.csproj", "{3F5099D1-3070-4FCD-8E39-5DE3CC426C71}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Test.Aspire", "tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj", "{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +69,10 @@ Global
 		{3F5099D1-3070-4FCD-8E39-5DE3CC426C71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F5099D1-3070-4FCD-8E39-5DE3CC426C71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F5099D1-3070-4FCD-8E39-5DE3CC426C71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +80,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{E560F5FB-936F-4D94-AD5C-F16200DF4C02} = {F35A7FEA-7C11-474A-82E5-549966D4DF47}
 		{3F5099D1-3070-4FCD-8E39-5DE3CC426C71} = {F35A7FEA-7C11-474A-82E5-549966D4DF47}
+		{E28BC8F2-5177-46B0-9E09-208DE5EEDC42} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6DFD8D43-B55A-46A9-8FC2-22BACFF0AE1F}
