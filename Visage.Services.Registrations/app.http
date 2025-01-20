@@ -1,0 +1,8 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+@Visage.Services.Registrations_HostAddress = https://localhost:62687
+
+
+
+GET {{Visage.Services.Registrations_HostAddress}}/register
+
+

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -9,13 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0-rc.2.24474.3" />
-    <PackageReference Include="Microsoft.Playwright" Version="1.20.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Visage.FrontEnd.Shared\Visage.FrontEnd.Shared.csproj" />
-    <ProjectReference Include="..\..\tests\Visage.Tests.EndToEnd\Visage.Tests.EndToEnd.csproj" />
   </ItemGroup>
 
 </Project>
