@@ -79,3 +79,52 @@ When writing new tests, follow these guidelines:
 For more detailed instructions and examples, refer to the test project files in the `tests` directory.
 
 By following these guidelines, we can ensure that our codebase remains reliable, maintainable, and of high quality.
+
+## Project Architecture and Components
+
+The Visage project is built using a modular architecture to ensure scalability, maintainability, and ease of development. Below is an overview of the project's architecture and its main components:
+
+### 1. Aspire
+
+Aspire is the core framework that powers the Visage project. It provides the foundation for building scalable and reliable applications. Aspire includes features such as dependency injection, configuration management, logging, and more.
+
+### 2. Semantic Kernel
+
+The Semantic Kernel is responsible for handling natural language processing (NLP) tasks within the Visage project. It leverages advanced machine learning models to understand and process user inputs, enabling intelligent interactions and responses.
+
+### 3. Blazor Universal
+
+Blazor Universal is the front-end framework used in the Visage project. It allows for building interactive web applications using C# and .NET. Blazor Universal provides a seamless development experience by enabling code sharing between the client and server.
+
+### 4. Azure Open AI
+
+Azure Open AI is integrated into the Visage project to leverage the power of artificial intelligence. It provides advanced AI capabilities, such as natural language understanding, image recognition, and predictive analytics. Azure Open AI enables the Visage project to deliver intelligent and personalized experiences to users.
+
+## Deployment Process
+
+The deployment process for the Visage project involves the following steps:
+
+1. **Build**: The project is built using the .NET SDK. This step compiles the source code and generates the necessary artifacts for deployment.
+
+2. **Containerization**: The project is containerized using Docker. Docker images are created for each component of the Visage project, ensuring consistency and portability across different environments.
+
+3. **Infrastructure Provisioning**: The necessary infrastructure is provisioned using Azure services. This includes setting up virtual machines, databases, storage accounts, and other resources required for the Visage project.
+
+4. **Deployment**: The Docker images are deployed to the provisioned infrastructure using Azure Kubernetes Service (AKS). AKS provides a scalable and managed environment for running containerized applications.
+
+5. **Configuration**: The deployed components are configured with the necessary environment variables, secrets, and connection strings. This ensures that the Visage project can connect to the required services and operate correctly.
+
+6. **Monitoring and Logging**: The deployed components are monitored using Azure Monitor and Application Insights. This allows for real-time monitoring of the application's performance, availability, and health. Logs are collected and analyzed to identify and troubleshoot any issues.
+
+7. **Scaling**: The Visage project is designed to scale horizontally to handle increased traffic and workload. Azure Kubernetes Service (AKS) automatically scales the deployed components based on the defined scaling policies.
+
+By following this deployment process, the Visage project can be reliably deployed and maintained in a production environment.
+
+## Further Reading
+
+For more detailed information about the Visage project, please refer to the following resources:
+
+- [Project Wiki](https://github.com/HackerspaceMumbai/Visage/wiki)
+- [Project Website](https://hackmum.in)
+
+These resources provide additional documentation, tutorials, and guides to help you get started with the Visage project and understand its architecture and components.
