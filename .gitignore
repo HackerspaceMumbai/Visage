@@ -297,3 +297,8 @@ solution-overview.pptx
 # Exclude work timing
 codealike.json
 .azure
+
+
+# Visual Studio live unit testing config
+*.lutconfig
+*.lutignore
