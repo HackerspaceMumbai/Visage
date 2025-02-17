@@ -35,6 +35,9 @@ builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSi
 builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
     client.BaseAddress = new Uri("https+http://registrations-api"));
 
+// Register the IUserService and UserService in the dependency injection container
+builder.Services.AddHttpClient<IUserService, UserService>(client =>
+    client.BaseAddress = new Uri("https+http://auth0"));
 
 var app = builder.Build();
 
@@ -84,4 +87,3 @@ app.MapRazorComponents<App>()
         typeof(Visage.FrontEnd.Web.Client._Imports).Assembly);
 
 app.Run();
-

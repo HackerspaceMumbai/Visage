@@ -1,11 +1,11 @@
-@page "/event-registration"
+@page "/user-registration"
 @inject IRegistrationService RegistrationService
 @inject NavigationManager NavigationManager
+@inject IUserService UserService
 
+<PageTitle>User Registration</PageTitle>
 
-<PageTitle>Event Registration</PageTitle>
-
-<h3 class="text-2xl font-extrabold">Event Registration</h3>
+<h3 class="text-2xl font-extrabold">User Registration</h3>
 
 <EditForm EditContext="editContext" FormName="NewRegistration" OnValidSubmit="HandleValidSubmit">
     <div class="text-error">
@@ -584,18 +584,15 @@
 
 @code {
 
-
-
     private bool disabled = true;
     private string? successMessage;
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
 
-
     [SupplyParameterFromForm(FormName = "ScheduleNewRegistration")]
     private Registrant? registrant { get; set; }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         registrant = new Registrant();
         editContext = new EditContext(registrant);
@@ -606,6 +603,12 @@
         if (RendererInfo.IsInteractive)
         {
             disabled = false;
+        }
+
+        var isFirstTimeVisitor = await UserService.IsFirstTimeVisitorAsync();
+        if (isFirstTimeVisitor)
+        {
+            NavigationManager.NavigateTo("/user/registration");
         }
     }
 
@@ -629,8 +632,6 @@
         await Task.Delay(3000);
         ClearForm();
         NavigationManager.NavigateTo("/");
-
-
     }
 
     private void ClearForm()
