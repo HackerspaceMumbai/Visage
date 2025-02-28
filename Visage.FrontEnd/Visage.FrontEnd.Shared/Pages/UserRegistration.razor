@@ -1,7 +1,6 @@
 @page "/user-registration"
 @inject IRegistrationService RegistrationService
 @inject NavigationManager NavigationManager
-@inject IUserService UserService
 
 <PageTitle>User Registration</PageTitle>
 
@@ -605,11 +604,7 @@
             disabled = false;
         }
 
-        var isFirstTimeVisitor = await UserService.IsFirstTimeVisitorAsync();
-        if (isFirstTimeVisitor)
-        {
-            NavigationManager.NavigateTo("/user/registration");
-        }
+        
     }
 
     private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)

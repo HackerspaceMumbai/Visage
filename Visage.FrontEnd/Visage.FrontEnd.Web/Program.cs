@@ -2,7 +2,6 @@ using Visage.FrontEnd.Shared.Services;
 using Visage.FrontEnd.Web.Components;
 using Visage.FrontEnd.Web.Services;
 using Auth0.AspNetCore.Authentication;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 
@@ -35,9 +34,9 @@ builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSi
 builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
     client.BaseAddress = new Uri("https+http://registrations-api"));
 
-// Register the IUserService and UserService in the dependency injection container
-builder.Services.AddHttpClient<IUserService, UserService>(client =>
-    client.BaseAddress = new Uri("https+http://auth0"));
+//// Register the IUserService and UserService in the dependency injection container
+//builder.Services.AddHttpClient<IUserService, UserService>(client =>
+//    client.BaseAddress = new Uri("https+http://auth0"));
 
 var app = builder.Build();
 
