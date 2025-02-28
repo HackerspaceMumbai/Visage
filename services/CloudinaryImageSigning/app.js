@@ -21,7 +21,7 @@ const config = {
   cacheAddress: process.env['ConnectionStrings__cache'] ?? '',
   apiServer: process.env['services__weatherapi__https__0'] ?? process.env['services__weatherapi__http__0']
 };
-console.log(`config: ${JSON.stringify(config)}`);
+console.log(`Configuration loaded. Environment: ${config.environment}, HTTP Port: ${config.httpPort}, HTTPS Port: ${config.httpsPort}`);
 
 
 // Setup HTTPS options
