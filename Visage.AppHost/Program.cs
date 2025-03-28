@@ -7,10 +7,18 @@ using Visage.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+
+#region KeyCloak
+
+var keycloak = builder.AddKeycloak("keycloak", 8080)
+                      .WithDataVolume();
+
+#endregion
+
 #region EventAPI
 
 var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api")
-                 .WithExternalHttpEndpoints();
+                        .WithExternalHttpEndpoints();
 
 #endregion
 
@@ -19,7 +27,7 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api");
 
 #endregion
-
+    
 #region CloudinaryImageSigning
 
 string cloudinaryCloudName = builder.Configuration["Cloudinary:CloudName"] ?? throw new Exception("Cloudinary CloudName required");
@@ -43,16 +51,20 @@ if (builder.Environment.IsDevelopment() && launchProfile == "https")
 }
 
 
+
+
 #endregion
+
+
 
 #region web
 
-string iam_domain = builder.Configuration["Auth0:Domain"] ?? throw new Exception("Auth0 Domain required");
-string iam_clientid = builder.Configuration["Auth0:ClientId"] ?? throw new Exception("Auth0 ClientId required");
+//string iam_domain = builder.Configuration["Auth0:Domain"] ?? throw new Exception("Auth0 Domain required");
+//string iam_clientid = builder.Configuration["Auth0:ClientId"] ?? throw new Exception("Auth0 ClientId required");
 
 var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
-                                                        .WithEnvironment("Auth0__Domain", iam_domain)
-                                                        .WithEnvironment("Auth0__ClientId", iam_clientid)
+                                                        .WithReference(keycloak)
+                                                        .WaitFor(keycloak)
                                                         .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
                                                         .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
                                                         .WithReference(EventAPI)

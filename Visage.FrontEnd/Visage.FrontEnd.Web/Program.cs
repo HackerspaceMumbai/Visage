@@ -1,17 +1,19 @@
+using Auth0.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using System.IdentityModel.Tokens.Jwt;
 using Visage.FrontEnd.Shared.Services;
+using Visage.FrontEnd.Web;
+using Visage.FrontEnd.Web.Client;
 using Visage.FrontEnd.Web.Components;
 using Visage.FrontEnd.Web.Services;
-using Auth0.AspNetCore.Authentication;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddAuth0WebAppAuthentication(options =>
-{
-    builder.Configuration.Bind("Auth0", options);
-});
 
 builder.AddServiceDefaults();
 
@@ -22,6 +24,10 @@ builder.Services.AddRazorComponents()
 
 // Add device-specific services used by the Visage.FrontEnd.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
+
+builder.Services.AddHttpContextAccessor()
+                .AddTransient<AuthorizationHandler>();
+
 
 // Register the IEventService and EventService in the dependency injection container
 builder.Services.AddHttpClient<IEventService, EventService>( client =>
@@ -35,6 +41,24 @@ builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSi
 builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
     client.BaseAddress = new Uri("https+http://registrations-api"));
 
+var oidcScheme = OpenIdConnectDefaults.AuthenticationScheme;
+
+builder.Services.AddAuthentication(oidcScheme)
+                .AddKeycloakOpenIdConnect("keycloak", realm: "Visage", oidcScheme, options =>
+                {
+                    options.ClientId = "VisageWeb";
+                    options.ResponseType = OpenIdConnectResponseType.Code;
+                   // options.Scope.Add("weather:all");
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
+                    options.SaveTokens = true;
+                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+                })
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+
+builder.Services.AddCascadingAuthenticationState();
+
 
 var app = builder.Build();
 
@@ -44,6 +68,8 @@ app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
+    IdentityModelEventSource.ShowPII = true;
+
 }
 else
 {
@@ -57,24 +83,24 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
-{
-    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
-            .WithRedirectUri(returnUrl)
-            .Build();
+//app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
+//{
+//    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
+//            .WithRedirectUri(returnUrl)
+//            .Build();
 
-    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
-});
+//    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+//});
 
-app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
-{
-    var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
-            .WithRedirectUri("/")
-            .Build();
+//app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
+//{
+//    var authenticationProperties = new LogoutAuthenticationPropertiesBuilder()
+//            .WithRedirectUri("/")
+//            .Build();
 
-    await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
-    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-});
+//    await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+//    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+//});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
@@ -82,6 +108,8 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(
         typeof(Visage.FrontEnd.Shared._Imports).Assembly,
         typeof(Visage.FrontEnd.Web.Client._Imports).Assembly);
+
+app.MapLoginAndLogout();
 
 app.Run();
 
