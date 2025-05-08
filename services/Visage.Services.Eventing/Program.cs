@@ -3,6 +3,8 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Visage.FrontEnd.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Linq;
 
 
 
@@ -39,6 +41,12 @@ app.UseHttpsRedirection();
 var events = app.MapGroup("/events");
 
 events.MapGet("/", GetAllEvents);
+events.MapGet("/upcoming", GetUpcomingEvents)
+    .WithName("Get Upcoming Events")
+    .WithOpenApi();
+events.MapGet("/past", GetPastEvents)
+    .WithName("Get Past Events")
+    .WithOpenApi();
 
 events.MapPost("/", ScheduleEvent)
     .WithName("Schedule Event")
@@ -50,6 +58,24 @@ app.Run();
 static async Task<IResult> GetAllEvents(EventDB db)
 {
     return TypedResults.Ok(await db.Events.ToListAsync());
+}
+
+static async Task<IResult> GetUpcomingEvents(EventDB db)
+{
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    var upcoming = await db.Events
+        .Where(e => e.StartDate >= today)
+        .ToListAsync();
+    return TypedResults.Ok(upcoming);
+}
+
+static async Task<IResult> GetPastEvents(EventDB db)
+{
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    var past = await db.Events
+        .Where(e => e.EndDate < today)
+        .ToListAsync();
+    return TypedResults.Ok(past);
 }
 
 static async Task<Results<BadRequest<String>, Created<Event>>> ScheduleEvent([FromBody]Event EventDetails, EventDB db)
