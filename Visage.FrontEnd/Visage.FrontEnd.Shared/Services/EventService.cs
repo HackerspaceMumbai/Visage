@@ -13,17 +13,15 @@ namespace Visage.FrontEnd.Shared.Services
         public async Task<List<Event>> GetUpcomingEvents()
         {
             // Fetch upcoming events from the backend
-            // This is a placeholder implementation
-            return await httpClient.GetFromJsonAsync<List<Event>>("/events") ?? [];
-
+            return await httpClient.GetFromJsonAsync<List<Event>>("/events/upcoming")
+                   ?? new List<Event>();
         }
 
         public async Task<List<Event>> GetPastEvents()
         {
             // Fetch past events from the backend
-            // This is a placeholder implementation
-            return await httpClient.GetFromJsonAsync<List<Event>>("/events") ?? [];
-
+            return await httpClient.GetFromJsonAsync<List<Event>>("/events/past")
+                   ?? new List<Event>();
         }
 
         public async Task ScheduleEvent(Event newEvent)
