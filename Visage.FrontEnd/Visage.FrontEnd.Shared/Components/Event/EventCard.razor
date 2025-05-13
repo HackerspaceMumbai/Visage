@@ -17,7 +17,7 @@
 
 <li class="card card-compact w-96 bg-base-100 shadow-xl hover:shadow-primary">
     <figure class="relative w-full max-h-[240px]">
-        <img src="https://picsum.photos/400" alt="Event Cover picture of @Title" />
+        <img src="@(string.IsNullOrWhiteSpace(CoverPicture) ? "https://picsum.photos/400" : CoverPicture)" alt="Event Cover picture of @Title" />
     </figure>
     <div class="card-body">
         <h2 class="card-title justify-start">@Title</h2>
