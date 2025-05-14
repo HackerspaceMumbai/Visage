@@ -33,7 +33,7 @@ else
 
         @foreach (var upcomingEvent in upcomingEvents)
         {
-            <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPictureFileName" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
+            <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPicture" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
         }
     </ul>
 }
@@ -47,7 +47,7 @@ else
 {
     @foreach (var pastEvent in pastEvents)
     {
-        <EventCard Title="@pastEvent.Title" CoverPicture="@pastEvent.CoverPictureFileName" Date="@pastEvent.StartDate" Venue="@pastEvent.Location" AttendeesPercentage="@pastEvent.AttendeesPercentage" />
+        <EventCard Title="@pastEvent.Title" CoverPicture="@pastEvent.CoverPicture" Date="@pastEvent.StartDate" Venue="@pastEvent.Location" AttendeesPercentage="@pastEvent.AttendeesPercentage" />
     }
 }
 

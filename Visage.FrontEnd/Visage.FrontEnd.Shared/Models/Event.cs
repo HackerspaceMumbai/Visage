@@ -32,8 +32,12 @@ public class Event
 
     public string? Location { get; set; }
 
+
+    // Deprecated: Use CoverPicture for the Cloudinary image URL
+    [Obsolete("Use CoverPicture property instead.")]
     public string? CoverPictureLocation { get; set; }
 
+    [Obsolete("Use CoverPicture property instead.")]
     public string? CoverPictureFileName { get; set; }
 
     public int? AttendeesPercentage { get; set; }

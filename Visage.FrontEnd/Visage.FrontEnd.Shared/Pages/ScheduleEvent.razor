@@ -254,9 +254,18 @@
                         {
                             if (response.IsSuccessStatusCode)
                             {
-                                var cloudinaryUrl = await response.Content.ReadAsStringAsync();
-                                newEvent!.CoverPictureLocation = cloudinaryUrl;
-                                uploadStatusMessage = "Image uploaded successfully!";
+                                var cloudinaryJson = await response.Content.ReadAsStringAsync();
+                                string? url = null;
+                                try
+                                {
+                                    url = System.Text.Json.JsonDocument.Parse(cloudinaryJson).RootElement.GetProperty("url").GetString();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Failed to parse Cloudinary response: {ex.Message}\nResponse: {cloudinaryJson}");
+                                }
+                                newEvent!.CoverPicture = url;
+                                uploadStatusMessage = url != null ? "Image uploaded successfully!" : "Image uploaded, but URL could not be parsed.";
                             }
                             else
                             {
