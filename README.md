@@ -87,6 +87,61 @@ By following these guidelines, we can ensure that our codebase remains reliable,
 
 The Visage project is built using a modular architecture to ensure scalability, maintainability, and ease of development. Below is an overview of the project's architecture and its main components:
 
+The following diagram illustrates how the components of Visage interact with each other and how data flows through the system:
+
+```mermaid
+graph TB
+    %% Define the user and their interactions
+    User(["User"])
+    
+    %% Define major components
+    subgraph "Client Application"
+        Blazor["Blazor Hybrid Web App"]
+    end
+    
+    subgraph "Azure Container Apps"
+        subgraph "Aspire Orchestration Layer"
+            AspireRuntime["Aspire Runtime"]
+            
+            subgraph "Backend Services"
+                MinimalAPIs["Minimal APIs with Scalar OpenAPI"]
+                AIExtensions["Microsoft .NET AI Extensions"]
+            end
+        end
+        
+        AzureOpenAI["Azure OpenAI Services"]
+    end
+    
+    subgraph "Data Layer"
+        EFCore["Entity Framework Core"]
+        Database[(Database)]
+    end
+    
+    %% Define relationships and data flow
+    User -->|Interacts with| Blazor
+    Blazor <-->|API Requests/Responses| MinimalAPIs
+    
+    MinimalAPIs -->|Data Access| EFCore
+    EFCore <-->|CRUD Operations| Database
+    
+    MinimalAPIs <-->|AI Processing Requests| AIExtensions
+    AIExtensions <-->|AI Model Queries| AzureOpenAI
+    
+    AspireRuntime -->|Monitors & Orchestrates| MinimalAPIs
+    AspireRuntime -->|Monitors & Orchestrates| AIExtensions
+    
+    %% Styling
+    classDef azure fill:#0072C6,color:white,stroke:#0072C6
+    classDef client fill:#7FBA00,color:white,stroke:#7FBA00
+    classDef data fill:#FFB900,color:black,stroke:#FFB900
+    classDef aspire fill:#F25022,color:white,stroke:#F25022
+    
+    class Blazor client
+    class AzureOpenAI,AspireRuntime azure
+    class Database,EFCore data
+    class MinimalAPIs,AIExtensions aspire
+```
+
 ### 1. Aspire
 
 Aspire is the core framework that powers the Visage project. It provides the foundation for building scalable and reliable applications. Aspire includes features such as dependency injection, configuration management, logging, and more.
