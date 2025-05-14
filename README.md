@@ -26,6 +26,8 @@ Meetups done right
 </p>
 
 ## The problem
+
+
 We are the largest Open Source Software[OSS] community with its longest running(> 10 years) tech meetup in Bombay. Most of our events are houseful.
 
 1. We have to curate the registrants based on the theme and also to ensure we are inclusive, diverse, and have a good mix of attendees.
@@ -51,10 +53,8 @@ Below are the guidelines for writing and running tests:
 
 ### Running Unit Tests
 
-Unit testing is restricted for crucial Blazor Hybrid components using bunit. 
-
-
-
+Unit testing is restricted for crucial Blazor Hybrid components using bunit.
+Unit testing is restricted for crucial Blazor Hybrid components using bunit.
 
 ### Running Integration Tests
 
@@ -63,8 +63,6 @@ To run the integration tests, execute the following command:
 ```bash
 dotnet test tests/Visage.Tests.Integration/Visage.Tests.Integration.csproj
 ```
-
-
 
 ### Configurable Tests
 
@@ -86,6 +84,217 @@ By following these guidelines, we can ensure that our codebase remains reliable,
 ## Project Architecture and Components
 
 The Visage project is built using a modular architecture to ensure scalability, maintainability, and ease of development. Below is an overview of the project's architecture and its main components:
+
+The following diagram illustrates how the components of Visage interact with each other and how data flows through the system
+
+Detailed Diagram:
+
+```mermaid
+flowchart TD
+
+        %% Define the user and their interactions
+flowchart TD
+
+        %% Define the user and their interactions
+    User(["User"])
+    %% Top layer: User Interfaces
+    subgraph "User Interfaces" 
+        direction TB
+        WebClient["Blazor Hybrid Web Client"]:::client
+        WebServer["Blazor Web (server-hosted)"]:::client
+        MAUI[".NET MAUI Mobile/Desktop App"]:::client
+        SharedUI["Shared UI Library"]:::client
+    end
+
+    %% Middle layer: AppHost
+    AppHost["Visage.AppHost"]:::aspire
+
+    %% Lower layer: Microservices
+    subgraph "Microservices"
+        direction TB
+        Eventing["Visage.Services.Eventing"]:::aspire
+        Registrations["Visage.Services.Registrations"]:::aspire
+        Cloudinary["Cloudinary Image Signing (Node.js)"]:::aspire
+    end
+
+    %% Bottom layer: Data Stores
+    subgraph "Data Stores"
+        direction TB
+        EventDB[(EventDB)]:::data
+        RegistrantDB[(RegistrantDB)]:::data
+    end
+
+    %% Bottom layer: External Services
+    subgraph "External Services"
+        direction TB
+        AzureAI["Azure AI Foundry"]:::azure
+        AzureContainer["Azure Container Apps"]:::azure
+        Insights["Azure Monitor & App Insights"]:::azure
+        CloudinaryStorage["Cloudinary"]:::azure
+    end
+
+    %% Connections
+    User -->|Interacts with| WebClient
+    User -->|Interacts with| WebServer
+    User -->|Interacts with| MAUI
+
+    WebClient -->|"HTTPS/REST"| AppHost
+    WebServer -->|"HTTPS/REST"| AppHost
+    MAUI -->|"HTTPS/REST"| AppHost
+    WebClient -->|"HTTPS/REST"| Cloudinary
+    WebServer -->|"HTTPS/REST"| Cloudinary
+    MAUI -->|"HTTPS/REST"| Cloudinary
+
+    AppHost -->|"HTTP/REST"| Eventing
+    AppHost -->|"HTTP/REST"| Registrations
+    AppHost -->|"Node Hosting Extension"| Cloudinary
+
+    Eventing -->|"EF Core"| EventDB
+    Registrations -->|"EF Core"| RegistrantDB
+
+    AppHost -->|"Azure SDK"| AzureAI
+    Eventing -->|"Azure SDK"| AzureAI
+    Registrations -->|"Azure SDK"| AzureAI
+
+    AppHost ---|"Containerized"| AzureContainer
+    Eventing ---|"Containerized"| AzureContainer
+    Registrations ---|"Containerized"| AzureContainer
+    Cloudinary ---|"Containerized"| AzureContainer
+
+    AppHost -->|"Monitoring"| Insights
+    Eventing -->|"Monitoring"| Insights
+    Registrations -->|"Monitoring"| Insights
+    Cloudinary -->|"Monitoring"| Insights
+
+    Cloudinary -->|"Media Storage"| CloudinaryStorage
+
+    %% Dependencies
+    WebClient --> SharedUI
+    WebServer --> SharedUI
+    MAUI --> SharedUI
+
+    %% Legend
+    subgraph Legend
+        direction TB
+        F["Rectangles: Frontend"]:::client
+        S["Rounded: Services"]:::aspire
+        D["Cylinders: Databases"]:::data
+        C["Cloud: External Services"]:::azure
+    end
+
+    %% Click Events
+    click WebClient "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Web.Client"
+    click WebServer "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Web"
+    click MAUI "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd"
+    click SharedUI "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Shared"
+    click AppHost "https://github.com/hackerspacemumbai/visage/blob/main/Visage.AppHost"
+    click Eventing "https://github.com/hackerspacemumbai/visage/blob/main/services/Visage.Services.Eventing"
+    click Registrations "https://github.com/hackerspacemumbai/visage/blob/main/services/Visage.Services.Registrations"
+    click Cloudinary "https://github.com/hackerspacemumbai/visage/tree/main/services/CloudinaryImageSigning"
+
+    %% Styling (matching your TB diagram)
+    %% Top layer: User Interfaces
+    subgraph "User Interfaces" 
+        direction TB
+        WebClient["Blazor Hybrid Web Client"]:::client
+        WebServer["Blazor Web (server-hosted)"]:::client
+        MAUI[".NET MAUI Mobile/Desktop App"]:::client
+        SharedUI["Shared UI Library"]:::client
+    end
+
+    %% Middle layer: AppHost
+    AppHost["Visage.AppHost"]:::aspire
+
+    %% Lower layer: Microservices
+    subgraph "Microservices"
+        direction TB
+        Eventing["Visage.Services.Eventing"]:::aspire
+        Registrations["Visage.Services.Registrations"]:::aspire
+        Cloudinary["Cloudinary Image Signing (Node.js)"]:::aspire
+    end
+
+    %% Bottom layer: Data Stores
+    subgraph "Data Stores"
+        direction TB
+        EventDB[(EventDB)]:::data
+        RegistrantDB[(RegistrantDB)]:::data
+    end
+
+    %% Bottom layer: External Services
+    subgraph "External Services"
+        direction TB
+        AzureAI["Azure AI Foundry"]:::azure
+        AzureContainer["Azure Container Apps"]:::azure
+        Insights["Azure Monitor & App Insights"]:::azure
+        CloudinaryStorage["Cloudinary"]:::azure
+    end
+
+    %% Connections
+    User -->|Interacts with| WebClient
+    User -->|Interacts with| WebServer
+    User -->|Interacts with| MAUI
+
+    WebClient -->|"HTTPS/REST"| AppHost
+    WebServer -->|"HTTPS/REST"| AppHost
+    MAUI -->|"HTTPS/REST"| AppHost
+    WebClient -->|"HTTPS/REST"| Cloudinary
+    WebServer -->|"HTTPS/REST"| Cloudinary
+    MAUI -->|"HTTPS/REST"| Cloudinary
+
+    AppHost -->|"HTTP/REST"| Eventing
+    AppHost -->|"HTTP/REST"| Registrations
+    AppHost -->|"Node Hosting Extension"| Cloudinary
+
+    Eventing -->|"EF Core"| EventDB
+    Registrations -->|"EF Core"| RegistrantDB
+
+    AppHost -->|"Azure SDK"| AzureAI
+    Eventing -->|"Azure SDK"| AzureAI
+    Registrations -->|"Azure SDK"| AzureAI
+
+    AppHost ---|"Containerized"| AzureContainer
+    Eventing ---|"Containerized"| AzureContainer
+    Registrations ---|"Containerized"| AzureContainer
+    Cloudinary ---|"Containerized"| AzureContainer
+
+    AppHost -->|"Monitoring"| Insights
+    Eventing -->|"Monitoring"| Insights
+    Registrations -->|"Monitoring"| Insights
+    Cloudinary -->|"Monitoring"| Insights
+
+    Cloudinary -->|"Media Storage"| CloudinaryStorage
+
+    %% Dependencies
+    WebClient --> SharedUI
+    WebServer --> SharedUI
+    MAUI --> SharedUI
+
+    %% Legend
+    subgraph Legend
+        direction TB
+        F["Rectangles: Frontend"]:::client
+        S["Rounded: Services"]:::aspire
+        D["Cylinders: Databases"]:::data
+        C["Cloud: External Services"]:::azure
+    end
+
+    %% Click Events
+    click WebClient "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Web.Client"
+    click WebServer "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Web"
+    click MAUI "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd"
+    click SharedUI "https://github.com/hackerspacemumbai/visage/blob/main/Visage.FrontEnd/Visage.FrontEnd.Shared"
+    click AppHost "https://github.com/hackerspacemumbai/visage/blob/main/Visage.AppHost"
+    click Eventing "https://github.com/hackerspacemumbai/visage/blob/main/services/Visage.Services.Eventing"
+    click Registrations "https://github.com/hackerspacemumbai/visage/blob/main/services/Visage.Services.Registrations"
+    click Cloudinary "https://github.com/hackerspacemumbai/visage/tree/main/services/CloudinaryImageSigning"
+
+    %% Styling (matching your TB diagram)
+    classDef azure fill:#0072C6,color:white,stroke:#0072C6
+    classDef client fill:#7FBA00,color:white,stroke:#7FBA00
+    classDef data fill:#FFB900,color:black,stroke:#FFB900
+    classDef aspire fill:#F25022,color:white,stroke:#F25022,rx:10,ry:10
+    classDef aspire fill:#F25022,color:white,stroke:#F25022,rx:10,ry:10
+```
 
 ### 1. Aspire
 
@@ -124,7 +333,12 @@ The deployment process for the Visage project involves the following steps:
 6. **Security and Compliance**: Security measures are implemented to protect the Visage project from threats and vulnerabilities. This includes setting up firewalls, encryption, access controls, and compliance with data protection regulations.
 
 7. **Testing**: The deployed components are tested to ensure that they are functioning correctly and meeting the required performance criteria. This includes functional testing, load testing, security testing, and other types of testing as needed.
-   
+
+8. **Deployment**: The final step involves deploying the built and tested components to the production environment. This includes updating DNS records, configuring load balancers, and ensuring that the application is accessible to users.
+  
+
+8. **Deployment**: The final step involves deploying the built and tested components to the production environment. This includes updating DNS records, configuring load balancers, and ensuring that the application is accessible to users.
+  
 By following this deployment process, the Visage project can be reliably deployed and maintained in a production environment.
 
 ## Further Reading
