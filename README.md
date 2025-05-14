@@ -90,9 +90,7 @@ The following diagram illustrates how the components of Visage interact with eac
 Detailed Diagram:
 
 ```mermaid
-flowchart TD
 
-        %% Define the user and their interactions
 flowchart TD
 
         %% Define the user and their interactions
