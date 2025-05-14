@@ -10,6 +10,10 @@ namespace Visage.FrontEnd.Shared.Services
 {
     public class EventService(HttpClient httpClient) : IEventService
     {
+        /// <summary>
+        /// Asynchronously retrieves a list of upcoming events from the backend.
+        /// </summary>
+        /// <returns>A list of upcoming <see cref="Event"/> objects, or an empty list if none are found.</returns>
         public async Task<List<Event>> GetUpcomingEvents()
         {
             // Fetch upcoming events from the backend
@@ -17,6 +21,10 @@ namespace Visage.FrontEnd.Shared.Services
                    ?? new List<Event>();
         }
 
+        /// <summary>
+        /// Asynchronously retrieves a list of past events from the backend.
+        /// </summary>
+        /// <returns>A list of past events, or an empty list if none are found.</returns>
         public async Task<List<Event>> GetPastEvents()
         {
             // Fetch past events from the backend
@@ -24,6 +32,10 @@ namespace Visage.FrontEnd.Shared.Services
                    ?? new List<Event>();
         }
 
+        /// <summary>
+        /// Sends a request to schedule a new event by posting its details to the backend.
+        /// </summary>
+        /// <param name="newEvent">The event to be scheduled.</param>
         public async Task ScheduleEvent(Event newEvent)
         {
             // Send a POST request to the backend to create a new event
