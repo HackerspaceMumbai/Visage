@@ -6,6 +6,8 @@
 @inject ICloudinaryImageSigningService CloudinaryService
 @inject NavigationManager NavigationManager
 @using System.Text
+@using System.Threading
+@using Visage.FrontEnd.Shared.Helpers
 
 <h3 class="text-2xl font-bold">Schedule Your New Event</h3>
 
@@ -123,7 +125,8 @@
                 }
                 @if (!string.IsNullOrEmpty(uploadStatusMessage))
                 {
-                    <div class="mt-2 text-sm text-gray-600">@uploadStatusMessage</div>
+                    var isSuccess = uploadStatusMessage.Contains("success", StringComparison.OrdinalIgnoreCase);
+                    <div class="mt-2 text-sm  font-semibold @(isSuccess ? "text-success" : "text-error")">@uploadStatusMessage</div>
                 }
             </div>
 
@@ -163,6 +166,9 @@
         editContext?.GetValidationMessages().Any() == true;
 
     private IBrowserFile? selectedFile;
+
+    private static readonly string[] AllowedImageTypes = { "image/png", "image/jpeg" };
+    private const long MaxCoverPictureSize = 512_000; // 500 KB
 
     protected override void OnInitialized()
     {
@@ -210,78 +216,111 @@
     private async Task UploadSelectedFile(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
-        if (selectedFile != null)
+        uploadStatusMessage = null;
+
+        // Check file size
+        if (selectedFile != null && selectedFile.Size > MaxCoverPictureSize)
         {
-            isUploading = true;
-            uploadStatusMessage = null;
+            uploadStatusMessage = $"Selected file is too large ({selectedFile.Size / 1024} KB). Maximum allowed size is {MaxCoverPictureSize / 1024} KB.";
+            isUploading = false;
+            StateHasChanged();
+            return;
+        }
 
-            var uploadParams = await CloudinaryService.SignUploadAsync();
-            Console.WriteLine($"Upload Params Signature: {uploadParams.signature} and timestamp: {uploadParams.timestamp}");
+        // Check file type
+        if (selectedFile != null && !selectedFile.HasAllowedImageExtension())
+        {
+            uploadStatusMessage = "Invalid file extension. Only JPG and PNG images are allowed.";
+            isUploading = false;
+            StateHasChanged();
+            return;
+        }
 
-            var CloudinaryApiKey = Environment.GetEnvironmentVariable("Cloudinary__ApiKey");
-            var cloudName = Environment.GetEnvironmentVariable("Cloudinary__CloudName");
+        isUploading = true;
 
-            Console.WriteLine($"Cloudinary API Key: {CloudinaryApiKey} and Cloud name: {cloudName}");
-
-            using (var cloudinaryAPI =  new HttpClient())
+        try
+        {
+            if (selectedFile != null)
             {
+                var uploadParams = await CloudinaryService.SignUploadAsync();
+                var CloudinaryApiKey = Environment.GetEnvironmentVariable("Cloudinary__ApiKey");
+                var cloudName = Environment.GetEnvironmentVariable("Cloudinary__CloudName");
+
+                using (var cloudinaryAPI = new HttpClient())
                 using (MultipartFormDataContent formImage = new("CloudinaryUpload"))
                 {
+                    formImage.Add(new StringContent(CloudinaryApiKey!.Trim(), Encoding.UTF8), @"""api_key""");
+                    formImage.Add(new StringContent(uploadParams.signature.Trim(), Encoding.UTF8), @"""signature""");
+                    formImage.Add(new StringContent(uploadParams.timestamp.ToString().Trim(), Encoding.UTF8), @"""timestamp""");
 
-                        var apiKeyContent = new StringContent(CloudinaryApiKey!.Trim(), Encoding.UTF8);
-                        formImage.Add(apiKeyContent, @"""api_key""");
+                    var imageContent = new StreamContent(selectedFile.OpenReadStream());
+                    imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                    formImage.Add(imageContent, "file", selectedFile.Name);
 
-                        var signatureContent = new StringContent(uploadParams.signature.Trim(), Encoding.UTF8);
-                        signatureContent?.Headers?.ContentDisposition?.Parameters.Clear();
-                        formImage.Add(signatureContent!, @"""signature""");
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.cloudinary.com/v1_1/{cloudName}/auto/upload")
+                    {
+                        Content = formImage
+                    };
 
-                        var timestampContent = new StringContent(uploadParams.timestamp.ToString().Trim(), Encoding.UTF8);
-                        formImage.Add(timestampContent, @"""timestamp""");
+                    try
+                    {
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+                        using var response = await cloudinaryAPI.SendAsync(request, cts.Token);
 
+                        var responseContent = await response.Content.ReadAsStringAsync();
 
-                        var imageContent = new StreamContent(selectedFile.OpenReadStream());
-                        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-                        formImage.Add(imageContent, "file", selectedFile.Name);
-
-                        var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.cloudinary.com/v1_1/{cloudName}/auto/upload");
-                        request.Content = formImage;
-
-                        Console.WriteLine($"Request URL: {request.RequestUri}");
-                        Console.WriteLine($"Request Method: {request.Method}");
-                        Console.WriteLine($"Request Content: {await request.Content.ReadAsStringAsync()}");
-
-                        using var response = await cloudinaryAPI.SendAsync(request);
+                        if (response.IsSuccessStatusCode)
                         {
-                            if (response.IsSuccessStatusCode)
+                            string? url = null;
+                            try
                             {
-                                var cloudinaryJson = await response.Content.ReadAsStringAsync();
-                                string? url = null;
-                                try
-                                {
-                                    url = System.Text.Json.JsonDocument.Parse(cloudinaryJson).RootElement.GetProperty("url").GetString();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"Failed to parse Cloudinary response: {ex.Message}\nResponse: {cloudinaryJson}");
-                                }
-                                newEvent!.CoverPicture = url;
-                                uploadStatusMessage = url != null ? "Image uploaded successfully!" : "Image uploaded, but URL could not be parsed.";
+                                url = System.Text.Json.JsonDocument.Parse(responseContent).RootElement.GetProperty("url").GetString();
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                var errorContent = await response.Content.ReadAsStringAsync();
-                                Console.WriteLine($"Error uploading image: {response.StatusCode}, {errorContent}");
-                                uploadStatusMessage = "Error uploading image. Please try again.";
+                                Console.WriteLine($"Failed to parse Cloudinary response: {ex.Message}\nResponse: {responseContent}");
                             }
-
-                            isUploading = false;
+                            newEvent!.CoverPicture = url;
+                            uploadStatusMessage = url != null ? "Image uploaded successfully!" : "Image uploaded, but URL could not be parsed.";
                         }
+                        else
+                        {
+                            string userMessage = "Error uploading image. Please try again.";
+                            try
+                            {
+                                var errorObj = System.Text.Json.JsonDocument.Parse(responseContent).RootElement;
+                                if (errorObj.TryGetProperty("error", out var errorProp) && errorProp.TryGetProperty("message", out var msgProp))
+                                {
+                                    userMessage = msgProp.GetString() ?? userMessage;
+                                }
+                            }
+                            catch { /* Ignore parse errors, fallback to generic message */ }
+
+                            uploadStatusMessage = userMessage;
+                            Console.WriteLine($"Cloudinary upload error: {response.StatusCode}, {responseContent}");
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        uploadStatusMessage = "Upload timed out. Please try a smaller image or check your connection.";
+                    }
+                    catch (Exception ex)
+                    {
+                        uploadStatusMessage = "Unexpected error during upload. Please try again.";
+                        Console.WriteLine($"Unexpected error during upload: {ex.Message}");
+                    }
                 }
-   
-
-
-            
             }
+        }
+        catch (Exception ex)
+        {
+            uploadStatusMessage = "Unexpected error during upload. Please try again.";
+            Console.WriteLine($"Outer error during upload: {ex.Message}");
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
         }
     }
 
