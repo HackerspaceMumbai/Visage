@@ -18,9 +18,7 @@ public class Registrant
     [Required]
     public string LastName { get; set; } = string.Empty;
 
-    [Required]
-    public string Address { get; set; } = string.Empty;
-
+    
     [Required]
     public string AddressLine1 { get; set; } = string.Empty;
 
