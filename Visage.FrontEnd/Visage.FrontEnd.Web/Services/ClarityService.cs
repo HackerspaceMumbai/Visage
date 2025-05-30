@@ -22,7 +22,7 @@ namespace Visage.FrontEnd.Web.Services
         /// <returns>The Clarity tracking ID</returns>
         public string GetTrackingId()
         {
-            return _configuration["Clarity:TrackingId"] ?? string.Empty;
+            return _configuration["Clarity:TrackingId"] ?? _configuration["Clarity__TrackingId"] ?? string.Empty;
         }
     }
 }
