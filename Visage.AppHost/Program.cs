@@ -49,12 +49,14 @@ if (builder.Environment.IsDevelopment() && launchProfile == "https")
 
 string iam_domain = builder.Configuration["Auth0:Domain"] ?? throw new Exception("Auth0 Domain required");
 string iam_clientid = builder.Configuration["Auth0:ClientId"] ?? throw new Exception("Auth0 ClientId required");
+string clarityTrackingId = builder.Configuration["Clarity:TrackingId"] ?? string.Empty;
 
 var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
                                                         .WithEnvironment("Auth0__Domain", iam_domain)
                                                         .WithEnvironment("Auth0__ClientId", iam_clientid)
                                                         .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
                                                         .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
+                                                        .WithEnvironment("Clarity__TrackingId", clarityTrackingId)
                                                         .WithReference(EventAPI)
                                                         .WaitFor(EventAPI)
                                                         .WithReference(registrationAPI)

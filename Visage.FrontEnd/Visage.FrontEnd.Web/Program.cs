@@ -22,6 +22,9 @@ builder.Services.AddRazorComponents()
 // Add device-specific services used by the Visage.FrontEnd.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+// Add Microsoft Clarity service for user behavior insights
+builder.Services.AddSingleton<IClarityService, ClarityService>();
+
 // Register the IEventService and EventService in the dependency injection container
 builder.Services.AddHttpClient<IEventService, EventService>( client =>
                 client.BaseAddress = new Uri("https+http://event-api"));
