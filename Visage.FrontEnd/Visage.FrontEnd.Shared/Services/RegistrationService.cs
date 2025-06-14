@@ -12,9 +12,14 @@ public class RegistrationService : IRegistrationService
         _httpClient = httpClient;
     }
 
-    public async Task<bool> RegisterAsync(Registrant registrant)
+    public async Task<Registrant?> RegisterAsync(Registrant registrant)
     {
         var response = await _httpClient.PostAsJsonAsync("/register", registrant);
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+        {
+            // Deserialize the returned Registrant (with Id)
+            return await response.Content.ReadFromJsonAsync<Registrant>();
+        }
+        return null;
     }
 }

@@ -572,19 +572,19 @@
     </fieldset>
 </EditForm>
 
-@if (!string.IsNullOrEmpty(successMessage))
+@if (!string.IsNullOrEmpty(failureMessage))
 
 
 {
-    <div class="alert alert-success mt-4">
-        @successMessage
+    <div role="alert" class="alert alert-error mt-4">
+        @failureMessage
     </div>
 }
 
 @code {
 
     private bool disabled = true;
-    private string? successMessage;
+    private string? failureMessage;
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
 
@@ -614,19 +614,17 @@
 
     private async Task HandleValidSubmit()
     {
-        var isSuccess = await RegistrationService.RegisterAsync(registrant!);
-        if (isSuccess)
+        var createdRegistrant = await RegistrationService.RegisterAsync(registrant!);
+        if (createdRegistrant != null)
         {
-            successMessage = "Registration successful!";
+            // Navigate immediately after success
+            NavigationManager.NavigateTo($"/profile/{createdRegistrant.Id}");
+            // Optionally, you can show a toast or notification before navigating, but do not delay navigation
         }
         else
         {
-            successMessage = "Registration failed. Please try again.";
+            failureMessage = "Registration failed. Please try again.";
         }
-        StateHasChanged();
-        await Task.Delay(3000);
-        ClearForm();
-        NavigationManager.NavigateTo("/");
     }
 
     private void ClearForm()

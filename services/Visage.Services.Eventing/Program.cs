@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Visage.FrontEnd.Shared.Models;
+using Visage.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;

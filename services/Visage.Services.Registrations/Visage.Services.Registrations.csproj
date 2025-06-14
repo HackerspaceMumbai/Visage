@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\tests\Visage.Tests.Integration\Visage.Tests.Integration.csproj" />
+    <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,24 @@ using Visage.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+#region Auth0Configuration
+
+
+string iam_domain = builder.Configuration["Auth0:Domain"] ?? throw new Exception("Auth0 Domain required");
+string iam_clientid = builder.Configuration["Auth0:ClientId"] ?? throw new Exception("Auth0 ClientId required");
+string iam_clientsecret = builder.Configuration["Auth0:ClientSecret"] ?? throw new Exception("Auth0 ClientSecret required");
+string iam_audience = builder.Configuration["Auth0:Audience"] ?? throw new Exception("Auth0 Audience required");
+
+#endregion
+
+#region database
+var VisageSQL = builder.AddConnectionString("visagesql");
+
+
+
+
+#endregion
+
 #region EventAPI
 
 var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api")
@@ -16,7 +34,11 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 
 #region RegistrationAPI
 
-var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api");
+var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
+                                                            .WithEnvironment("Auth0__Domain", iam_domain)
+                                                            .WithEnvironment("Auth0__Audience", iam_audience)
+                                                            .WithReference(VisageSQL);
+                                                       
 
 #endregion
 
@@ -47,13 +69,12 @@ if (builder.Environment.IsDevelopment() && launchProfile == "https")
 
 #region web
 
-string iam_domain = builder.Configuration["Auth0:Domain"] ?? throw new Exception("Auth0 Domain required");
-string iam_clientid = builder.Configuration["Auth0:ClientId"] ?? throw new Exception("Auth0 ClientId required");
-string clarityTrackingId = builder.Configuration["Clarity:TrackingId"] ?? string.Empty;
 
 var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
                                                         .WithEnvironment("Auth0__Domain", iam_domain)
                                                         .WithEnvironment("Auth0__ClientId", iam_clientid)
+                                                        .WithEnvironment("Auth0__ClientSecret", iam_clientsecret)
+                                                        .WithEnvironment("Auth0__Audience", iam_audience)
                                                         .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
                                                         .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
                                                         .WithEnvironment("Clarity__TrackingId", clarityTrackingId)
