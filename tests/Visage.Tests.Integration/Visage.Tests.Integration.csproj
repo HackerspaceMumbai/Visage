@@ -2,17 +2,25 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.0.0" />
-    <PackageReference Include="FluentAssertions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+    <PackageReference Include="Aspire.Testing" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\services\Visage.Services.Eventing\Visage.Services.Eventing.csproj" />
-    <ProjectReference Include="..\..\services\Visage.Services.Registrations\Visage.Services.Registrations.csproj" />
+    <!-- Only reference the AppHost for integration testing -->
+    <ProjectReference Include="..\..\Visage.AppHost\Visage.AppHost.csproj" />
+    <!-- Reference shared models for testing DTOs -->
+    <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
   </ItemGroup>
 
 </Project>

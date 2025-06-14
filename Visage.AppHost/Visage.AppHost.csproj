@@ -9,8 +9,9 @@
     <UserSecretsId>65b9ba5a-abb2-41d6-8ae4-bde74f1710d0</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
-    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.0.0" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="9.3.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\services\Visage.Services.Eventing\Visage.Services.Eventing.csproj" />

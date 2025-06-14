@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StrictId.EFCore;
-using Visage.FrontEnd.Shared.Models;
+using Visage.Shared.Models;
 
 
 

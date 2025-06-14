@@ -1,15 +1,13 @@
 ﻿@import "tailwindcss";
-@plugin "@daisyui" {
+@source "./**/*.{razor,html}";
+
+@plugin "daisyui" {
     themes: light --default, dark --prefersdark;
-    root: ":root";
-    include:;
-    exclude:;
-    prefix:;
     logs: true;
 }
 @plugin "daisyui/theme" {
     name: "light";
-    default: true;
+    default: true;  
     --color-primary: #facc15;
     --color-secondary: #003366;
     --color-success: #22c55e;

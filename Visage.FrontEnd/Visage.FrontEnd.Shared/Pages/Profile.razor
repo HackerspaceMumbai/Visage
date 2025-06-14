@@ -1,0 +1,147 @@
+@page "/profile/{UserId}"
+@attribute [Authorize]
+@inject IUserProfileService UserProfileService
+
+@using Visage.FrontEnd.Shared.Services
+@using Visage.Shared.Models
+
+<PageTitle>Profile</PageTitle>
+
+@if (IsLoading)
+{
+    <div class="flex justify-center items-center h-64">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+}
+else if (HasError)
+{
+    <div class="alert alert-error shadow-lg mt-4">
+        <span>Error loading profile. Please try again later.</span>
+    </div>
+}
+else if (UserProfile is not null)
+{
+    <div class="max-w-xl mx-auto mt-8 p-6 bg-base-200 rounded-lg shadow">
+        <h2 class="text-2xl font-bold mb-4">Your Profile</h2>
+        <form @onsubmit="HandleValidSubmit" @onsubmit:preventDefault="true">
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Name</span>
+                </label>
+                <input class="input input-bordered" @bind="UserProfile.Name" required />
+            </div>
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Email</span>
+                </label>
+                <input class="input input-bordered" value="@UserProfile.Email" readonly />
+            </div>
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">LinkedIn</span>
+                </label>
+                <input class="input input-bordered" @bind="UserProfile.LinkedIn" />
+            </div>
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">GitHub</span>
+                </label>
+                <input class="input input-bordered" @bind="UserProfile.GitHub" />
+            </div>
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Registration Date</span>
+                </label>
+                <input class="input input-bordered" value="@UserProfile.RegistrationDate.ToString("yyyy-MM-dd HH:mm")" readonly />
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button class="btn btn-primary" type="submit" disabled="@IsSaving">
+                    @if (IsSaving)
+                    {
+                        <span class="loading loading-spinner loading-sm"></span>
+                    }
+                    Save
+                </button>
+                <button class="btn btn-secondary" type="button" @onclick="ResetForm" disabled="@IsSaving">Cancel</button>
+            </div>
+            @if (SaveSuccess)
+            {
+                <div class="alert alert-success shadow-lg mt-4">
+                    <span>Profile updated successfully!</span>
+                </div>
+            }
+            @if (SaveError)
+            {
+                <div class="alert alert-error shadow-lg mt-4">
+                    <span>Failed to update profile. Please try again.</span>
+                </div>
+            }
+        </form>
+    </div>
+}
+
+@code {
+    private UserProfileDto? UserProfile;
+    private UserProfileDto? OriginalProfile;
+    private bool IsLoading = true;
+    private bool HasError = false;
+    private bool IsSaving = false;
+    private bool SaveSuccess = false;
+    private bool SaveError = false;
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserProfile = await UserProfileService.GetUserProfileAsync(UserId);
+            OriginalProfile = UserProfile?.Clone();
+            HasError = false;
+        }
+        catch
+        {
+            HasError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        IsSaving = true;
+        SaveSuccess = false;
+        SaveError = false;
+        try
+        {
+            if (UserProfile is not null)
+            {
+                await UserProfileService.UpdateCurrentUserProfileAsync(UserProfile);
+                SaveSuccess = true;
+                OriginalProfile = UserProfile.Clone();
+            }
+        }
+        catch
+        {
+            SaveError = true;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private void ResetForm()
+    {
+        if (OriginalProfile is not null)
+        {
+            UserProfile = OriginalProfile.Clone();
+        }
+        SaveSuccess = false;
+        SaveError = false;
+    }
+}
+
