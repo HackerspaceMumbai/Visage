@@ -51,8 +51,7 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuthenticationDelegatingHandler>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-// Add Microsoft Clarity service for user behavior insights
-builder.Services.AddSingleton<IClarityService, ClarityService>();
+
 
 
 // Register the IEventService and EventService in the dependency injection container
@@ -80,6 +79,12 @@ builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client
 // Register the IUserService and UserService in the dependency injection container
 //builder.Services.AddHttpClient<IUserService, UserService>(client =>
 //    client.BaseAddress = new Uri("https+http://auth0"));
+
+// Read Clarity Project ID from environment/configuration
+var clarityProjectId = builder.Configuration["Clarity:ProjectId"] ?? builder.Configuration["Clarity__ProjectId"];
+
+// Register as singleton for DI
+builder.Services.AddSingleton(new ClarityConfig { ProjectId = clarityProjectId });
 
 var app = builder.Build();
 
