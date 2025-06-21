@@ -44,17 +44,16 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
     .WithEnvironment("Auth0__Domain", iamDomain)
-var cloudinaryCloudName = builder.AddParameter("cloudinary-cloudname", secret: false);
-var cloudinaryApiKey    = builder.AddParameter("cloudinary-apikey",    secret: true);
-var cloudinaryApiSecret = builder.AddParameter("cloudinary-apisecret", secret: true);
+    .WithEnvironment("Auth0__Audience", iamAudience)
+    .WithReference(VisageSQL);
 
-// Note: Parameter validation should be handled by the AddParameter method or during app startup#endregion
+#endregion
 
 #region CloudinaryImageSigning
 
-var cloudinaryCloudName = builder.AddParameter("cloudinary-cloudname", secret: false) ?? throw new Exception("Cloudinary Cloud Name required");
-var cloudinaryApiKey = builder.AddParameter("cloudinary-apikey", secret: true) ?? throw new Exception("Cloudinary API Key required");
-var cloudinaryApiSecret = builder.AddParameter("cloudinary-apisecret", secret: true) ?? throw new Exception("Cloudinary API Secret required");
+var cloudinaryCloudName = builder.AddParameter("cloudinary-cloudname", secret: false);
+var cloudinaryApiKey = builder.AddParameter("cloudinary-apikey", secret: true);
+var cloudinaryApiSecret = builder.AddParameter("cloudinary-apisecret", secret: true);
 
 var cloudinaryImageSigning = builder.AddNpmApp("cloudinary-image-signing", "../services/CloudinaryImageSigning", "watch")
     .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
