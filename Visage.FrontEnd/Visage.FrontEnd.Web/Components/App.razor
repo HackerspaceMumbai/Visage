@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@inject ClarityConfig ClarityConfig
+
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,14 +10,14 @@
     <link rel="stylesheet" href="_content/Visage.FrontEnd.Shared/output.css" />
     <link rel="icon" type="image/png" href="_content/Visage.FrontEnd.Shared/favicon.png" />
     <HeadOutlet @rendermode="InteractiveServer"/>
-    @if (!string.IsNullOrEmpty(ClarityTrackingId))
+    @if (!string.IsNullOrEmpty(ClarityConfig.ProjectId))
     {
         <script type="text/javascript">
             (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "@ClarityTrackingId");
+            })(window, document, "clarity", "script", "@ClarityConfig.ProjectId");
         </script>
     }
 </head>
@@ -26,9 +28,3 @@
 </body>
 
 </html>
-
-@code {
-    [Inject] private IClarityService ClarityService { get; set; } = default!;
-    
-    private string ClarityTrackingId => ClarityService.GetTrackingId();
-}
