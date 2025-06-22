@@ -24,19 +24,20 @@ var VisageSQL = builder.AddConnectionString("visagesql");
 
 var clarityProjectId = builder.AddParameter("clarity-projectid", secret: false);
 
-// Validate the parameter value at runtime
-var clarityProjectIdValue = builder.Configuration["clarity-projectid"];
-if (string.IsNullOrWhiteSpace(clarityProjectIdValue))
-{
-    throw new Exception("Clarity Project ID required");
-}
-
 #endregion
 
 #region EventAPI
 
 var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api")
-                 .WithExternalHttpEndpoints();
+                                            .WithUrlForEndpoint("http",
+                               url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
+                                            .WithUrlForEndpoint("https", url =>
+                                            {
+                                                url.DisplayText = "Event API Scalar OpenAPI";
+                                                url.Url += "/scalar/v1";
+                                            }); 
+               
+                 
 
 #endregion
 
