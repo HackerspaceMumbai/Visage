@@ -9,10 +9,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 #region Auth0Configuration
 
-var iamDomain = builder.AddParameter("auth0-domain", secret: false);
-var iamClientId = builder.AddParameter("auth0-clientid", secret: false);
+var iamDomain = builder.AddParameter("auth0-domain");
+var iamClientId = builder.AddParameter("auth0-clientid");
 var iamClientSecret = builder.AddParameter("auth0-clientsecret", secret: true);
-var iamAudience = builder.AddParameter("auth0-audience", secret: false);
+var iamAudience = builder.AddParameter("auth0-audience"); //For API access
 
 #endregion
 
