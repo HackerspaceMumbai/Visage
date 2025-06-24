@@ -75,11 +75,13 @@ Maps Scalar API reference endpoints with default configuration.
 ### AppHost Extensions
 
 #### `WithScalarApiDocumentation(title, scalarPath)`
-Configures a project resource to expose Scalar API documentation.
+Configures a project resource to expose Scalar API documentation. This method automatically configures HTTP and HTTPS endpoints for the service and sets up the Scalar UI endpoint.
 
 **Parameters:**
 - `title` (optional): The title for the API documentation
 - `scalarPath` (optional): The path where Scalar UI will be served (defaults to "/scalar/v1")
+
+**Note:** This method automatically adds HTTP and HTTPS endpoints to the project resource if they don't exist.
 
 ## Examples
 
@@ -178,3 +180,4 @@ app.MapScalarDefaults("My API"); // Handles development check automatically
 - Ensure the service uses `AddServiceDefaults()` and `MapScalarDefaults()`
 - Verify that the project reference in AppHost is correct
 - Check that the `WithScalarApiDocumentation()` extension is applied to the correct resource
+- Ensure the AppHost project includes the `Scalar.AspNetCore` package reference
