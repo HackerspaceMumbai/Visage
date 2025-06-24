@@ -24,6 +24,8 @@ public static class ScalarResourceExtensions
         var apiTitle = title ?? $"{projectResource.Resource.Name} API";
         
         return projectResource
+            .WithHttpEndpoint(port: null, name: "http")
+            .WithHttpsEndpoint(port: null, name: "https")
             .WithUrlForEndpoint("http", url => 
                 url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
             .WithUrlForEndpoint("https", url =>
@@ -44,6 +46,8 @@ public static class ScalarResourceExtensions
         Action<ResourceUrlAnnotation> configure)
     {
         return projectResource
+            .WithHttpEndpoint(port: null, name: "http")
+            .WithHttpsEndpoint(port: null, name: "https")
             .WithUrlForEndpoint("http", url => 
                 url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
             .WithUrlForEndpoint("https", configure);
