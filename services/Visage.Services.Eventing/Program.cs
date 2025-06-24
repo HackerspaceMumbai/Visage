@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Visage.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -16,25 +15,10 @@ builder.AddServiceDefaults();
 builder.Services.AddDbContext<EventDB>(opt => opt.UseInMemoryDatabase("EventList"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-            {
-                options.WithTitle("Visage Event API")
-                       .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-            }
-    );
-}
+app.MapScalarDefaults("Visage Event API");
 
 app.UseHttpsRedirection();
 

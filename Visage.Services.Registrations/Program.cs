@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
-using Scalar.AspNetCore;
 using Visage.Services.Registration;
 using Visage.Shared.Models;
 
@@ -54,21 +53,10 @@ builder.Services.AddHttpLogging(logging =>
     logging.RequestHeaders.Add("Authorization");
 });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options.WithTitle("Visage Registration API")
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    });
-}
+app.MapScalarDefaults("Visage Registration API");
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
