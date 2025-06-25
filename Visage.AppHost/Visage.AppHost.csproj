@@ -12,7 +12,6 @@
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.3.1" />
     <PackageReference Include="Aspire.Hosting.SqlServer" Version="9.3.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.4.13" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\services\Visage.Services.Eventing\Visage.Services.Eventing.csproj" />
