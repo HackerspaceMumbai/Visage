@@ -1,149 +1,29 @@
 # Scalar Aspire Integration
 
-This document describes how to use Scalar API documentation with .NET Aspire in the Visage project.
+This document describes how Scalar API documentation is integrated with .NET Aspire in the Visage project, following the official Scalar guide.
 
 ## Overview
 
-Scalar has been integrated as an Aspire primitive, providing a simplified way to add interactive API documentation to your Aspire applications. The integration includes both service-level configuration and AppHost orchestration support.
+Scalar provides interactive API documentation for .NET APIs. This integration follows the official approach recommended in the [Scalar .NET Aspire Integration Guide](https://guides.scalar.com/scalar/scalar-api-references/integrations/net-aspire).
 
-## Features
+## Implementation
 
-- **Centralized Configuration**: Scalar setup is included in the default service configuration
-- **Aspire Integration**: Easy configuration through the AppHost with the `WithScalarApiDocumentation()` extension method
-- **Development Mode**: Automatically enabled only in development environment
-- **Customizable**: Support for custom titles, paths, and configurations
+### Services Configuration
 
-## Usage
-
-### In Services (Automatic)
-
-Services that use `builder.AddServiceDefaults()` automatically get Scalar support. Simply call:
+Each API service configures Scalar directly in their `Program.cs`:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// Add service defaults (includes Scalar configuration)
+// Add service defaults & Aspire components
 builder.AddServiceDefaults();
 
-var app = builder.Build();
-
-// Map Scalar with default configuration
-app.MapScalarDefaults("My API");
-
-// Or with custom configuration
-app.MapScalarDefaults(options =>
-{
-    options.WithTitle("My Custom API")
-           .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-});
-
-app.Run();
-```
-
-### In AppHost
-
-Configure Scalar endpoints for your services in the AppHost:
-
-```csharp
-var builder = DistributedApplication.CreateBuilder(args);
-
-// Add project with Scalar documentation
-var eventAPI = builder.AddProject<Projects.MyEventAPI>("event-api")
-    .WithScalarApiDocumentation("Event API");
-
-// With custom path
-var registrationAPI = builder.AddProject<Projects.MyRegistrationAPI>("registration-api")
-    .WithScalarApiDocumentation("Registration API", "/docs/v1");
-
-builder.Build().Run();
-```
-
-## API Reference
-
-### ServiceDefaults Extensions
-
-#### `AddScalarDefaults()`
-Adds Scalar support to service defaults, including OpenAPI services.
-
-#### `MapScalarDefaults(title, path)`
-Maps Scalar API reference endpoints with default configuration.
-
-**Parameters:**
-- `title` (optional): The title for the API documentation
-- `path` (optional): The path where Scalar UI will be served (defaults to "/scalar/v1")
-
-### AppHost Extensions
-
-#### `WithScalarApiDocumentation(title, scalarPath)`
-Configures a project resource to expose Scalar API documentation. This method automatically configures HTTP and HTTPS endpoints for the service and sets up the Scalar UI endpoint.
-
-**Parameters:**
-- `title` (optional): The title for the API documentation
-- `scalarPath` (optional): The path where Scalar UI will be served (defaults to "/scalar/v1")
-
-**Note:** This method automatically adds HTTP and HTTPS endpoints to the project resource if they don't exist.
-
-## Examples
-
-### Basic Service Setup
-
-```csharp
-using Microsoft.EntityFrameworkCore;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Add service defaults & Aspire components (includes Scalar)
-builder.AddServiceDefaults();
-
-builder.Services.AddDbContext<MyDB>(opt => opt.UseInMemoryDatabase("MyList"));
-
-var app = builder.Build();
-
-// Configure Scalar with service name
-app.MapScalarDefaults("My Service API");
-
-app.UseHttpsRedirection();
-
-// Your API endpoints
-var api = app.MapGroup("/api");
-api.MapGet("/items", GetItems).WithOpenApi();
-
-app.Run();
-```
-
-### AppHost Configuration
-
-```csharp
-using Aspire.Hosting;
-
-var builder = DistributedApplication.CreateBuilder(args);
-
-// Services with Scalar documentation
-var eventAPI = builder.AddProject<Projects.EventService>("event-api")
-    .WithScalarApiDocumentation("Event Management API");
-
-var userAPI = builder.AddProject<Projects.UserService>("user-api")
-    .WithScalarApiDocumentation("User Management API", "/api-docs");
-
-// Frontend references the APIs
-var webapp = builder.AddProject<Projects.WebApp>("webapp")
-    .WithReference(eventAPI)
-    .WithReference(userAPI);
-
-builder.Build().Run();
-```
-
-## Migration Guide
-
-If you're migrating from manual Scalar configuration:
-
-### Before
-```csharp
-// Manual configuration
+// Add OpenAPI services
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Configure Scalar in development
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -155,29 +35,41 @@ if (app.Environment.IsDevelopment())
 }
 ```
 
-### After
-```csharp
-// Using Scalar Aspire primitive
-builder.AddServiceDefaults(); // Includes OpenAPI and Scalar setup
-
-var app = builder.Build();
-
-app.MapScalarDefaults("My API"); // Handles development check automatically
+**Required Package Reference:**
+```xml
+<PackageReference Include="Scalar.AspNetCore" Version="2.4.13" />
 ```
 
-## Troubleshooting
+### AppHost Configuration
 
-### Scalar UI not appearing
-- Ensure you're running in Development environment
-- Check that `AddServiceDefaults()` is called before building the app
-- Verify that `MapScalarDefaults()` is called after building the app
+The AppHost configures dashboard URLs to link directly to Scalar endpoints:
 
-### OpenAPI not working
-- Make sure your endpoints use `.WithOpenApi()` extension
-- Check that the Microsoft.AspNetCore.OpenApi package is referenced
+```csharp
+var eventAPI = builder.AddProject<Projects.EventService>("event-api")
+    .WithUrlForEndpoint("http", url => 
+        url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide HTTP link
+    .WithUrlForEndpoint("https", url =>
+    {
+        url.DisplayText = "Event API Scalar OpenAPI";
+        url.Url += "/scalar/v1";  // Default Scalar endpoint
+    });
+```
 
-### AppHost configuration not working
-- Ensure the service uses `AddServiceDefaults()` and `MapScalarDefaults()`
-- Verify that the project reference in AppHost is correct
-- Check that the `WithScalarApiDocumentation()` extension is applied to the correct resource
-- Ensure the AppHost project includes the `Scalar.AspNetCore` package reference
+## Current Services
+
+### Event API
+- **Service**: Uses `MapScalarApiReference` with title "Visage Event API"
+- **AppHost**: Configured with "Event API Scalar OpenAPI" dashboard link
+- **URL**: `https://localhost:{port}/scalar/v1`
+
+### Registration API  
+- **Service**: Uses `MapScalarApiReference` with title "Visage Registration API"
+- **AppHost**: Configured with "Registration API Scalar OpenAPI" dashboard link
+- **URL**: `https://localhost:{port}/scalar/v1`
+
+## Benefits
+
+- **Development-only**: Scalar UI only appears in development environment
+- **Direct Integration**: Services configure Scalar directly following official patterns
+- **Dashboard Links**: Aspire dashboard provides direct access to API documentation
+- **Standard Endpoints**: Uses default `/scalar/v1` path for consistency

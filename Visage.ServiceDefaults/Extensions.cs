@@ -20,8 +20,6 @@ namespace Microsoft.Extensions.Hosting
             builder.ConfigureOpenTelemetry();
 
             builder.AddDefaultHealthChecks();
-            
-            builder.AddScalarDefaults();
 
             builder.Services.AddServiceDiscovery();
 
