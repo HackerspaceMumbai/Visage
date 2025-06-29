@@ -1,4 +1,4 @@
-#Default all files it determins as text, normalize them.
+#Default all files it determines as text, normalize them.
 * text=auto eol=lf
 
 # These files are text and should be normalized (convert crlf => lf)
@@ -9,18 +9,19 @@
 
 # cSharp / Visual Studio
 
-*.bat     text eol=crlf
-*.cmd     text eol=crlf
-*.cs      text eol=crlf diff=csharp 
-*.csproj  text eol=crlf
-*.h       text eol=crlf
-*.md      text eol=crlf
-*.msbuild text eol=crlf
-*.ps1     text eol=crlf
+*.bat     text eol=lf
+*.cmd     text eol=lf
+*.cs      text eol=lf diff=csharp
+*.csproj  text eol=lf
+*.h       text eol=lf
+*.md      text eol=lf
+*.msbuild text eol=lf
+*.ps1     text eol=lf
 *.sdf     binary
-*.sln     text eol=crlf
-*.tt      text eol=crlf
-*.xaml    text eol=crlf
+*.sln     text eol=lf
+*.tt      text eol=lf
+*.xaml    text eol=lf
+*.user    text eol=lf
 
 # Web
 *.css     text eol=lf
@@ -28,10 +29,12 @@
 *.sass    text eol=lf
 *.json    text eol=lf
 *.js      text eol=lf
+*.ts      text eol=lf
 *.htm     text eol=lf
 *.chm     binary
 *.html    text eol=lf
 *.cshtml  text eol=lf
+*.razor   text eol=lf
 *.xml     text eol=lf
 *.svg     text eol=lf
 
@@ -42,9 +45,7 @@
 *.gif     binary
 *.ico     binary
 *.mov     binary
-*.ico     binary
 *.pdf     binary
-
 
 # Compression
 *.gz      binary
@@ -59,19 +60,18 @@
 
 # Config
 *.conf text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
 
 # Documents
-*.doc  diff=astextplain 
+*.doc  diff=astextplain
 *.DOC  diff=astextplain
 *.docx diff=astextplain
 *.DOCX diff=astextplain
 *.dot  diff=astextplain
 *.DOT  diff=astextplain
-*.pdf  diff=astextplain
-*.PDF  diff=astextplain
 *.rtf  diff=astextplain
 *.RTF  diff=astextplain
-
 
 *.txt text eol=lf
 *.md text eol=lf
