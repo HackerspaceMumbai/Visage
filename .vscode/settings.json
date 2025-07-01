@@ -2,5 +2,10 @@
     "eslint.enable": true,
     "cSpell.words": [
         "xamarin"
-    ]
+    ],
+    "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./.vscode/daisyui.md"
+    }
+  ]
 }

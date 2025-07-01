@@ -1,9 +1,7 @@
-using Aspire.Hosting;
+
 using Microsoft.Extensions.Hosting;
-using Projects;
-using System.Globalization;
-using System.Reflection;
 using Visage.AppHost;
+using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -41,12 +39,39 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 
 #endregion
 
+
 #region RegistrationAPI
 
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
     .WithEnvironment("Auth0__Domain", iamDomain)
     .WithEnvironment("Auth0__Audience", iamAudience)
     .WithReference(VisageSQL);
+
+#endregion
+
+
+#region ScalarApiReference
+
+// Add Scalar API Reference for all services
+var scalar = builder.AddScalarApiReference(options =>
+{
+    options.WithTheme(ScalarTheme.BluePlanet);
+    //options.WithSidebar(false);
+    // You can add more options here (title, sidebar, etc.)
+})
+.WithLifetime(ContainerLifetime.Persistent);
+;
+
+// Register your APIs with Scalar
+scalar
+    .WithApiReference(registrationAPI, options =>
+    {
+        options.WithOpenApiRoutePattern("scalar/v1");
+        });
+    // .WithApiReference(registrationAPI, options =>
+    // {
+    //     options.WithOpenApiRoutePattern("/swagger/v1/swagger.json");
+    // });
 
 #endregion
 

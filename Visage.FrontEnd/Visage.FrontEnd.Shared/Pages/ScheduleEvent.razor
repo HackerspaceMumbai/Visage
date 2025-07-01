@@ -20,80 +20,65 @@
     </div>
     
 
-    <fieldset disabled="@disabled">
+    <fieldset class="fieldset mt-4 bg-base-200 border-base-300 rounded-box w-screen p-4" disabled="@disabled">
+        <legend class="fieldset-legend">Event Info</legend>
 
-        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
-            <div class="sm:col-span-4">
 
-                <label for="title" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Title of the Event</span>
-                    </div>
-                    <InputText id="title" class="block input input-bordered focus:input-primary" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
-                </label>
+        <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+
+            <div class="sm:row-start-1 sm:col-span-4">
+                <label for="title" class="label">Event Title</label>
+                <InputText id="title" class="input input-bordered focus:input-primary w-full" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
 
             </div>
 
-            <div class="sm:col-span-2">
-                <label for="hashtag" class="form-control ">
-                    <div class="label">
-                        <span class="label-text font-bold">Hashtag of the Event</span>
-                    </div>
-                    <div class="join w-full max-w-xs">
-                        <div class="flex join-item input input-bordered items-center bg-base-200">#</div>
-                        <InputText id="hashtag" class="block input input-bordered focus:input-primary" @bind-Value="newEvent.Hashtag" placeholder="Rule the social media" />
-                    </div>
-                </label>
+            <div class="sm:col-span-1">
+                <label for="hashtag" class="label">Event Hashtag</label>
+                <div class="flex w-full">
+                    <div class="text-lg px-2 flex flex-none items-center justify-center bg-base-300">#</div>
+                        <InputText id="hashtag" class="input input-bordered focus:input-primary" @bind-Value="newEvent.Hashtag" placeholder="Rule the social media" />
+                </div>
             </div>
-
-            <div class="sm:col-start-1 sm:col-span-2">
-                <label for="startdate" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Start Date</span>
-                    </div>
-                    <InputDate id="start_date" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.StartDate" class="block input input-bordered focus:input-primary" />
+ 
+            <div class="sm:row-start-2 sm:col-start-1 sm:col-span-2">
+                <label for="startdate" class="label">
+                    Start Date
                 </label>
+                <InputDate id="start_date" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.StartDate" class="block input focus:input-primary" />
             </div>
             <div class="sm:col-start-3 sm:col-span-2">
-                <label for="starttime" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Start Date</span>
-                    </div>
-                    <InputDate id="starttime" Type="InputDateType.Time"
-                    min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="input input-bordered focus:input-primary" />
+                <label for="starttime" class="label">
+                    Start Date
                 </label>
+                <InputDate id="starttime" Type="InputDateType.Time"
+                           min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="block input input-bordered focus:input-primary" />
             </div>
 
             <div class="sm:row-start-3 sm:col-start-1 sm:col-span-2">
-                <label for="enddate" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">End Date</span>
-                    </div>
-                    <InputDate id="enddate" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.EndDate" class="block input input-bordered focus:input-primary" />
+                <label for="enddate" class="label">
+                    End Date
                 </label>
+                    <InputDate id="enddate" min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent.EndDate" class="block input input-bordered focus:input-primary" />
+ 
             </div>
             <div class="sm:row-start-3 sm:col-span-2">
                 <label for="endtime" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">End Time</span>
-                    </div>
-                    <InputDate id="endtime" Type="InputDateType.Time"
-                    min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="input input-bordered focus:input-primary" />
+                    End Time
                 </label>
+                <InputDate id="endtime" Type="InputDateType.Time"
+                    min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="block input input-bordered focus:input-primary" />
             </div>
 
-            <div class="sm:col-span-full">
-                <label for="description" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Description</span>
-                        <span class="badge badge-info">Optional</span>
-
-                    </div>
-                    <InputTextArea id="description" name="description" placeholder="Tell us all about it!" @bind-Value="newEvent.Description" class="block input input-bordered focus:input-primary"/>
-                </label>
+            <div class="sm:row-start-4 sm:col-span-4">
+                <label for="description" class="label">Description</label>
+                <div class="indicator block w-full">
+                    <span class="indicator-item badge badge-info badge-xs">Optional</span>
+                    <InputTextArea id="description" name="description" placeholder="Tell us all about it!" @bind-Value="newEvent.Description"
+                                   class="block w-full input focus:input-primary" />
+                </div>
             </div>
 
-            <div class="sm:col-span-full">
+            <div class="sm:row-start-5 sm:col-span-4">
                 <label for="location" class="form-control">
                     <div class="label">
                         <span class="label-text font-bold">Venue</span>
@@ -106,15 +91,13 @@
                 </label>
             </div>
 
-            <div class="sm:col-span-full">
-                <label for="coverPicture" class="form-control">
-                    <div class="label">
-                        <span class="label-text font-bold">Cover Picture</span>
-                        <span class="badge badge-info">Optional</span>
-                    </div>
-                    <InputFile id="coverPicture" OnChange="UploadSelectedFile" class="block input input-bordered alert-success focus:input-primary"/>
+            <div class="sm:row-start-6 sm:col-span-4">
+                <label for="coverPicture" class="label">Cover Picture</label>
+                <div class="indicator block w-full">
+                    <span class="indicator-item badge badge-info badge-xs">Optional</span>
+                    <InputFile id="coverPicture" OnChange="UploadSelectedFile" class="block w-full input input-bordered focus:input-primary" />
+                </div>    
                     <small class="text-gray-500">Max size: 5MB. Allowed formats: JPG, PNG.</small>
-                </label>
 
                 @if (isUploading)
                 {
@@ -130,8 +113,8 @@
                 }
             </div>
 
-            <button type="submit" class="mt-4 sm:col-span-2 btn btn-primary ">Schedule Event</button>
-            <button type="reset" class="mt-4 sm:col-span-2 btn btn-secondary hover:input-primary" @onclick="@ClearForm" >Clear</button>
+            <button type="submit" class="mt-4 sm:row-start-7 sm:col-span-2 btn btn-primary text-primary-content">Schedule Event</button>
+            <button type="reset" class="mt-4 sm:row-start-7 sm:col-span-2  btn btn-secondary hover:input-primary" @onclick="@ClearForm">Clear</button>
 
 
         </div>
