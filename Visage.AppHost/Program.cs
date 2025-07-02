@@ -45,7 +45,14 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
     .WithEnvironment("Auth0__Domain", iamDomain)
     .WithEnvironment("Auth0__Audience", iamAudience)
-    .WithReference(VisageSQL);
+    .WithReference(VisageSQL)
+    .WithUrlForEndpoint("http",
+                       url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
+    .WithUrlForEndpoint("https", url =>
+    {
+        url.DisplayText = "Registration API Scalar OpenAPI";
+        url.Url += "/scalar/v1";
+    });
 
 #endregion
 
