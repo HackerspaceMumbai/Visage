@@ -22,11 +22,10 @@
             <div class="collapse-content peer-checked:border-primary peer-checked:border-8  ">
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 ">
                     <div class="sm:col-span-4">
-                        <label for="govtId" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Govt ID</span>
-                            </div>
-                            <InputSelect id="govtId" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtId">
+                        <label for="govtId" class="label w-full">
+                            Govt ID
+                            </label>
+                            <InputSelect id="govtId" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.GovtId">
                                 <option value="">Select Govt ID</option>
                                 <option value="Aadhaar">Aadhaar</option>
                                 <option value="PAN">PAN</option>
@@ -34,161 +33,114 @@
                                 <option value="Voter ID">Voter ID</option>
                                 <option value="Driving License">Driving License</option>
                             </InputSelect>
-                        </label>
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="govtIdLast4Digits" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Last 4 Digits of Govt ID</span>
-                            </div>
-                            <InputText id="govtIdLast4Digits" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtIdLast4Digits" placeholder="Enter last 4 digits" />
+                        <label for="govtIdLast4Digits" class="label">
+                            Last 4 Digits of Govt ID
                         </label>
+                        <InputText id="govtIdLast4Digits" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GovtIdLast4Digits" placeholder="Enter last 4 digits" />
                     </div>
                     <div class="sm:col-span-4">
-                        <label for="firstName" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">First Name</span>
-                            </div>
-                            <InputText id="firstName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.FirstName" placeholder="Enter your first name" />
-                        </label>
+                        <label for="firstName" class="label">First Name</label>
+                        <InputText id="firstName" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.FirstName" placeholder="Enter your first name" />
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="middleName" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Middle Name</span>
-                                <span class="badge badge-info">Optional</span>
+                        <label for="middleName" class="label">Middle Name</label>
+                        <div class="indicator block">
+                            <span class="indicator-item badge badge-info badge-xs">Optional</span>
+                            <InputText id="middleName" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.MiddleName" placeholder="Enter your middle name" />
+                        </div>
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label for="lastName" class="label">Last Name </label>
+                        <InputText id="lastName" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.LastName" placeholder="Enter your last name" />
+                    </div>
+                    <div class="sm:col-span-full">
+                        <label for="addressLine1" class="label">
+                            Address Line 1</label>
+                        <InputText id="addressLine1" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine1" placeholder="Enter address line 1" />
+                    </div>
+                    <div class="sm:col-span-full">
+                        <label for="addressLine2" class="label">
+                            Address Line 2 </label>
 
-                            </div>
-                            <InputText id="middleName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MiddleName" placeholder="Enter your middle name" />
-                        </label>
+                        <InputText id="addressLine2" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine2" placeholder="Enter address line 2" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="city" class="label">City</label>
+                        <InputText id="city" class="block w-full input input-bordered focus:input-primary" @bind-Value="registrant.City" placeholder="Enter city" />
+                     </div>
+                    <div class="sm:col-span-2">
+                        <label for="state" class="label">State</label>
+                        <InputText id="state" class="block input input-bordered focus:input-primary" @bind-Value="registrant.State" placeholder="Enter state" />
+                        
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="postalCode" class="label">Postal Code</label>
+                        <InputText id="postalCode" class="block input input-bordered focus:input-primary" @bind-Value="registrant.PostalCode" placeholder="Enter postal code" />
                     </div>
                     <div class="sm:col-span-4">
-                        <label for="lastName" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Last Name</span>
-                            </div>
-                            <InputText id="lastName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LastName" placeholder="Enter your last name" />
+                        <label for="email" class="label">
+                            Email
                         </label>
-                    </div>
-                    <div class="sm:col-span-full">
-                        <label for="addressLine1" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Address Line 1</span>
-                            </div>
-                            <InputText id="addressLine1" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine1" placeholder="Enter address line 1" />
-                        </label>
-                    </div>
-                    <div class="sm:col-span-full">
-                        <label for="addressLine2" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Address Line 2</span>
-                            </div>
-                            <InputText id="addressLine2" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AddressLine2" placeholder="Enter address line 2" />
-                        </label>
+                        <InputText id="email" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Email" placeholder="Enter your email" />
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="city" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">City</span>
-                            </div>
-                            <InputText id="city" class="block input input-bordered focus:input-primary" @bind-Value="registrant.City" placeholder="Enter city" />
-                        </label>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label for="state" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">State</span>
-                            </div>
-                            <InputText id="state" class="block input input-bordered focus:input-primary" @bind-Value="registrant.State" placeholder="Enter state" />
-                        </label>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label for="postalCode" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Postal Code</span>
-                            </div>
-                            <InputText id="postalCode" class="block input input-bordered focus:input-primary" @bind-Value="registrant.PostalCode" placeholder="Enter postal code" />
-                        </label>
-                    </div>
-                    <div class="sm:col-span-4">
-                        <label for="email" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Email</span>
-                            </div>
-                            <InputText id="email" class="block input input-bordered focus:input-primary" @bind-Value="registrant.Email" placeholder="Enter your email" />
-                        </label>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label for="mobileNumber" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Mobile Number</span>
-                            </div>
+                        <label for="mobileNumber" class="label">
+                            Mobile Number</label>
                             <InputText id="mobileNumber" class="block input input-bordered focus:input-primary" @bind-Value="registrant.MobileNumber" placeholder="Enter your mobile number" />
-                        </label>
+                  
                     </div>
 
                     <div class="sm:col-span-full">
-                        <label for="occupationStatus" class="form-control">
-                            <div class="label">
-                                <span class="label-text font-bold">Occupation Status</span>
-                            </div>
+                        <label for="occupationStatus" class="label">
+                            Occupation Status
+                            </label>
                             <InputSelect id="occupationStatus" class="block input input-bordered focus:input-primary" @bind-Value="registrant.OccupationStatus" @onchange="HandleOccupationStatusChange">
                                 <option value="">Select Occupation Status</option>
                                 <option value="Working Professional">Working Professional</option>
                                 <option value="Student">Student</option>
                             </InputSelect>
-                        </label>
+                        
                     </div>
                     @if (registrant.OccupationStatus == "Working Professional")
                     {
                         <div class="sm:col-span-4">
-                            <label for="companyName" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">Company Name</span>
-                                </div>
-                                <InputText id="companyName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.CompanyName" placeholder="Enter your company name" />
-                            </label>
+                            <label for="companyName" class="label">
+                                Company Name</label>
+                             <InputText id="companyName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.CompanyName" placeholder="Enter your company name" />
+                        
                         </div>
                         <div class="sm:col-span-4">
-                            <label for="linkedInProfile" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">LinkedIn Profile</span>
-                                </div>
+                            <label for="linkedInProfile" class="label">
+                                LinkedIn Profile</label>
+                                
                                 <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
-                            </label>
+                            
                         </div>
                         <div class="sm:col-span-4">
-                            <label for="gitHubProfile" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">GitHub Profile (Optional)</span>
-                                </div>
-                                <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
-                            </label>
+                            <label for="gitHubProfile" class="label">
+                                GitHub Profile (Optional) </label>
+                                
+                             <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
                         </div>
                     }
                     @if (registrant.OccupationStatus == "Student")
                     {
                         <div class="sm:col-span-4">
-                            <label for="educationalInstituteName" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">Educational Institute Name</span>
-                                </div>
-                                <InputText id="educationalInstituteName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.EducationalInstituteName" placeholder="Enter your educational institute name" />
-                            </label>
+                            <label for="educationalInstituteName" class="label">Educational Institute Name</label>
+                            <InputText id="educationalInstituteName" class="block input input-bordered focus:input-primary" @bind-Value="registrant.EducationalInstituteName" placeholder="Enter your educational institute name" />
                         </div>
                         <div class="sm:col-span-4">
-                            <label for="linkedInProfile" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">LinkedIn Profile (Optional)</span>
-                                </div>
+                            <label for="linkedInProfile" class="label">
+                                LinkedIn Profile (Optional)</label>
+                               
                                 <InputText id="linkedInProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.LinkedInProfile" placeholder="Enter your LinkedIn profile URL" />
-                            </label>
+                            
                         </div>
                         <div class="sm:col-span-4">
-                            <label for="gitHubProfile" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">GitHub Profile</span>
-                                </div>
+                            <label for="gitHubProfile" class="label">
+                                GitHub Profile
                                 <InputText id="gitHubProfile" class="block input input-bordered focus:input-primary" @bind-Value="registrant.GitHubProfile" placeholder="Enter your GitHub profile URL" />
                             </label>
                         </div>
