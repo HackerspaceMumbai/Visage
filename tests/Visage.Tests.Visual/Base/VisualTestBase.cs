@@ -12,12 +12,20 @@ public abstract class VisualTestBase : PageTest
 {
     protected VisualTestingEngine VisualEngine { get; private set; } = null!;
     protected PlaywrightMcpHelper McpHelper { get; private set; } = null!;
+    protected VisualTestConfig Config { get; private set; } = null!;
 
     [Before(Test)]
     public async Task SetupVisualTesting()
     {
-        // Initialize visual testing engine
-        VisualEngine = new VisualTestingEngine();
+        // Load configuration
+        Config = VisualTestConfig.LoadFromFile();
+        
+        // Initialize visual testing engine with configuration
+        VisualEngine = new VisualTestingEngine(
+            Config.Directories.Baselines,
+            Config.Directories.Actual,
+            Config.Directories.Diffs,
+            Config.DifferenceThreshold);
         
         // Initialize MCP helper
         McpHelper = new PlaywrightMcpHelper(Page, VisualEngine);
@@ -32,7 +40,7 @@ public abstract class VisualTestBase : PageTest
     protected virtual async Task ConfigurePageForTesting()
     {
         // Set consistent viewport for testing
-        await Page.SetViewportSizeAsync(1280, 720);
+        await Page.SetViewportSizeAsync(Config.DefaultViewport.Width, Config.DefaultViewport.Height);
         
         // Disable animations for consistent screenshots
         await Page.AddInitScriptAsync(@"
@@ -63,30 +71,13 @@ public abstract class VisualTestBase : PageTest
     /// </summary>
     protected async Task NavigateToLocalAsync(string path = "/")
     {
-        var baseUrl = GetBaseUrl();
-        var fullUrl = new Uri(new Uri(baseUrl), path).ToString();
+        var fullUrl = new Uri(new Uri(Config.BaseUrl), path).ToString();
         
         await Page.GotoAsync(fullUrl);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Wait for any initial renders or hydration
         await Page.WaitForTimeoutAsync(1000);
-    }
-
-    /// <summary>
-    /// Gets the base URL for testing. Can be overridden for different environments.
-    /// </summary>
-    protected virtual string GetBaseUrl()
-    {
-        // Try to get from environment variable first (for CI/CD)
-        var envUrl = Environment.GetEnvironmentVariable("VISAGE_TEST_URL");
-        if (!string.IsNullOrEmpty(envUrl))
-        {
-            return envUrl;
-        }
-
-        // Default to local development
-        return "https://localhost:7150";
     }
 
     /// <summary>
@@ -129,17 +120,9 @@ public abstract class VisualTestBase : PageTest
     /// </summary>
     protected async Task<List<VisualTestResult>> TestResponsiveComponentAsync(string selector, string componentName)
     {
-        var breakpoints = new[]
-        {
-            new { Name = "mobile", Width = 375, Height = 667 },
-            new { Name = "tablet", Width = 768, Height = 1024 },
-            new { Name = "desktop", Width = 1280, Height = 720 },
-            new { Name = "large", Width = 1920, Height = 1080 }
-        };
-
         var results = new List<VisualTestResult>();
 
-        foreach (var breakpoint in breakpoints)
+        foreach (var breakpoint in Config.ResponsiveBreakpoints)
         {
             await Page.SetViewportSizeAsync(breakpoint.Width, breakpoint.Height);
             await Page.WaitForTimeoutAsync(500); // Allow for responsive transitions
