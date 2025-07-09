@@ -1,59 +1,58 @@
 
-# Copilot Instructions
 
-You are a senior .NET software engineer specialized in building highly-scalable and maintainable systems. You are working on a project called Visage.
+# Copilot Instructions for Visage
 
-Visage(this GitHub repo) is an app to manage events for OSS community events which are usually houseful 3 times the venue capacity, yet we are determined to promote inclusiveness and diversity.
+## Project Overview
+Visage is a modular, Aspire-orchestrated .NET 9 solution for managing large-scale OSS community events, with a focus on inclusiveness, privacy, and reliability. The architecture is designed for scalability, maintainability, and rapid developer onboarding.
 
-Deeply reflect upon all architectural considerations needed to build this application.
+## Architecture & Key Components
+- **Frontend:** Hybrid Blazor (Web, MAUI, and Shared UI) for a single codebase across web and mobile. See `Visage.FrontEnd/`.
+- **Backend:** Minimal APIs per service (see `services/`), each with its own `.http` file for ad-hoc testing. All APIs use EF Core and [StrictId](https://www.nuget.org/packages/StrictId) for data access and identity.
+- **AppHost:** `Visage.AppHost` orchestrates all services using .NET Aspire. All services must be registered as project resources and use health checks, OpenTelemetry, and Scalar OpenAPI for documentation.
+- **Cloudinary Node Service:** `services/CloudinaryImageSigning` provides secure image upload signatures, containerized and integrated via Aspire.
+- **Data Models:** Shared via `Visage.Shared/Models/` and `Visage.FrontEnd.Shared/Models/`. Use StrictId for all entity IDs.
+- **Authentication:** Auth0 is used for user authentication and authorization. All profile endpoints require `profile:read-write` scope.
 
-Visage has the following tech architecture:
 
-1. Hybrid Blazor Web App Front End. Aim is to have a single code base for Web and Mobile.
-2. Please ask a clarifying questions if a Blazor components need to be rendered in the MAUI part of the app.
-3. The solution is orchestrated through the .NET Aspire workload for local developer loop.
-4. Each service is a Minimal API that will have its own .http file to do some ad-hoc testing.
-5. All services need to be added as a Project Resource in Aspire AppHost. Ensure the services is waiting for another service to be up before starting.
-6. The Minimal API will connect to the backend via EF Core
+## Developer Workflows
+- **Build:** Use `dotnet build` or the provided Azure Pipelines config (`azure-pipelines.yml`).
+- **Test:**
+  - Integration: `dotnet test tests/Visage.Tests.Integration/Visage.Tests.Integration.csproj`
+  - E2E: Playwright (see `tests/`). Example: `pwsh ./scripts/run-playwright.ps1`
+  - Load: NBomber. Example: `dotnet nbomber run --config ./tests/NBomberConfig.json`
+  - Security: OWASP ZAP
+  - Mutation: Stryker
+  - Unit: Only for critical Blazor components (bunit)
+- **Run Locally:** Use Aspire for orchestration. All services must be referenced in `Visage.AppHost/Program.cs` and use `.WaitFor()` to ensure correct startup order.
+- **API Testing:** Use `.http` files in each service for ad-hoc API calls.
+- **Containerization:** All services are containerized for local and cloud deployment. Node services use `nodemon` for hot reload.
 
-Think deeply about scalability, usability and customer experience. Eventually, you need to distill these requirements and thoughts down into a comprehensive set of technical specifications. DO NOT write ANY code at all or define API specifications. You goal is to provide a set of high-level technical requirements/specifications needed to build this application. Produce 4-6 different architectures based on your reflections and scalability needs - including but not limited to choice of database, ORM, framework, caching, a need for queue system, rich media storage, authentication, authorization, logging/monitoring, security, serverless vs server-based approach, etc. Take into consideration the user's preferences provided earlier and try to leverage those in all proposed system designs. If these preferences will not scale or be feasible for the requirements, then make sure to tell me why and provide alternative solutions. After producing these specifications, produce a set of 4-6 follow up questions to ask the user that will help you distill down these proposed architecture into 2 recommended solutions.
+## Project Conventions & Patterns
+- **Minimal APIs:** All endpoints in a single file per service. Use Scalar OpenAPI for documentation.
+- **EF Core:** Use Repository and Unit of Work patterns. Configure StrictId in `OnModelCreating`.
+- **Service Defaults:** All services must call `AddServiceDefaults()` for health checks, OpenTelemetry, and service discovery.
+- **Commit Messages:** Imperative, sentence case, no trailing dot. All commits must be signed off.
+- **Variable Naming:** Use descriptive names with auxiliary verbs (e.g., `IsLoading`, `HasError`).
+- **Splitting:** Split files/functions when they grow too large. Do not refactor unrelated code.
+- **Testing:** All new code must be covered by integration or E2E tests. Document new tests in the `tests/` directory.
+- **Configuration:** Use environment variables for secrets and service URLs. See `appsettings.json` and Aspire parameters.
 
-## General Coding Guidelines
+## Integration Points
+- **Cloudinary:** Secure image upload via `CloudinaryImageSigning` Node service. Use `/sign-upload` endpoint for signatures.
+- **Auth0:** All user profile endpoints require valid JWT with `profile:read-write` scope.
+- **OpenTelemetry:** All services must emit traces and metrics. See `Visage.ServiceDefaults/Extensions.cs`.
+- **Scalar OpenAPI:** All APIs must expose OpenAPI docs at `/scalar/v1` in development.
 
-### Adhere to .NET 9 Best Practices
+## Examples
+- **Registering a new service in Aspire:** See `Visage.AppHost/Program.cs` for `.AddProject<>()` and `.WaitFor()` usage.
+- **Minimal API with EF Core:** See `services/Visage.Services.Eventing/Program.cs` and `EventDB.cs`.
+- **Profile API:** See `services/Visage.Services.Registrations/ProfileApi.cs` for user profile endpoints and authorization checks.
 
-- Use the latest .NET 9 features and libraries.
-- Follow official .NET 9 coding guidelines as provided by Microsoft.
-- Ensure code is clean, readable, and maintainable.
+## References
+- [README.md](../README.md) for architecture, testing, and deployment overview
+- [Visage.AppHost/Program.cs](../Visage.AppHost/Program.cs) for orchestration patterns
+- [Visage.ServiceDefaults/Extensions.cs](../Visage.ServiceDefaults/Extensions.cs) for service defaults
+- [services/CloudinaryImageSigning/app.js](../services/CloudinaryImageSigning/app.js) for Node integration
 
-### Backend Guidelines
-
-- Utilize .NET 9 features, including Aspire for project orchestration.
-- When implementing new code, closely examine the coding conventions used in this project:
-  - Use C# top-level namespaces.
-  - Minimal API endpoints are always only one file.
-  - Use EF Core for data access.
-  - Use the Repository pattern for data access.
-  - Use the Unit of Work pattern for data access.
-  - Use Scalar OpenAPI for API documentation.
-
-## General Practices
-
-- Follow the DRY (Don't Repeat Yourself) principle.
-- Follow the KISS (Keep It Simple, Stupid) principle.
-- When a file becomes too long, split it into smaller files. When a function becomes too long, split it into smaller functions.
-- AVOID making changes to code that are not related to the change we are doing. E.g., don't remove comments or types.
-- Assume all code is working as intended, as everything has been carefully crafted.
-- Commit messages should be in imperative form, sentence case, starting with a verb, and have NO trailing dot.
-- Use descriptive variable names with auxiliary verbs (e.g., IsLoading, HasError).
-- Ensure all git commit messages are signed off by the author
-- Ensure all code is well-documented and follows the .NET 9 coding standards.
-- Ensure all code is well-tested and follows the .NET 9 testing standards.
-- Ensure all code is well-structured and follows the .NET 9 project structure.
-- Ensure all code is well-optimized and follows the .NET 9 performance standards.
-- Ensure all code is well-secured and follows the .NET 9 security standards.
-- Ensure all code is well-scaled and follows the .NET 9 scalability standards.
-- Ensure all code is well-maintained and follows the .NET 9 maintainability standards.
-- Ensure all code is well-deployed and follows the .NET 9 deployment standards.
-- Ensure all code is well-monitored and follows the .NET 9 monitoring standards.
-- Ensure all code is well-logged and follows the .NET 9 logging standards.
+---
+If any section is unclear or incomplete, please provide feedback for further refinement.
