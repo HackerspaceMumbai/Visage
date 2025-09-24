@@ -1,0 +1,54 @@
+{
+  "baseUrl": "https://localhost:7150",
+  "differenceThreshold": 0.2,
+  "defaultTimeout": 30000,
+  "headlessMode": true,
+  "testEnvironment": "Development",
+  "defaultViewport": {
+    "name": "default",
+    "width": 1280,
+    "height": 720
+  },
+  "responsiveBreakpoints": [
+    {
+      "name": "mobile",
+      "width": 375,
+      "height": 667
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "name": "large",
+      "width": 1920,
+      "height": 1080
+    }
+  ],
+  "browser": {
+    "type": "chromium",
+    "slowMo": false,
+    "slowMoMs": 0,
+    "devTools": false,
+    "args": [
+      "--disable-dev-shm-usage",
+      "--disable-extensions",
+      "--disable-gpu",
+      "--no-sandbox"
+    ],
+    "ignoreHttpsErrors": true
+  },
+  "directories": {
+    "baselines": "test-results/visual-baselines",
+    "actual": "test-results/visual-actual",
+    "diffs": "test-results/visual-diffs",
+    "reports": "test-results/reports",
+    "screenshots": "test-results/screenshots"
+  }
+}

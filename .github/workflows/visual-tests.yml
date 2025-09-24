@@ -1,0 +1,67 @@
+permissions:
+  contents: read
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  visual-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Install .NET workloads
+      run: dotnet workload restore
+      
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build application
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Install Playwright browsers
+      run: |
+        cd tests/Visage.Tests.Visual
+        dotnet build
+        pwsh bin/Debug/net9.0/playwright.ps1 install chromium --with-deps
+        
+    - name: Start application
+      run: |
+        dotnet run --project Visage.FrontEnd/Visage.FrontEnd.Web --no-build --configuration Release &
+        sleep 30 # Wait for application to start
+        curl --retry 10 --retry-delay 5 --retry-connrefused https://localhost:7150
+      env:
+        ASPNETCORE_ENVIRONMENT: Production
+        
+    - name: Run visual tests
+      run: dotnet test tests/Visage.Tests.Visual --no-build --configuration Release --logger trx --results-directory TestResults
+      env:
+        VISAGE_TEST_URL: https://localhost:7150
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: visual-test-results
+        path: |
+          TestResults/
+          tests/Visage.Tests.Visual/test-results/
+        retention-days: 30
+        
+    - name: Upload visual diffs on failure
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: visual-test-diffs
+        path: tests/Visage.Tests.Visual/test-results/visual-diffs/
+        retention-days: 30

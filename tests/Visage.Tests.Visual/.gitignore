@@ -1,0 +1,15 @@
+# Visual Test Results
+test-results/
+**/test-results/
+
+# Screenshots and visual artifacts  
+**/visual-baselines/
+**/visual-actual/
+**/visual-diffs/
+
+# Playwright artifacts
+**/TestResults/
+*.log
+playwright-report/
+test-results/
+coverage/
