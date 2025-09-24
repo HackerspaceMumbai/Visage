@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Auth0.AspNetCore.Authentication" Version="1.4.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
-    <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
-    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+    <PackageReference Include="Auth0.AspNetCore.Authentication" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="System.Text.Json" />
     <ProjectReference Include="..\..\Visage.ServiceDefaults\Visage.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Visage.FrontEnd.Web.Client\Visage.FrontEnd.Web.Client.csproj" />
   </ItemGroup>

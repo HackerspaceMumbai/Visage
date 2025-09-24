@@ -9,14 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="[7.0.0]" />
-    <PackageReference Include="TUnit" Version="0.6.15" />
-    <PackageReference Include="TUnit.Playwright" Version="0.6.15" />
-    <PackageReference Include="Verify.TUnit" Version="28.7.0" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Playwright" />
+    <PackageReference Include="Verify.TUnit" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" VersionOverride="$(TUnitVersion)" />
+    <PackageReference Include="TUnit" VersionOverride="$(TUnitVersion)" Condition="'$(TUnitVersion)' != ''" />
   </ItemGroup>
   
 
