@@ -29,7 +29,7 @@ namespace Microsoft.Extensions.Hosting
                 http.AddStandardResilienceHandler();
 
                 // Turn on service discovery by default
-                // http.AddServiceDiscovery(); // Commented out for .NET 8 compatibility
+                http.AddServiceDiscovery();
             });
 
             // Uncomment the following to restrict the allowed schemes for service discovery.

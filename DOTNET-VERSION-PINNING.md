@@ -8,8 +8,8 @@ The Visage solution has been configured to pin the .NET SDK version to ensure co
 
 ## Current Configuration
 
-- **Pinned SDK Version**: 8.0.119
-- **Target Framework**: net8.0 (across all projects)
+- **Pinned SDK Version**: 10.0.100-rc.1
+- **Target Framework**: net10.0 (across all projects)
 - **Rollforward Policy**: latestPatch
 
 ## Files Modified
@@ -19,41 +19,45 @@ Created to pin the .NET SDK version:
 ```json
 {
   "sdk": {
-    "version": "8.0.119",
+    "version": "10.0.100-rc.1",
     "rollForward": "latestPatch"
   }
 }
 ```
 
 ### Project Files
-All `.csproj` files updated to target `net8.0`:
+All `.csproj` files updated to target `net10.0`:
 - Visage.AppHost/Visage.AppHost.csproj
 - Visage.ServiceDefaults/Visage.ServiceDefaults.csproj
 - All service and frontend projects
 - All test projects
 
 ### Package Versions
-Updated `Directory.Packages.props` with .NET 8 compatible package versions:
-- Microsoft.AspNetCore.* packages: 8.0.11
-- Microsoft.EntityFrameworkCore.* packages: 8.0.11
-- Microsoft.Extensions.* packages: 8.0.x
-- StrictId packages: 1.1.0
-- Aspire packages: 8.0.0-preview.1.23557.2
+Updated `Directory.Packages.props` with .NET 10 RC compatible package versions:
+- Microsoft.AspNetCore.* packages: 10.0.0-rc.1
+- Microsoft.EntityFrameworkCore.* packages: 10.0.0-rc.1
+- Microsoft.Extensions.* packages: 10.0.0-rc.1
+- StrictId packages: 1.3.0
+- Aspire packages: 10.0.0-rc.1
 
 ### CI/CD
-Updated `.github/workflows/dotnet.yml` to use .NET 8.0.x
+Updated `.github/workflows/dotnet.yml` to use .NET 10.0.x
+
+## Installation Requirements
+
+⚠️ **Important**: This solution now requires .NET 10 RC SDK to be installed.
+
+### Installing .NET 10 RC
+1. Visit the official .NET download page: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
+2. Download and install the .NET 10 RC SDK for your platform
+3. Verify installation: `dotnet --version` should show `10.0.100-rc.1`
 
 ## Current Status
 
-✅ **Working**: Core infrastructure projects build successfully
-- Visage.ServiceDefaults
-- Visage.Shared
-- Services (with package compatibility fixes)
-
-⚠️ **Needs Work**: Some frontend projects use .NET 9-specific APIs
-- AssignedRenderMode
-- RendererInfo
-- Other Blazor .NET 9 features
+✅ **Ready for .NET 10 RC**: All project configurations updated
+✅ **Package Versions**: Updated to .NET 10 RC compatible versions
+✅ **Service Discovery**: Restored to use full API (compatible with .NET 10)
+⚠️ **Requires Installation**: .NET 10 RC SDK must be installed to build
 
 ## Validation
 
@@ -64,56 +68,50 @@ pwsh ./validate-dotnet-version.ps1
 
 This script:
 1. Checks that the actual SDK version matches global.json
-2. Tests building core projects
-3. Reports success/failure status
+2. Provides guidance if .NET 10 RC is not installed
+3. Tests building core projects (when SDK is available)
 
-## Migration Notes
+## Migration History
 
-### From .NET 9 to .NET 8
-The following changes were necessary:
-1. Downgraded all package versions to .NET 8 compatible versions
-2. Commented out .NET 9-specific Service Discovery API usage
-3. Updated StrictId package to earlier version (1.1.0)
+### From .NET 8 to .NET 10 RC
+The following changes were made:
+1. Updated global.json SDK version to 10.0.100-rc.1
+2. Updated all project target frameworks from net8.0 to net10.0
+3. Upgraded all package versions to 10.0.0-rc.1
+4. Restored Service Discovery API usage (was commented out for .NET 8)
+5. Updated CI/CD pipeline to use .NET 10.0.x
 
-### Aspire Compatibility
-- Used preview versions of Aspire packages for .NET 8
-- Disabled IsAspireHost flag to avoid workload issues
-- Some Aspire features may have limited functionality in .NET 8
-
-## Future Considerations
-
-### Upgrading to .NET 9
-When ready to upgrade:
-1. Update global.json SDK version to 9.0.x
-2. Update all target frameworks to net9.0
-3. Upgrade package versions in Directory.Packages.props
-4. Restore .NET 9-specific API usage
-5. Test all projects build and run correctly
-
-### .NET 10 (Future)
-The original issue mentioned ".NET version to 10", but .NET 10 is projected for November 2025. When available:
-1. Follow similar upgrade process as .NET 9
-2. Update global.json and target frameworks
-3. Upgrade packages to .NET 10 compatible versions
+### Aspire Integration
+- Updated to use .NET 10 RC versions of Aspire packages
+- Restored full Aspire functionality
+- Service Discovery API fully enabled
 
 ## Troubleshooting
 
 ### Build Failures
 If builds fail after version changes:
-1. Check `dotnet --version` matches global.json
-2. Run `dotnet clean` and `dotnet restore`
-3. Verify package versions are compatible with target framework
-4. Check for framework-specific API usage
+1. Ensure .NET 10 RC SDK is installed: `dotnet --version`
+2. Check that version matches global.json (10.0.100-rc.1)
+3. Run `dotnet clean` and `dotnet restore`
+4. If SDK not installed, download from: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 
-### Workload Issues
-Some features (MAUI, Aspire) may require additional workloads:
-```bash
-dotnet workload install aspire
-dotnet workload install wasi-experimental
-```
+### Package Compatibility
+All packages have been updated to RC versions. If specific packages are not available:
+1. Check NuGet.org for latest RC versions
+2. Update Directory.Packages.props accordingly
+3. Some packages may still be in preview - this is expected for RC releases
+
+## Future Considerations
+
+### Upgrading to .NET 10 RTM
+When .NET 10 RTM is released:
+1. Update global.json SDK version to 10.0.100
+2. Update package versions from RC to RTM versions
+3. Test all functionality with RTM release
 
 ## References
 
 - Issue #187: Pin the .NET version to 10 for the solution
+- [.NET 10 RC-1 Blog Post](https://devblogs.microsoft.com/dotnet/dotnet-10-rc-1/)
+- [.NET 10 Download](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 - [.NET global.json documentation](https://docs.microsoft.com/en-us/dotnet/core/tools/global-json)
-- [.NET SDK rollForward policies](https://docs.microsoft.com/en-us/dotnet/core/tools/global-json#rollforward)
