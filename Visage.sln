@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.12.35209.166
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11018.127
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MobileApps", "MobileApps", "{B1444FC4-DFEE-422C-BC81-CFDD6D40E859}"
 EndProject
@@ -30,6 +30,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Test.Aspire", "tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj", "{E28BC8F2-5177-46B0-9E09-208DE5EEDC42}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Shared", "Visage.Shared\Visage.Shared.csproj", "{BD1770DA-9A87-452B-95E5-7B4B67B56144}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D0CEFD08-0F49-45ED-9B30-9B1B1BEA648E}"
+	ProjectSection(SolutionItems) = preProject
+		.env = .env
+		global.json = global.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
