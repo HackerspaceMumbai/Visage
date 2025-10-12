@@ -58,9 +58,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Controls" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+    <!-- Remove explicit Microsoft.Maui.* package versions that target older frameworks.
+         The SDK / workload provides the correct MAUI assemblies for net10.0.
+         If you must keep explicit versions, update them to the .NET 10 MAUI package versions. -->
+    <!--<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1" />-->
+    <!--<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.0-rc.1" />-->
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.1" />
   </ItemGroup>
 
   <ItemGroup>
