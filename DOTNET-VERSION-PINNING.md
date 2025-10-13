@@ -8,18 +8,18 @@ The Visage solution has been configured to pin the .NET SDK version to ensure co
 
 ## Current Configuration
 
-- **Pinned SDK Version**: 10.0.100-rc.1
+-- **Pinned SDK Version**: 10.0.100-rc.1 (full SDK identifier in `global.json` may be `10.0.100-rc.1.25451.107`)
 - **Target Framework**: net10.0 (across all projects)
 - **Rollforward Policy**: latestPatch
 
 ## Files Modified
 
 ### global.json
-Created to pin the .NET SDK version:
+Created to pin the .NET SDK version. Note that `global.json` may include a full SDK identifier with patch/build metadata. Example:
 ```json
 {
   "sdk": {
-    "version": "10.0.100-rc.1",
+    "version": "10.0.100-rc.1.25451.107",
     "rollForward": "latestPatch"
   }
 }
@@ -50,7 +50,12 @@ Updated `.github/workflows/dotnet.yml` to use .NET 10.0.x
 ### Installing .NET 10 RC
 1. Visit the official .NET download page: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 2. Download and install the .NET 10 RC SDK for your platform
-3. Verify installation: `dotnet --version` should show `10.0.100-rc.1`
+3. Verify installation: `dotnet --version` will show the full installed SDK version. When `global.json` pins a preview SDK and `rollForward` is enabled you may see a string like:
+
+- `10.0.100-rc.1.25451.107` (full SDK identifier), or
+- a short form with additional patch/build segments, e.g. `10.0.100-rc.1.xxxxx.xxx`.
+
+If you only see `10.0.100-rc.1` without the patch segments, the SDK installed matches the short identifier exactly. Otherwise expect the full patch/build identifier when roll-forward is in effect.
 
 ## Current Status
 
@@ -67,7 +72,7 @@ pwsh ./validate-dotnet-version.ps1
 ```
 
 This script:
-1. Checks that the actual SDK version matches global.json
+1. Checks that the actual SDK version matches `global.json` (compare full version strings when available)
 2. Provides guidance if .NET 10 RC is not installed
 3. Tests building core projects (when SDK is available)
 

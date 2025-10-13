@@ -15,7 +15,7 @@ jobs:
       - name: Setup dotnet ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          dotnet-version: '10.0.100-rc.1.25451.107'
       # You can test your matrix by printing the current dotnet version
       - name: Display dotnet version
         run: dotnet --version

@@ -15,7 +15,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="System.Text.Json" />
+  <!-- System.Text.Json removed; runtime provides this and central package management should control versions when necessary -->
     <PackageReference Include="TUnit" />
     <PackageReference Include="TUnit.Playwright" />
   </ItemGroup>
