@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable nullable reference types for better null-safety -->
+    <Nullable>enable</Nullable>
+    
+    <!-- Treat all warnings as errors to catch issues during development -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
