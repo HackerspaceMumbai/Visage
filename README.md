@@ -81,6 +81,26 @@ For more detailed instructions and examples, refer to the test project files in 
 
 By following these guidelines, we can ensure that our codebase remains reliable, maintainable, and of high quality.
 
+## Code Quality and Build Configuration
+
+The Visage project enforces strict code quality standards through MSBuild configuration:
+
+### Nullable Reference Types
+
+All projects have nullable reference types enabled via `Directory.Build.props`, which provides:
+- Static analysis for potential null reference issues
+- Explicit handling of nullable types
+- Improved null safety throughout the codebase
+
+### TreatWarningsAsErrors
+
+The solution is configured to treat all compiler warnings as errors (`TreatWarningsAsErrors=true`). This ensures:
+- Code won't compile until warnings are addressed
+- Issues are caught during development rather than production
+- Consistent code quality across all projects
+
+These settings are centrally managed in the `Directory.Build.props` file located at the solution root, ensuring they apply to all projects in the solution automatically.
+
 ## Project Architecture and Components
 
 The Visage project is built using a modular architecture to ensure scalability, maintainability, and ease of development. Below is an overview of the project's architecture and its main components:
