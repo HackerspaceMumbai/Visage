@@ -1,15 +1,16 @@
+````markdown
 ---
-description: "Task list template for feature implementation"
+description: "Task list for SQL Server Aspire Integration feature implementation"
 ---
 
-# Tasks: [FEATURE NAME]
+# Tasks: SQL Server Aspire Integration
 
-**Input**: Design documents from `/specs/[###-feature-name]/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Input**: Design documents from `/specs/001-aspire-sqlserver-integration/`
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: Integration tests are MANDATORY per Visage Constitution Principle III. E2E tests with Playwright are required for user-facing features. Unit tests (bunit) are optional and only for critical Blazor components.
+**Tests**: Integration tests are MANDATORY per Visage Constitution Principle III. E2E tests with Playwright are NOT required (infrastructure change only, no user-facing changes). Unit tests (bunit) are NOT required for this feature.
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story (P1: SQL Server resource, P2: Registration service, P3: Eventing service).
 
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)

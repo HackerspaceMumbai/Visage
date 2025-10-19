@@ -15,7 +15,21 @@ var iamAudience = builder.AddParameter("auth0-audience"); //For API access
 #endregion
 
 #region database
+
+// T012: Register SQL Server as a first-class Aspire resource and pin image tag to avoid 2025-latest pulls
+var sqlServer = builder.AddSqlServer("sql")
+                                                 .WithLifetime(ContainerLifetime.Persistent);
+;
+
+// T013: Register registrationdb as a database on the SQL Server instance
+var registrationDb = sqlServer.AddDatabase("registrationdb");
+
+// T014: Register eventingdb as a database on the SQL Server instance
+var eventingDb = sqlServer.AddDatabase("eventingdb");
+
+// Legacy connection string - to be removed after full migration
 var VisageSQL = builder.AddConnectionString("visagesql");
+
 #endregion
 
 #region Clarity
@@ -42,10 +56,12 @@ var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api"
 
 #region RegistrationAPI
 
+// T022-T023: Wire Registration service to Aspire-managed registrationdb
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
     .WithEnvironment("Auth0__Domain", iamDomain)
     .WithEnvironment("Auth0__Audience", iamAudience)
-    .WithReference(VisageSQL);
+    .WithReference(registrationDb)  // Aspire-managed database connection
+    .WaitFor(registrationDb);  // Ensure database is ready before service starts
 
 #endregion
 

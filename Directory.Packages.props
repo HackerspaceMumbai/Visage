@@ -1,47 +1,38 @@
 <Project>
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- .NET Aspire packages -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="9.5.1" />
     <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.5.1" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="9.5.1" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="9.3.1" />
-
     <!-- Microsoft ASP.NET Core packages -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
-  <!-- Microsoft.AspNetCore.Components.WebView.Maui is MAUI-specific; pinned later to match SDK -->
-    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-
+    <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" Version="9.5.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <!-- Microsoft Entity Framework packages -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
-
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
     <!-- Microsoft Extensions packages -->
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.6.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.1.25451.107" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.5.0" />
-
-
-  <!-- Microsoft MAUI packages -->
-  <!-- Pin MAUI to match the installed SDK workload to ensure target types are available during build -->
-  <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1.25452.6" />
-  <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.0-rc.1.25452.6" />
-
+    <!-- Microsoft MAUI packages -->
+    <!-- Pin MAUI to match the installed SDK workload to ensure target types are available during build -->
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1.25452.6" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.0-rc.1.25452.6" />
     <!-- Microsoft Testing packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.52.0" />
-
     <!-- OpenTelemetry packages -->
     <PackageVersion Include="OpenTelemetry.Api" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
@@ -49,10 +40,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
-
     <!-- Authentication packages -->
     <PackageVersion Include="Auth0.AspNetCore.Authentication" Version="1.4.1" />
-
     <!-- Testing packages -->
     <PackageVersion Include="TUnit" Version="0.67.19" />
     <PackageVersion Include="TUnit.Playwright" Version="0.25.21" />
@@ -61,7 +50,6 @@
     <PackageVersion Include="Verify.TUnit" Version="28.7.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
-
     <!-- Other packages -->
     <PackageVersion Include="Refit" Version="8.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.4.13" />
@@ -69,5 +57,4 @@
     <PackageVersion Include="StrictId" Version="1.2.0" />
     <PackageVersion Include="StrictId.EFCore" Version="1.2.0" />
   </ItemGroup>
-
 </Project>
