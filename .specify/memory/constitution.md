@@ -1,19 +1,25 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: Initial → 1.0.0
-Modified principles: N/A (initial version)
+Version change: 1.0.0 → 1.1.0
+Modified principles: 
+  - Principle IV: Blazor Hybrid UI Consistency → Expanded with render mode strategy
+  - Principle VI: Security & Privacy by Design → Expanded with IdP abstraction
 Added sections:
-  - Core Principles (7 principles)
-  - Technology Stack Requirements
-  - Development Workflow & Quality Gates
-  - Governance
+  - Principle VIII: Blazor Render Mode Strategy (new)
+  - Principle IX: Identity Provider Abstraction (new)
+  - DaisyUI styling requirements in Technology Stack
+  - Three new prohibited patterns (IdP coupling, WASM for auth, render mode mixing)
+  - Two new quality gates (render mode, DaisyUI styling)
 Removed sections: N/A
 Templates status:
-  ✅ plan-template.md - Updated (added Visage-specific constitution checks)
-  ✅ spec-template.md - Compatible (user stories align with integration testing focus)
-  ✅ tasks-template.md - Updated (Visage testing requirements, .NET paths, Aspire patterns)
-Follow-up TODOs: None
+  ✅ plan-template.md - Updated (added render mode, IdP abstraction, and DaisyUI checks)
+  ✅ spec-template.md - Compatible (no changes needed)
+  ✅ tasks-template.md - Compatible (no changes needed)
+Follow-up TODOs:
+  - Review copilot-instructions.md for IdP abstraction guidance (manual review recommended)
+  - Add Blazor render mode decision guide to blazor-guidance.md (manual task)
+  - Document DaisyUI integration pattern in frontend documentation (manual task)
 -->
 
 # Visage Constitution
@@ -118,6 +124,44 @@ The solution MUST showcase the latest .NET 10 features:
 **Rationale**: Visage serves as a reference implementation for the OSS community in Mumbai,
 demonstrating .NET 10's capabilities for building modern, scalable, distributed applications.
 
+### VIII. Blazor Render Mode Strategy
+
+Blazor components MUST use the appropriate render mode based on their security and performance requirements:
+
+- **Static SSR (default)**: Public pages without user interaction (marketing, docs, landing pages)
+- **InteractiveServer**: Authenticated pages requiring real-time updates, secure data access, or server-side validation (user profiles, admin dashboards, check-in flows)
+- **InteractiveWebAssembly**: Client-side interactive features that don't require server data or authentication (theme toggles, UI animations, offline-capable features)
+- **InteractiveAuto**: Pages requiring initial fast load with subsequent rich interactivity (event listings with filtering, registration forms with client validation)
+
+Components MUST NOT:
+
+- Use InteractiveWebAssembly for pages accessing secure APIs or user data
+- Use InteractiveServer for purely cosmetic interactions (increases server load unnecessarily)
+- Mix render modes within a single component without justification
+
+**Rationale**: Correct render mode selection ensures optimal security (server-side for auth),
+performance (client-side for UI), and resource efficiency. As a high-traffic event platform,
+minimizing server connections for non-critical features reduces infrastructure costs while
+maintaining security for sensitive operations.
+
+### IX. Identity Provider Abstraction
+
+Authentication MUST be implemented through an abstraction layer to enable IdP replacement:
+
+- All authentication logic MUST be encapsulated behind interfaces (e.g., `IAuthenticationService`, `IUserClaimsProvider`)
+- Auth0-specific code MUST be isolated in implementation classes, never in business logic or UI
+- JWT validation, claims extraction, and scope checking MUST work with any OIDC-compliant provider
+- Configuration MUST use generic keys (`Authentication:Authority`, `Authentication:ClientId`) mapped to provider-specific values
+- No direct references to Auth0 SDK types in shared models, DTOs, or domain logic
+
+**Design Goal**: Enable migration to Keycloak, Microsoft Entra ID, or other OIDC providers with
+configuration changes and single implementation class updates—no business logic rewrites.
+
+**Rationale**: As an OSS project, Visage may be deployed by communities using different IdPs.
+By abstracting authentication, we enable deployment flexibility while maintaining the same
+codebase. This also future-proofs against vendor lock-in and demonstrates enterprise-grade
+architectural patterns.
+
 ## Technology Stack Requirements
 
 ### Mandatory Stack
@@ -126,7 +170,8 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - **Orchestration**: .NET Aspire
 - **Backend**: Minimal APIs, EF Core 10, StrictId
 - **Frontend**: Blazor Hybrid (Web + MAUI)
-- **Authentication**: Auth0
+- **UI Framework**: DaisyUI 5 (Tailwind CSS components) for consistent, accessible UI
+- **Authentication**: Auth0 (abstracted via interfaces for provider replaceability)
 - **Image Storage**: Cloudinary (via Node.js signing service)
 - **Testing**: TUnit, Fluent Assertions, Playwright, NBomber, OWASP ZAP, Stryker, bunit
 - **Mocking**: NSubstitute
@@ -137,7 +182,9 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - Repository and Unit of Work for data access
 - Service Defaults for cross-cutting concerns (health, telemetry, discovery)
 - Shared models in `Visage.Shared/` for backend DTOs
-- Shared UI components in `Visage.FrontEnd.Shared/`
+- Shared UI components in `Visage.FrontEnd.Shared/` styled with DaisyUI
+- Authentication abstraction via interfaces (`IAuthenticationService`, `IUserClaimsProvider`)
+- Blazor render modes: Static SSR (default), InteractiveServer (auth/secure), InteractiveWebAssembly (client-side), InteractiveAuto (hybrid)
 - Containerization for all services (Docker/Podman)
 
 ### Prohibited Patterns
@@ -147,6 +194,9 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - Synchronous I/O in API endpoints
 - Unscoped service injection in singleton services
 - Hard-coded secrets or connection strings
+- Direct Auth0 SDK references in business logic, domain models, or shared UI components
+- InteractiveWebAssembly render mode for authenticated or secure pages
+- Mixing render modes without architectural justification
 
 ## Development Workflow & Quality Gates
 
@@ -160,7 +210,9 @@ Before merging any PR:
 4. `.http` files MUST include examples for new endpoints
 5. Service registration in AppHost MUST be correct with proper `.WaitFor()` dependencies
 6. Observability: New endpoints MUST emit appropriate traces and metrics
-7. Security: Auth0 scopes MUST be correctly applied to protected endpoints
+7. Security: Authentication scopes MUST be correctly applied to protected endpoints (no provider-specific code in business logic)
+8. Blazor components: Render mode MUST be appropriate for security/performance requirements
+9. UI components: MUST use DaisyUI classes for styling consistency and accessibility
 
 ### Commit Conventions
 
@@ -213,4 +265,4 @@ Before merging any PR:
   in `.github/prompts/`
 - Complexity must be justified: if constitution rules are violated, document in plan.md
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-17
+**Version**: 1.1.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-19
