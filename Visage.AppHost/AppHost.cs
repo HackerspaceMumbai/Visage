@@ -40,16 +40,18 @@ var clarityProjectId = builder.AddParameter("clarity-projectid", secret: false);
 
 #region EventAPI
 
-var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api")
-                                            .WithUrlForEndpoint("http",
-                               url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
-                                            .WithUrlForEndpoint("https", url =>
-                                            {
-                                                url.DisplayText = "Event API Scalar OpenAPI";
-                                                url.Url += "/scalar/v1";
-                                            }); 
-               
-                 
+// Register the Eventing service under the canonical name "eventing" so
+// Aspire service discovery exposes the hostname `https://eventing` that
+// the frontend and documentation expect.
+var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("eventing")
+    .WithReference(eventingDb)
+    .WaitFor(eventingDb)
+    .WithUrlForEndpoint("http", url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly)
+    .WithUrlForEndpoint("https", url =>
+    {
+        url.DisplayText = "Event API Scalar OpenAPI";
+        url.Url += "/scalar/v1";
+    });
 
 #endregion
 
@@ -133,5 +135,6 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
     .WithExternalHttpEndpoints();
 
 #endregion
+
 
 builder.Build().Run();

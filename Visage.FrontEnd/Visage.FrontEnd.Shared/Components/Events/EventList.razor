@@ -1,0 +1,53 @@
+@* T019: EventList component to display event collections *@
+@using Visage.FrontEnd.Shared.Models
+
+@if (Events == null)
+{
+    <!-- Loading skeleton -->
+    <EventGrid>
+        @for (int i = 0; i < SkeletonCount; i++)
+        {
+            <div class="card card-compact bg-base-100 shadow-xl animate-pulse">
+                <div class="aspect-video bg-base-300"></div>
+                <div class="card-body">
+                    <div class="h-6 bg-base-300 rounded w-3/4 mb-2"></div>
+                    <div class="h-4 bg-base-300 rounded w-1/2 mb-2"></div>
+                    <div class="h-4 bg-base-300 rounded w-full"></div>
+                </div>
+            </div>
+        }
+    </EventGrid>
+}
+else if (!Events.Any())
+{
+    <EmptyState 
+        Icon="@EmptyIcon"
+        Title="@EmptyTitle"
+        Message="@EmptyMessage" />
+}
+else
+{
+    <EventGrid>
+        @foreach (var evt in Events)
+        {
+            <EventCard Event="@evt" />
+        }
+    </EventGrid>
+}
+
+@code {
+    [Parameter]
+    public List<EventViewModel>? Events { get; set; }
+    
+    [Parameter]
+    public string EmptyIcon { get; set; } = "📭";
+    
+    [Parameter]
+    public string EmptyTitle { get; set; } = "No Events Available";
+    
+    [Parameter]
+    public string EmptyMessage { get; set; } = "Check back soon for upcoming events!";
+    
+    [Parameter]
+    public int SkeletonCount { get; set; } = 6;
+}

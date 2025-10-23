@@ -1,0 +1,120 @@
+@* T016: EventCard component with DaisyUI styling *@
+@* T023: Cloudinary optimization *@
+@* T024: RSVP button *@
+@* T025: Description truncation *@
+@* T026: Keyboard navigation *@
+@using Visage.FrontEnd.Shared.Models
+
+<div class="card card-border bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-200"
+     tabindex="0"
+     role="article"
+     aria-label="@($"Event: {Event.Name} on {Event.FormattedDate}")"
+     @onkeydown="HandleKeyDown">
+    
+    @* Image section with lazy loading *@
+    <figure class="aspect-video">
+        @if (!string.IsNullOrEmpty(Event.OptimizedImageUrl))
+        {
+            <img src="@Event.OptimizedImageUrl" 
+                 alt="@Event.Name"
+                 class="w-full h-full object-cover"
+                 loading="lazy" />
+        }
+        else
+        {
+            @* Placeholder gradient for events without images *@
+            <div class="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+        }
+    </figure>
+
+    <div class="card-body p-4">
+        @* Title with truncation *@
+        <h3 class="card-title text-lg font-semibold line-clamp-2 min-h-[3.5rem]">
+            @Event.Name
+        </h3>
+
+        @* Date and Location *@
+        <div class="flex flex-col gap-1 text-sm text-base-content/70 mb-2">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>@Event.FormattedDate at @Event.FormattedTime</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>@Event.Location</span>
+            </div>
+        </div>
+
+        @* Description with truncation (line-clamp-3) *@
+        @if (!string.IsNullOrEmpty(Event.Description))
+        {
+            <p class="text-sm text-base-content/80 line-clamp-3 mb-3">
+                @Event.Description
+            </p>
+        }
+
+        @* Card Actions *@
+        <div class="card-actions justify-between items-center mt-auto pt-3 border-t border-base-300">
+            @if (Event.IsUpcoming)
+            {
+                @* RSVP button for upcoming events *@
+                <button class="btn btn-primary btn-sm" 
+                        @onclick="HandleRSVP"
+                        @onclick:stopPropagation="true">
+                    RSVP
+                </button>
+            }
+            else
+            {
+                @* Completed button for past events (disabled for visual consistency) *@
+                <button class="btn btn-ghost btn-sm" disabled>
+                    Completed
+                </button>
+                
+                @* Attendee count badge if available *@
+                @if (Event.AttendeeCount > 0)
+                {
+                    <span class="badge badge-outline badge-sm">
+                        @Event.AttendeeCount @(Event.AttendeeCount == 1 ? "attendee" : "attendees")
+                    </span>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public EventViewModel Event { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<EventViewModel> OnRSVP { get; set; }
+
+    // T024: RSVP button handler
+    private async Task HandleRSVP()
+    {
+        if (OnRSVP.HasDelegate)
+        {
+            await OnRSVP.InvokeAsync(Event);
+        }
+    }
+
+    // T026: Keyboard navigation support
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        // Enter or Space key activates RSVP for upcoming events
+        if ((e.Key == "Enter" || e.Key == " ") && Event.IsUpcoming)
+        {
+            await HandleRSVP();
+        }
+    }
+}

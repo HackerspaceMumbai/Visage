@@ -1,4 +1,5 @@
 @page "/schedule-event"
+@* Inherit default InteractiveServer from App.razor *@
 @using Visage.FrontEnd.Shared.Models
 @using Visage.FrontEnd.Shared.Services
 @using Microsoft.AspNetCore.Components.Forms
@@ -11,7 +12,7 @@
 
 <h3 class="text-2xl font-bold">Schedule Your New Event</h3>
 
-<EditForm EditContext="editContext" FormName="ScheduleNewEvent" OnValidSubmit="HandleValidSubmit">
+<EditForm EditContext="editContext" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit">
 
     <div class="input-error">
         <DataAnnotationsValidator />
@@ -29,7 +30,7 @@
             <div class="sm:row-start-1 sm:col-span-4">
                 <label for="title" class="label">Event Title</label>
                 <InputText id="title" class="input input-bordered focus:input-primary w-full" @bind-Value="newEvent!.Title" placeholder="Make it thematic and memorable" />
-
+                <ValidationMessage For="@(() => newEvent.Title)" class="text-error text-sm mt-1" />
             </div>
 
             <div class="sm:col-span-1">
@@ -48,10 +49,12 @@
             </div>
             <div class="sm:col-start-3 sm:col-span-2">
                 <label for="starttime" class="label">
-                    Start Date
+                    Start Time
                 </label>
-                <InputDate id="starttime" Type="InputDateType.Time"
-                           min="@DateTime.Today.ToString("yyyy-MM-dd")" @bind-Value="newEvent!.StartTime" class="block input input-bordered focus:input-primary" />
+                <input type="time" id="starttime" value="@newEvent!.StartTime.ToString("HH:mm")" 
+                       @onchange="@((ChangeEventArgs e) => newEvent.StartTime = TimeOnly.Parse(e.Value?.ToString() ?? "00:00"))" 
+                       class="block input input-bordered focus:input-primary" />
+                <ValidationMessage For="@(() => newEvent.StartTime)" class="text-error text-sm mt-1" />
             </div>
 
             <div class="sm:row-start-3 sm:col-start-1 sm:col-span-2">
@@ -62,11 +65,13 @@
  
             </div>
             <div class="sm:row-start-3 sm:col-span-2">
-                <label for="endtime" class="form-control">
+                <label for="endtime" class="label">
                     End Time
                 </label>
-                <InputDate id="endtime" Type="InputDateType.Time"
-                    min="@DateTime.Now" @bind-Value="newEvent.EndTime" class="block input input-bordered focus:input-primary" />
+                <input type="time" id="endtime" value="@newEvent.EndTime.ToString("HH:mm")" 
+                       @onchange="@((ChangeEventArgs e) => newEvent.EndTime = TimeOnly.Parse(e.Value?.ToString() ?? "00:00"))" 
+                       class="block input input-bordered focus:input-primary" />
+                <ValidationMessage For="@(() => newEvent.EndTime)" class="text-error text-sm mt-1" />
             </div>
 
             <div class="sm:row-start-4 sm:col-span-4">
@@ -85,9 +90,8 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <InputText id="location" name="location" placeholder="Put in the awesome location" @bind-Value="newEvent.Location" class="block input input-bordered focus:input-primary grow focus:input-primary"/>
-
                     </div>
-
+                    <ValidationMessage For="@(() => newEvent.Location)" class="text-error text-sm mt-1" />
                 </label>
             </div>
 
@@ -113,7 +117,9 @@
                 }
             </div>
 
-            <button type="submit" class="mt-4 sm:row-start-7 sm:col-span-2 btn btn-primary text-primary-content">Schedule Event</button>
+            <button type="submit" class="mt-4 sm:row-start-7 sm:col-span-2 btn btn-primary text-primary-content" disabled="@isSubmitting" aria-busy="@isSubmitting">
+                @(isSubmitting ? "Submitting..." : "Schedule Event")
+            </button>
             <button type="reset" class="mt-4 sm:row-start-7 sm:col-span-2  btn btn-secondary hover:input-primary" @onclick="@ClearForm">Clear</button>
 
 
@@ -129,6 +135,12 @@
         @successMessage
     </div>
 }
+@if (!string.IsNullOrEmpty(submitError))
+{
+    <div class="alert alert-error mt-4" role="alert" aria-live="polite">
+        @submitError
+    </div>
+}
 
 @code {
 
@@ -138,9 +150,10 @@
     private bool isUploading = false;
     private string? uploadStatusMessage;
     private string? successMessage;
+    private string? submitError;
+    private bool isSubmitting;
 
 
-    [SupplyParameterFromForm(FormName = "ScheduleNewEvent")]
     private Event? newEvent { get; set; }
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
@@ -155,7 +168,7 @@
 
     protected override void OnInitialized()
     {
-        newEvent = new Event()
+        newEvent ??= new Event()
         {
             StartDate = DateOnly.FromDateTime(DateTime.Now),
             StartTime = TimeOnly.FromDateTime(DateTime.Now),
@@ -168,10 +181,21 @@
         editContext.OnValidationRequested += HandleValidationRequested;
         messageStore = new(editContext);
 
-        if (RendererInfo.IsInteractive)
+        // keep disabled true initially to avoid interactive controls during prerender
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        // If the renderer becomes interactive at any point, enable the fieldset.
+        if (RendererInfo.IsInteractive && disabled)
         {
             disabled = false;
+            StateHasChanged();
         }
+
+        Console.WriteLine($"OnAfterRenderAsync firstRender={firstRender}, IsInteractive={RendererInfo.IsInteractive}, disabled={disabled}");
+
+        return Task.CompletedTask;
     }
 
     private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
@@ -192,6 +216,7 @@
                 (newEvent.EndDate == newEvent.StartDate && newEvent.EndTime <= newEvent.StartTime))
             {
                 messageStore?.Add(editContext.Field(nameof(newEvent.EndDate)), "End date and time must be after start date and time.");
+                messageStore?.Add(editContext.Field(nameof(newEvent.EndTime)), "End date and time must be after start date and time.");
             }
         }
     }
@@ -309,11 +334,32 @@
 
     private async Task HandleValidSubmit()
     {
-        await EventService.ScheduleEvent(newEvent!);
-        successMessage = "Event scheduled successfully!";
+        submitError = null;
+        isSubmitting = true;
+        try
+        {
+            await EventService.ScheduleEvent(newEvent!);
+            successMessage = "Event scheduled successfully!";
+            StateHasChanged();
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            submitError = "Unable to schedule the event right now. Please try again.";
+            Console.WriteLine($"ScheduleEvent submit failed: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        submitError = "Please fix the highlighted errors before submitting.";
         StateHasChanged();
-        await Task.Delay(3000);
-        NavigationManager.NavigateTo("/");
     }
 
 
@@ -327,6 +373,18 @@
 
     private void ClearForm()
     {
-        newEvent = new();
+        newEvent = new Event()
+        {
+            StartDate = DateOnly.FromDateTime(DateTime.Now),
+            StartTime = TimeOnly.FromDateTime(DateTime.Now),
+            EndDate = DateOnly.FromDateTime(DateTime.Now),
+            EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1))
+        };
+        editContext = new EditContext(newEvent);
+        editContext.SetFieldCssClassProvider(new DaisyUIInputError());
+        messageStore?.Clear();
+        uploadStatusMessage = null;
+        successMessage = null;
+        StateHasChanged();
     }
 }

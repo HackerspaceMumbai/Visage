@@ -2,6 +2,8 @@ using Auth0.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using Visage.FrontEnd.Shared.Services;
 using Visage.FrontEnd.Web.Components;
 using Visage.FrontEnd.Web.Services;
@@ -46,6 +48,8 @@ builder.Services.AddRazorComponents()
 // Add device-specific services used by the Visage.FrontEnd.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+// T015: Register IMemoryCache for event caching
+builder.Services.AddMemoryCache();
 
 // Add the delegating handler
 builder.Services.AddHttpContextAccessor();
@@ -54,22 +58,31 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 
 
-// Register the IEventService and EventService in the dependency injection container
-builder.Services.AddHttpClient<IEventService, EventService>( client =>
-                client.BaseAddress = new Uri("https+http://event-api"));
+// T014: Register typed HttpClients for backend services via Aspire Service Discovery.
+// With ServiceDefaults configured, setting BaseAddress to the resource name enables
+// automatic resolution to the correct endpoint in all environments.
+// Use the special "https+http" scheme to prefer HTTPS and fall back to HTTP in dev.
 
-// Register the ICloudinaryImageSigningService and CloudinaryImageSigningService in the dependency injection container
+builder.Services.AddHttpClient<IEventService, EventService>(client =>
+{
+    client.BaseAddress = new Uri("https+http://eventing");
+});
+
 builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSigningService>(client =>
-    client.BaseAddress = new Uri("https+http://cloudinary-image-signing"));
+{
+    client.BaseAddress = new Uri("https+http://cloudinary-image-signing");
+});
 
-// Register the IUserProfileService and UserProfileService in the dependency injection container
 builder.Services.AddHttpClient<IUserProfileService, UserProfileService>(client =>
-   client.BaseAddress = new Uri("https+http://registrations-api"))
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+})
    .AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
-// Register the IRegistrationService and RegistrationService in the dependency injection container
 builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
-    client.BaseAddress = new Uri("https+http://registrations-api"));
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+});
 
                                                         
 
@@ -104,8 +117,10 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
 app.UseAntiforgery();
+app.MapStaticAssets();
+
 
 app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
 {
@@ -125,6 +140,7 @@ app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
     await httpContext.SignOutAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
     await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 });
+
 
 app.UseAuthentication(); // This should come before UseAuthorization
 app.UseAuthorization();  // This requires AddAuthorization() to be called

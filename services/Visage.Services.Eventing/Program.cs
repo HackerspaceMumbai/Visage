@@ -13,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
 
-builder.Services.AddDbContext<EventDB>(opt => opt.UseInMemoryDatabase("EventList"));
+// Use SQL Server with Aspire-provided connection string (replaces in-memory DB)
+builder.AddSqlServerDbContext<EventDB>("eventingdb");
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
@@ -23,6 +24,82 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Apply migrations automatically on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<EventDB>();
+    db.Database.Migrate();
+    
+    // Seed sample data in development if database is empty
+    if (app.Environment.IsDevelopment() && !db.Events.Any())
+    {
+        var sampleEvents = new[]
+        {
+            new Event
+            {
+                Title = "Open Source Saturday",
+                Description = "Join us for a day of open source contributions, learning, and collaboration!",
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+                StartTime = new TimeOnly(10, 0),
+                EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+                EndTime = new TimeOnly(17, 0),
+                Location = "Hackerspace Mumbai",
+                Type = "Workshop",
+                Theme = "Open Source",
+                Hashtag = "OSSaturday",
+                CoverPicture = "https://res.cloudinary.com/demo/image/upload/sample.jpg"
+            },
+            new Event
+            {
+                Title = "Docker & Kubernetes Workshop",
+                Description = "Hands-on workshop covering containerization with Docker and orchestration with Kubernetes.",
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
+                StartTime = new TimeOnly(14, 0),
+                EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)),
+                EndTime = new TimeOnly(18, 0),
+                Location = "Mumbai Tech Hub",
+                Type = "Workshop",
+                Theme = "DevOps",
+                Hashtag = "K8sWorkshop",
+                CoverPicture = "https://res.cloudinary.com/demo/image/upload/mountain.jpg"
+            },
+            new Event
+            {
+                Title = "AI & Machine Learning Meetup",
+                Description = "Exploring the latest in AI and ML with local experts and practitioners.",
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(21)),
+                StartTime = new TimeOnly(18, 30),
+                EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(21)),
+                EndTime = new TimeOnly(21, 0),
+                Location = "Colaba Library",
+                Type = "Meetup",
+                Theme = "AI/ML",
+                Hashtag = "AIMeetup",
+                CoverPicture = "https://res.cloudinary.com/demo/image/upload/forest.jpg"
+            },
+            new Event
+            {
+                Title = "Web Development Bootcamp",
+                Description = "Intensive bootcamp covering modern web development with .NET and Blazor.",
+                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30)),
+                StartTime = new TimeOnly(9, 0),
+                EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-28)),
+                EndTime = new TimeOnly(18, 0),
+                Location = "Hackerspace Mumbai",
+                Type = "Bootcamp",
+                Theme = "Web Development",
+                Hashtag = "WebBootcamp",
+                CoverPicture = "https://res.cloudinary.com/demo/image/upload/code.jpg"
+            }
+        };
+        
+        db.Events.AddRange(sampleEvents);
+        db.SaveChanges();
+        
+        Console.WriteLine($"Seeded {sampleEvents.Length} sample events for development");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
