@@ -11,7 +11,7 @@
 
 **Location**: Visage.Shared/Models/Event.cs (existing)
 
-\\\csharp
+```csharp
 public class Event
 {
     public EventId Id { get; set; } // StrictId<Guid>
@@ -35,7 +35,7 @@ public enum EventStatus
     Completed,
     Cancelled
 }
-\\\
+```
 
 ---
 
@@ -47,7 +47,7 @@ public enum EventStatus
 
 **Purpose**: Presentation model for event cards and lists with computed properties for UI binding.
 
-\\\csharp
+```csharp
 namespace Visage.FrontEnd.Shared.Models;
 
 public record EventViewModel
@@ -87,7 +87,7 @@ public record EventViewModel
         Status = evt.Status
     };
 }
-\\\
+```
 
 ### EventListViewModel
 
@@ -95,7 +95,7 @@ public record EventViewModel
 
 **Purpose**: Container for event collections with metadata for pagination/filtering.
 
-\\\csharp
+```csharp
 namespace Visage.FrontEnd.Shared.Models;
 
 public record EventListViewModel
@@ -113,7 +113,7 @@ public record EventListViewModel
     public bool HasNextPage => CurrentPage < TotalPages;
     public bool HasPreviousPage => CurrentPage > 1;
 }
-\\\
+```
 
 ---
 
@@ -136,7 +136,7 @@ public record EventListViewModel
 
 ## Data Flow Diagram
 
-\\\
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ Frontend (Blazor)                                               │
 ├─────────────────────────────────────────────────────────────────┤
@@ -175,7 +175,7 @@ public record EventListViewModel
 │  SQL Server (indexed by Date, Status)                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
-\\\
+```
 
 ---
 
@@ -191,11 +191,11 @@ public record EventListViewModel
 
 ### Database Indexes (Backend)
 
-\\\sql
+```sql
 -- Visage.Services.Eventing/EventDB.cs - EF Core configuration
 CREATE INDEX IX_Events_Date_Status ON Events(Date, Status);
 CREATE INDEX IX_Events_Status ON Events(Status);
-\\\
+```
 
 **Rationale**: Most queries filter by Status='Upcoming' and order by Date. Combined index optimizes this query pattern.
 
@@ -219,7 +219,7 @@ CREATE INDEX IX_Events_Status ON Events(Status);
 
 ### Seed Data for Integration Tests
 
-\\\csharp
+```csharp
 // Visage.Test.Aspire/Fixtures/EventTestData.cs
 public static class EventTestData
 {
@@ -254,7 +254,7 @@ public static class EventTestData
         // Add 20+ more events for pagination testing
     };
 }
-\\\
+```
 
 ---
 

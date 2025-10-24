@@ -64,7 +64,7 @@
 
         @* Card Actions *@
         <div class="card-actions justify-between items-center mt-auto pt-3 border-t border-base-300">
-            @if (Event.IsUpcoming)
+            @if (Event.IsUpcoming(DateTime.Now))
             {
                 @* RSVP button for upcoming events *@
                 <button class="btn btn-primary btn-sm" 
@@ -112,7 +112,7 @@
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         // Enter or Space key activates RSVP for upcoming events
-        if ((e.Key == "Enter" || e.Key == " ") && Event.IsUpcoming)
+        if ((e.Key == "Enter" || e.Key == " ") && Event.IsUpcoming(DateTime.Now))
         {
             await HandleRSVP();
         }

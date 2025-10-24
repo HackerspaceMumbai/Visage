@@ -9,6 +9,7 @@
 @inject NavigationManager NavigationManager
 @inject IFormFactor FormFactor
 @inject IEventService EventService
+@inject IImageUrlTransformer ImageUrlTransformer
 @inject ILogger<Home> Logger
 
 <PageTitle>Visage - Hackerspace Mumbai Events</PageTitle>
@@ -96,8 +97,17 @@
     // T021: Inject EventService and load upcoming events
     protected override async Task OnInitializedAsync()
     {
+        await LoadEventsAsync();
+    }
+
+    // Extract event-loading logic to avoid manually calling lifecycle methods
+    private async Task LoadEventsAsync()
+    {
         try
         {
+            // Clear any previous error state
+            errorMessage = null;
+            
             // T021: Load events with error handling (T022)
             var upcomingEvents = await EventService.GetUpcomingEvents();
             var pastEvents = await EventService.GetPastEvents();
@@ -174,13 +184,12 @@
     // T022: Retry button handler
     private async Task RetryLoadEvents()
     {
-        errorMessage = null;
         upcomingEventViewModels = null;
         pastEventViewModels = null;
-        await OnInitializedAsync();
+        await LoadEventsAsync();
     }
 
-    // T025: Helper method to map Event to EventViewModel
+    // T025: Helper method to map Event to EventViewModel with image URL transformation
     private List<EventViewModel> MapToViewModels(List<Event> events)
     {
         var viewModels = events.Select(evt => {
@@ -188,6 +197,10 @@
                 evt.Title, evt.CoverPicture ?? "(null)");
             
             var eventDateTime = evt.StartDate.ToDateTime(evt.StartTime);
+            
+            // Apply CDN transformation to image URL using injected transformer
+            var optimizedImageUrl = ImageUrlTransformer.Transform(evt.CoverPicture);
+            
             return new EventViewModel
             {
                 Id = evt.Id.Value.ToGuid(), // Convert StrictId's Ulid to Guid
@@ -195,10 +208,12 @@
                 Date = eventDateTime,
                 Location = evt.Location ?? "TBA",
                 CoverImageUrl = evt.CoverPicture,
+                OptimizedImageUrl = optimizedImageUrl,
                 Description = evt.Description ?? "",
                 RsvpLink = null, // Not available in current Event model
                 AttendeeCount = 0, // Not available in current Event model
-                Status = eventDateTime > DateTime.Now 
+                // Assuming eventDateTime is already in UTC, or convert as needed:
+                Status = eventDateTime > DateTime.UtcNow 
                     ? EventStatus.Upcoming 
                     : EventStatus.Completed
             };

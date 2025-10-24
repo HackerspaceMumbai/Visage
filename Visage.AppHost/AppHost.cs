@@ -19,7 +19,7 @@ var iamAudience = builder.AddParameter("auth0-audience"); //For API access
 // T012: Register SQL Server as a first-class Aspire resource and pin image tag to avoid 2025-latest pulls
 var sqlServer = builder.AddSqlServer("sql")
                                                  .WithLifetime(ContainerLifetime.Persistent);
-;
+
 
 // T013: Register registrationdb as a database on the SQL Server instance
 var registrationDb = sqlServer.AddDatabase("registrationdb");
@@ -28,8 +28,7 @@ var registrationDb = sqlServer.AddDatabase("registrationdb");
 var eventingDb = sqlServer.AddDatabase("eventingdb");
 
 // Legacy connection string - to be removed after full migration
-var VisageSQL = builder.AddConnectionString("visagesql");
-
+var visageSQL = builder.AddConnectionString("visagesql");
 #endregion
 
 #region Clarity
@@ -43,7 +42,7 @@ var clarityProjectId = builder.AddParameter("clarity-projectid", secret: false);
 // Register the Eventing service under the canonical name "eventing" so
 // Aspire service discovery exposes the hostname `https://eventing` that
 // the frontend and documentation expect.
-var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("eventing")
+var eventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("eventing")
     .WithReference(eventingDb)
     .WaitFor(eventingDb)
     .WithUrlForEndpoint("http", url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly)
@@ -78,7 +77,6 @@ var scalar = builder.AddScalarApiReference(options =>
     // You can add more options here (title, sidebar, etc.)
 })
 .WithLifetime(ContainerLifetime.Persistent);
-;
 
 // Register your APIs with Scalar
 scalar
@@ -126,8 +124,8 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
     .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
     .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
     .WithEnvironment("Clarity__ProjectId", clarityProjectId)
-    .WithReference(EventAPI)
-    .WaitFor(EventAPI)
+    .WithReference(eventAPI)
+    .WaitFor(eventAPI)
     .WithReference(registrationAPI)
     .WaitFor(registrationAPI)
     .WithReference(cloudinaryImageSigning)

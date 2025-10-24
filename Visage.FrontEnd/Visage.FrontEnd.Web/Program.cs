@@ -56,6 +56,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuthenticationDelegatingHandler>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
+// Image CDN transformation options and service
+builder.Services.Configure<ImageCdnOptions>(builder.Configuration.GetSection("ImageCdn"));
+builder.Services.AddScoped<IImageUrlTransformer, ConfigImageUrlTransformer>();
+
 
 
 // T014: Register typed HttpClients for backend services via Aspire Service Discovery.

@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using TUnit.Core;
 using Visage.Shared.Models;
+using System.Net.Http.Json;
 
 namespace Visage.Test.Aspire;
 
@@ -31,9 +32,19 @@ public class RegistrationDbTests
         await resourceNotificationService.WaitForResourceAsync("registrationdb", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(60));
         
-        // Assert
+        // Assert - Verify database is registered and running
         var registrationDbResource = builder.Resources.FirstOrDefault(r => r.Name == "registrationdb");
         registrationDbResource.Should().NotBeNull("registrationdb should be registered as a database resource");
+        
+        // Verify runtime connectivity by querying the registrations service health endpoint
+        // (which requires DB connection for EF Core migrations to have run)
+        var httpClient = app.CreateHttpClient("registrations-api");
+        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(90));
+        
+        var healthResponse = await httpClient.GetAsync("/health");
+        healthResponse.IsSuccessStatusCode.Should().BeTrue(
+            "Registration service health check should succeed, confirming database connectivity");
     }
 
     /// <summary>
@@ -54,10 +65,38 @@ public class RegistrationDbTests
         await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(90));
         
-        // Act & Assert - Verify service is accessible
         var httpClient = app.CreateHttpClient("registrations-api");
-        var response = await httpClient.GetAsync("/health");
-        response.Should().NotBeNull("Registration service should be accessible");
+        
+        // Create a valid registrant with all required properties
+        var newRegistrant = new Registrant
+        {
+            FirstName = "Test",
+            LastName = "User",
+            Email = "testuser@example.com",
+            MobileNumber = "+919876543210",
+            AddressLine1 = "123 Test Street",
+            City = "Mumbai",
+            State = "Maharashtra",
+            PostalCode = "400001",
+            GovtId = "ABCD1234E",
+            GovtIdLast4Digits = "234E",
+            OccupationStatus = "Employed"
+        };
+        
+        // Act - POST to /register endpoint
+        var postResponse = await httpClient.PostAsJsonAsync("/register", newRegistrant);
+        
+        // Assert - Verify successful creation
+        postResponse.Should().NotBeNull("POST response should not be null");
+        postResponse.IsSuccessStatusCode.Should().BeTrue($"POST should succeed but got {postResponse.StatusCode}");
+        
+        // Verify the created registrant is returned
+        var createdRegistrant = await postResponse.Content.ReadFromJsonAsync<Registrant>();
+        createdRegistrant.Should().NotBeNull("Created registrant should be returned in response");
+        createdRegistrant!.FirstName.Should().Be("Test", "FirstName should match");
+        createdRegistrant.LastName.Should().Be("User", "LastName should match");
+        createdRegistrant.Email.Should().Be("testuser@example.com", "Email should match");
+        createdRegistrant.Id.Should().NotBeNull("Id should be auto-generated");
     }
 
     /// <summary>
@@ -80,10 +119,17 @@ public class RegistrationDbTests
         await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(90));
         
-        // Act & Assert
+        // Act - Query registrants from the /register endpoint
         var httpClient = app.CreateHttpClient("registrations-api");
-        var healthResponse = await httpClient.GetAsync("/health");
-        healthResponse.Should().NotBeNull("Registration service should connect to database");
+        var getResponse = await httpClient.GetAsync("/register");
+        
+        // Assert - Verify successful query
+        getResponse.Should().NotBeNull("GET response should not be null");
+        getResponse.IsSuccessStatusCode.Should().BeTrue($"GET should succeed but got {getResponse.StatusCode}");
+        
+        // Deserialize and verify registrants collection
+        var registrants = await getResponse.Content.ReadFromJsonAsync<IEnumerable<Registrant>>();
+        registrants.Should().NotBeNull("Registrants collection should not be null");
     }
 
     /// <summary>

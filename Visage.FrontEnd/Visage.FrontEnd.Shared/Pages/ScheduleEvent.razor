@@ -9,6 +9,8 @@
 @using System.Text
 @using System.Threading
 @using Visage.FrontEnd.Shared.Helpers
+@inject ILogger<ScheduleEvent> Logger
+
 
 <h3 class="text-2xl font-bold">Schedule Your New Event</h3>
 
@@ -51,8 +53,8 @@
                 <label for="starttime" class="label">
                     Start Time
                 </label>
-                <input type="time" id="starttime" value="@newEvent!.StartTime.ToString("HH:mm")" 
-                       @onchange="@((ChangeEventArgs e) => newEvent.StartTime = TimeOnly.Parse(e.Value?.ToString() ?? "00:00"))" 
+                  <input type="time" id="starttime" value="@newEvent!.StartTime.ToString("HH:mm")" 
+                      @onchange="OnStartTimeChanged" 
                        class="block input input-bordered focus:input-primary" />
                 <ValidationMessage For="@(() => newEvent.StartTime)" class="text-error text-sm mt-1" />
             </div>
@@ -68,8 +70,8 @@
                 <label for="endtime" class="label">
                     End Time
                 </label>
-                <input type="time" id="endtime" value="@newEvent.EndTime.ToString("HH:mm")" 
-                       @onchange="@((ChangeEventArgs e) => newEvent.EndTime = TimeOnly.Parse(e.Value?.ToString() ?? "00:00"))" 
+                  <input type="time" id="endtime" value="@newEvent.EndTime.ToString("HH:mm")" 
+                      @onchange="OnEndTimeChanged" 
                        class="block input input-bordered focus:input-primary" />
                 <ValidationMessage For="@(() => newEvent.EndTime)" class="text-error text-sm mt-1" />
             </div>
@@ -193,7 +195,11 @@
             StateHasChanged();
         }
 
-        Console.WriteLine($"OnAfterRenderAsync firstRender={firstRender}, IsInteractive={RendererInfo.IsInteractive}, disabled={disabled}");
+        Logger.LogDebug(
+            "OnAfterRenderAsync firstRender={firstRender} IsInteractive={isInteractive} disabled={disabled}",
+            firstRender,
+            RendererInfo.IsInteractive,
+            disabled);
 
         return Task.CompletedTask;
     }
@@ -382,9 +388,39 @@
         };
         editContext = new EditContext(newEvent);
         editContext.SetFieldCssClassProvider(new DaisyUIInputError());
-        messageStore?.Clear();
-        uploadStatusMessage = null;
+        editContext.OnValidationRequested += HandleValidationRequested;
+        messageStore = new ValidationMessageStore(editContext);
         successMessage = null;
+        uploadStatusMessage = null;
         StateHasChanged();
+    }
+
+    // Use TryParse to avoid FormatException on invalid inputs
+    private void OnStartTimeChanged(ChangeEventArgs e)
+    {
+        var input = e?.Value?.ToString();
+        if (TimeOnly.TryParse(input, out var parsed))
+        {
+            newEvent!.StartTime = parsed;
+        }
+        else
+        {
+            // Leave existing value; optionally log for diagnostics
+            Console.WriteLine($"Invalid StartTime input: '{input}'");
+        }
+    }
+
+    private void OnEndTimeChanged(ChangeEventArgs e)
+    {
+        var input = e?.Value?.ToString();
+        if (TimeOnly.TryParse(input, out var parsed))
+        {
+            newEvent!.EndTime = parsed;
+        }
+        else
+        {
+            // Leave existing value; optionally log for diagnostics
+            Console.WriteLine($"Invalid EndTime input: '{input}'");
+        }
     }
 }

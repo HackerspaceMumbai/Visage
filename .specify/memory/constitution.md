@@ -194,7 +194,7 @@ maintaining security for sensitive operations.
 @@- Use InteractiveAuto sparingly and only when justified (e.g., initial fast load with subsequent rich interactivity)
 @@- Avoid per-page render mode overrides; centralize render mode strategy for predictable navigation behavior
 
-### IX. Identity Provider Abstraction
+### X. Identity Provider Abstraction
 
 Authentication MUST be implemented through an abstraction layer to enable IdP replacement:
 
@@ -238,6 +238,12 @@ architectural patterns.
 @@- Form validation: EditForm with DataAnnotationsValidator + custom ValidationMessageStore + inline ValidationMessage components for field-specific errors
 @@- DateTime comparisons: Use full DateTime for event status classification (not DateOnly) to prevent same-day future events from being misclassified
 @@- UI consistency: Maintain consistent visual styling across component states (e.g., buttons for both active/disabled states)
+- Aspire CLI tools (9.5+):
+  - `aspire exec --resource <name> -- <command>`: Execute commands in resource context with automatic environment variable injection (requires feature flag)
+  - `aspire exec --workdir /path -- <command>`: Run commands in specific working directory (Aspire 9.5+)
+  - `aspire update`: Keep Aspire packages and templates current (preview)
+  - `aspire config`: Manage feature flags and CLI configuration
+  - `aspire run` failure protocol: If aspire run fails repeatedly (2+ attempts), STOP and report the issue with error details to the user immediately. Do not continue debugging in silence.
 - Containerization for all services (Docker/Podman)
 
 ### Prohibited Patterns

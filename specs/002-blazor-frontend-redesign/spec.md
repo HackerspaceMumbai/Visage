@@ -3,7 +3,7 @@
 **Feature Branch**: `002-blazor-frontend-redesign`  
 **Created**: October 20, 2025  
 **Status**: Draft  
-**Input**: User description: "Create a new Blazor Hybrid project to host our Frontend with a home page that displays upcoming and past events. It should the color palette of our website https://hackmum.in/ and its source is hosted on https://github.com/HackerspaceMumbai/blog"
+**Input**: User description: "Create a new Blazor Hybrid project to host our Frontend with a home page that displays upcoming and past events. It should use the color palette of our website https://hackmum.in/ and its source is hosted on https://github.com/HackerspaceMumbai/blog"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -120,7 +120,7 @@ As a community member familiar with Hackerspace Mumbai's website, I want the Vis
 
 ### Non-Functional Requirements
 
-- **NFR-001**: Page load time must not exceed 3 seconds on 3G connections, with Core Web Vitals targets: LCP (Largest Contentful Paint) < 2.5s, FID (First Input Delay) < 100ms, CLS (Cumulative Layout Shift) < 0.1 (measured at 75th percentile)
+- **NFR-001**: Page load time must not exceed 3 seconds on 3G connections, with Core Web Vitals targets: LCP (Largest Contentful Paint) < 2.5s, INP (Interaction to Next Paint) < 200ms, CLS (Cumulative Layout Shift) < 0.1 (measured at 75th percentile)
 - **NFR-002**: Images must be optimized and served in modern formats (WebP with fallbacks)
 - **NFR-003**: Application must be usable without JavaScript for core content viewing - specifically, upcoming events list must render with Static SSR fallback (event cards, images, and basic information visible). Interactive features (RSVP buttons, filtering, search) require JavaScript.
 - **NFR-004**: Application must support dark mode preferences based on system settings

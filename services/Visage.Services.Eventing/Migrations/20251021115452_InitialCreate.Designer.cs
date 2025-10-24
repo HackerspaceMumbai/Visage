@@ -32,20 +32,17 @@ namespace Visage.Services.Eventing.Migrations
                         .HasColumnType("nchar(26)")
                         .IsFixedLength();
 
-                    b.Property<int?>("AttendeesPercentage")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("AttendeesPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("CoverPicture")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CoverPictureFileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CoverPictureLocation")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
@@ -54,10 +51,12 @@ namespace Visage.Services.Eventing.Migrations
                         .HasColumnType("time");
 
                     b.Property<string>("Hashtag")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Location")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -66,7 +65,8 @@ namespace Visage.Services.Eventing.Migrations
                         .HasColumnType("time");
 
                     b.Property<string>("Theme")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -74,7 +74,8 @@ namespace Visage.Services.Eventing.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Type")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 

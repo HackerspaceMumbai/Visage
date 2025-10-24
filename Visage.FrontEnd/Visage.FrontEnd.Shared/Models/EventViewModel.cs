@@ -12,14 +12,19 @@ public record EventViewModel
     public int AttendeeCount { get; init; }
     public EventStatus Status { get; init; }
 
+    /// <summary>
+    /// Optimized image URL with CDN transformations applied during mapping.
+    /// Assigned by the mapper using IImageUrlTransformer.
+    /// </summary>
+    public string? OptimizedImageUrl { get; init; }
+
     // Computed Properties
     public string FormattedDate => Date.ToString("MMM dd, yyyy");
     public string FormattedTime => Date.ToString("h:mm tt");
     public string FormattedDateTime => $"{FormattedDate} at {FormattedTime}";
-    public bool IsUpcoming => Status == EventStatus.Upcoming && Date > DateTime.Now;
-    public bool IsPast => Status == EventStatus.Completed || Date < DateTime.Now;
-    public bool HasImage => !string.IsNullOrEmpty(CoverImageUrl);
-    public string OptimizedImageUrl => HasImage
-        ? CoverImageUrl!.Replace("/upload/", "/upload/f_auto,q_auto,w_800/")
-        : string.Empty;
+    public bool HasImage => !string.IsNullOrEmpty(OptimizedImageUrl);
+
+    // Time-dependent methods (accept currentTime for testability)
+    public bool IsUpcoming(DateTime currentTime) => Status == EventStatus.Upcoming && Date > currentTime;
+    public bool IsPast(DateTime currentTime) => Status == EventStatus.Completed || Date < currentTime;
 }

@@ -20,7 +20,7 @@
 
 ### Verify Installation
 
-\\\pwsh
+```pwsh
 # Check .NET version
 dotnet --version
 # Expected: 10.0.100-rc.2.25502.107 or newer
@@ -30,15 +30,15 @@ docker --version
 # Expected: Docker version 24.0+ or Podman equivalent
 
 # Check PowerShell
-\System.Management.Automation.PSVersionHashTable.PSVersion
+$PSVersionTable.PSVersion
 # Expected: 7.0+
 \\\
 
----
+```
 
 ## Step 1: Clone and Build
 
-\\\pwsh
+```pwsh
 # Clone repository (if not already done)
 git clone https://github.com/HackerspaceMumbai/Visage.git
 cd Visage
@@ -52,7 +52,7 @@ dotnet restore
 # Build solution (web projects only to avoid MAUI platform errors)
 dotnet build Visage.FrontEnd/Visage.FrontEnd.Web/Visage.FrontEnd.Web.csproj
 dotnet build Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.csproj
-\\\
+```
 
 ---
 
@@ -60,12 +60,12 @@ dotnet build Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.cspro
 
 ### Option A: Use Aspire Orchestration (Recommended)
 
-\\\pwsh
+```pwsh
 # Start Aspire AppHost (starts all services including Eventing API)
 cd Visage.AppHost
 dotnet run
-\\\
 
+```
 **Aspire Dashboard**: Opens automatically at \https://localhost:15888\ (or similar port)
 
 **Service URLs** (discovered automatically):
@@ -179,7 +179,7 @@ dotnet test --logger "console;verbosity=detailed"
 3. Reload page
 4. Verify:
    - Initial HTML includes event cards (Static SSR working)
-   - \lazor.web.js\ loads successfully (InteractiveAuto enabled)
+   - \blazor.web.js\ loads successfully (InteractiveAuto enabled)
    - No excessive API calls (caching working)
 
 ---
@@ -205,9 +205,10 @@ pwsh ./scripts/run-playwright.ps1
 **Symptom**: Browser console shows 404 for \/_framework/blazor.web.js\
 
 **Solution**:
-\\\pwsh
+```pwsh
 # Stop all running processes
-Get-Process -Name dotnet | Where-Object {.Path -like "*Visage*"} | Stop-Process -Force
+
++Get-Process -Name dotnet | Where-Object {$_.Path -like "*Visage*"} | Stop-Process -Force
 
 # Clean and rebuild
 dotnet clean
@@ -219,7 +220,7 @@ dotnet build Visage.FrontEnd/Visage.FrontEnd.Web.Client/Visage.FrontEnd.Web.Clie
 # Restart Aspire AppHost
 cd Visage.AppHost
 dotnet run
-\\\
+ ```
 
 ### Issue: Eventing API Returns Empty Results
 
@@ -299,7 +300,7 @@ New-Item -Path "Visage.FrontEnd/Visage.FrontEnd.Shared/Components/Events/MyCompo
 
 ### 3. Add Integration Test
 
-**File**: \	ests/Visage.Test.Aspire/MyComponentTests.cs\
+**File**: \tests/Visage.Test.Aspire/MyComponentTests.cs\
 
 \\\csharp
 using TUnit.Assertions;
@@ -366,7 +367,8 @@ Get-Process -Name dotnet | Where-Object {.Path -like "*Visage*"}
 1. **Review Specification**: Read \specs/002-blazor-frontend-redesign/spec.md\ for feature requirements
 2. **Review Data Model**: Check \data-model.md\ for view models and validation rules
 3. **Review API Contracts**: Check \contracts/api-contracts.md\ for endpoint specifications
-4. **Review Research**: Read \esearch.md\ for technical decisions and patterns
+4. **Review Research**: Read \
+research.md\ for technical decisions and patterns
 5. **Start Implementation**: Wait for Phase 2 task breakdown via \/speckit.tasks\ command
 
 ---

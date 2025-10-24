@@ -8,7 +8,7 @@ The Visage solution has been configured to pin the .NET SDK version to ensure co
 
 ## Current Configuration
 
--- **Pinned SDK Version**: 10.0.100-rc.1 (full SDK identifier in `global.json` may be `10.0.100-rc.1.25451.107`)
+- **Pinned SDK Version**: 10.0.100-rc.2 (full SDK identifier in `global.json` is `10.0.100-rc.2.25502.107`)
 - **Target Framework**: net10.0 (across all projects)
 - **Rollforward Policy**: latestPatch
 
@@ -16,14 +16,6 @@ The Visage solution has been configured to pin the .NET SDK version to ensure co
 
 ### global.json
 Created to pin the .NET SDK version. Note that `global.json` may include a full SDK identifier with patch/build metadata. Example:
-```json
-{
-  "sdk": {
-    "version": "10.0.100-rc.1.25451.107",
-    "rollForward": "latestPatch"
-  }
-}
-```
 
 ### Project Files
 All `.csproj` files updated to target `net10.0`:
@@ -58,12 +50,12 @@ Updated `.github/workflows/dotnet.yml` to use .NET 10.0.x
 If you only see `10.0.100-rc.1` without the patch segments, the SDK installed matches the short identifier exactly. Otherwise expect the full patch/build identifier when roll-forward is in effect.
 
 ## Current Status
+3. Verify installation: `dotnet --version` will show the full installed SDK version. When `global.json` pins a preview SDK and `rollForward` is enabled you may see a string like:
 
-✅ **Ready for .NET 10 RC**: All project configurations updated
-✅ **Package Versions**: Updated to .NET 10 RC compatible versions
-✅ **Service Discovery**: Restored to use full API (compatible with .NET 10)
-⚠️ **Requires Installation**: .NET 10 RC SDK must be installed to build
+- `10.0.100-rc.2.25502.107` (full SDK identifier), or
+- a short form with additional patch/build segments, e.g. `10.0.100-rc.1.xxxxx.xxx`.
 
+If you only see `10.0.100-rc.1` without the patch segments, the SDK installed matches the short identifier exactly. Otherwise expect the full patch/build identifier when roll-forward is in effect.
 ## Validation
 
 Use the provided PowerShell script to validate the setup:
