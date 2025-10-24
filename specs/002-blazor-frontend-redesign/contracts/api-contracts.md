@@ -2,7 +2,7 @@
 
 **Feature**: 002-blazor-frontend-redesign  
 **Service**: Visage.Services.Eventing  
-**Base URL**: \https://eventing\ (Aspire service discovery)
+**Base URL**: `https://eventing` (Aspire service discovery)
 
 ---
 
@@ -10,18 +10,18 @@
 
 ### 1. Get Upcoming Events
 
-**GET** \/events/upcoming\
+**GET** `/events/upcoming`
 
 **Description**: Retrieves all events with status 'Upcoming' and future dates, ordered by date ascending.
 
 **Request**:
 - **Method**: GET
 - **Headers**:
-  - \Accept: application/json\
+  - `Accept: application/json`
 - **Query Parameters**: None
 
 **Response** (200 OK):
-\\\json
+```json
 [
   {
     "id": "11111111-1111-1111-1111-111111111111",
@@ -38,7 +38,7 @@
     "updatedAt": "2025-10-15T14:30:00Z"
   }
 ]
-\\\
+```
 
 **Response** (204 No Content):
 - Returned when no upcoming events exist
@@ -54,20 +54,21 @@
 
 ### 2. Get Past Events (Paginated)
 
-**GET** \/events/past?page={page}&pageSize={pageSize}\
+**GET** `/events/past?page={page}&pageSize={pageSize}`
 
 **Description**: Retrieves completed events ordered by date descending (most recent first), with pagination support.
 
 **Request**:
 - **Method**: GET
 - **Headers**:
-  - \Accept: application/json\
+  - `Accept: application/json`
 - **Query Parameters**:
-  - \page\ (integer, required): Page number starting from 1
-  - \pageSize\ (integer, required): Number of items per page (default: 20, max: 100)
+  - `page` (integer, required): Page number starting from 1
+  - `pageSize` (integer, required): Number of items per page (default: 20, max: 100)
 
 **Response** (200 OK):
-\\\json
+
+```json
 {
   "items": [
     {
@@ -92,16 +93,18 @@
   "hasNextPage": true,
   "hasPreviousPage": false
 }
-\\\
+```
 
 **Error Responses**:
 - **400 Bad Request**: Invalid page or pageSize parameters
-  \\\json
+
+  ```json
   {
     "error": "InvalidPagination",
     "message": "Page must be >= 1 and pageSize must be between 1 and 100"
   }
-  \\\
+  ```
+
 - **500 Internal Server Error**: Database failure
 
 **Performance**: < 100ms (paginated query with indexes)
@@ -112,19 +115,20 @@
 
 ### 3. Get Event by ID
 
-**GET** \/events/{id}\
+**GET** `/events/{id}`
 
 **Description**: Retrieves detailed information for a specific event by its unique identifier.
 
 **Request**:
 - **Method**: GET
 - **Headers**:
-  - \Accept: application/json\
+  - `Accept: application/json`
 - **Path Parameters**:
-  - \id\ (GUID, required): Unique event identifier
+  - `id` (GUID, required): Unique event identifier
 
 **Response** (200 OK):
-\\\json
+
+```json
 {
   "id": "11111111-1111-1111-1111-111111111111",
   "name": "Introduction to Open Source",
@@ -139,23 +143,27 @@
   "createdAt": "2025-10-01T10:00:00Z",
   "updatedAt": "2025-10-15T14:30:00Z"
 }
-\\\
+```
 
 **Error Responses**:
 - **404 Not Found**: Event with specified ID does not exist
-  \\\json
+
+  ```json
   {
     "error": "EventNotFound",
     "message": "Event with ID 11111111-1111-1111-1111-111111111111 was not found"
   }
-  \\\
+  ```
+
 - **400 Bad Request**: Invalid GUID format
-  \\\json
+
+  ```json
   {
     "error": "InvalidEventId",
     "message": "Event ID must be a valid GUID"
   }
-  \\\
+  ```
+
 - **500 Internal Server Error**: Database failure
 
 **Performance**: < 30ms (primary key lookup)
@@ -168,7 +176,7 @@
 
 ### Event DTO
 
-\\\	ypescript
+```typescript
 interface Event {
   id: string;                  // GUID format
   name: string;                // Max 200 chars
@@ -183,11 +191,11 @@ interface Event {
   createdAt: string;           // ISO 8601 datetime
   updatedAt: string;           // ISO 8601 datetime
 }
-\\\
+```
 
 ### PaginatedResult<T> DTO
 
-\\\	ypescript
+```typescript
 interface PaginatedResult<T> {
   items: T[];
   totalCount: number;
@@ -197,24 +205,25 @@ interface PaginatedResult<T> {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
 }
-\\\
+```
 
 ---
 
 ## Service Discovery Configuration
 
-**Aspire Service Name**: \venting\
+**Aspire Service Name**: `eventing`
 
 **Frontend HttpClient Configuration** (Program.cs):
-\\\csharp
+
+```csharp
 builder.Services.AddHttpClient<EventService>(client =>
 {
     client.BaseAddress = new Uri("https://eventing");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-\\\
+```
 
-**Service Discovery Resolution**: Aspire resolves \https://eventing\ to the actual Visage.Services.Eventing endpoint at runtime.
+**Service Discovery Resolution**: Aspire resolves `https://eventing` to the actual Visage.Services.Eventing endpoint at runtime.
 
 ---
 
@@ -222,7 +231,7 @@ builder.Services.AddHttpClient<EventService>(client =>
 
 ### Frontend Error Handling
 
-\\\csharp
+```csharp
 // EventService.cs
 public async Task<List<EventViewModel>> GetUpcomingEventsAsync()
 {
@@ -249,17 +258,18 @@ public async Task<List<EventViewModel>> GetUpcomingEventsAsync()
         throw; // Rethrow to trigger UI error state
     }
 }
-\\\
+```
 
 ### Backend Error Responses
 
 All error responses follow this format:
-\\\json
+
+```json
 {
   "error": "ErrorCode",
   "message": "Human-readable error description"
 }
-\\\
+```
 
 ---
 
@@ -267,7 +277,7 @@ All error responses follow this format:
 
 ### Integration Test Examples
 
-\\\csharp
+```csharp
 // Visage.Test.Aspire/EventApiIntegrationTests.cs
 [Test]
 public async Task GetUpcomingEvents_ReturnsOrderedEvents()
@@ -316,7 +326,7 @@ public async Task GetEventById_WithInvalidId_Returns400()
     // Assert
     response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 }
-\\\
+```
 
 ---
 
@@ -327,7 +337,7 @@ public async Task GetEventById_WithInvalidId_Returns400()
 - **3 Endpoints**: GET /events/upcoming, GET /events/past, GET /events/{id}
 - **DTOs**: Event, PaginatedResult<T>
 - **Error Handling**: Standardized error responses with fallback strategies
-- **Service Discovery**: Aspire-based resolution via \https://eventing\ service name
+- **Service Discovery**: Aspire-based resolution via `https://eventing` service name
 - **Testing**: Integration test examples provided
 - **Performance**: All endpoints meet < 100ms target
 - **Caching**: Frontend implements TTL-based caching (5min/1hr/10min)

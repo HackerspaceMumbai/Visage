@@ -12,42 +12,102 @@
 
 **Use Tailwind CSS 4 with DaisyUI 5 via CDN for rapid development, with build-time compilation for production.**
 
-### Rationale
+\\\csharp
+// Visage.FrontEnd.Shared/Services/EventService.cs
+using System.Net.Http.Json;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
-1. **Blazor Compatibility**: Tailwind CSS 4 works seamlessly with Blazor's CSS isolation via scoped styles
-2. **DaisyUI Component Library**: Provides pre-built, accessible components matching Hackerspace Mumbai design system
-3. **Build Pipeline**: Tailwind CLI can be integrated into MSBuild for automatic CSS generation
-4. **Performance**: Purged CSS in production removes unused utility classes (< 50KB gzipped)
+public class EventService
+{
+    private readonly HttpClient _httpClient;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<EventService> _logger;
 
-### Implementation Approach
-
-**Development (CDN)**:
-\\\html
-<!-- Visage.FrontEnd.Web/Components/App.razor -->
-<link href=\"https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.css\" rel=\"stylesheet\" />
-<script src=\"https://cdn.tailwindcss.com\"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          'hackmum-primary': '#FFC107',
-          'hackmum-secondary': '#4DB6AC',
-          'hackmum-accent': '#7986CB',
-          'hackmum-dark': '#1A1A1A'
-        }
-      }
+    public EventService(HttpClient httpClient, IMemoryCache cache, ILogger<EventService> logger)
+    {
+        _httpClient = httpClient;
+        _cache = cache;
+        _logger = logger;
     }
-  }
-</script>
+
+    public async Task<List<EventViewModel>> GetUpcomingEventsAsync()
+    {
+        const string cacheKey = "upcoming-events";
+
+        if (_cache.TryGetValue(cacheKey, out List<EventViewModel>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            using var response = await _httpClient.GetAsync("https://eventing/events/upcoming");
+            response.EnsureSuccessStatusCode();
+
+            var events = await response.Content.ReadFromJsonAsync<List<Event>>() ?? new List<Event>();
+            var viewModels = events.Select(EventViewModel.FromEvent).ToList();
+
+            // Cache only on successful fetch
+            _cache.Set(cacheKey, viewModels, new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromMinutes(5)
+            });
+
+            return viewModels;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch upcoming events (HTTP error).");
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Timeout fetching upcoming events.");
+        }
+
+        // Fallback: return empty list (do not cache failures)
+        return new List<EventViewModel>();
+    }
+
+    public async Task<List<EventViewModel>> GetPastEventsAsync(int page = 1, int pageSize = 20)
+    {
+        var cacheKey = $"past-events-{page}-{pageSize}";
+
+        if (_cache.TryGetValue(cacheKey, out List<EventViewModel>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            using var response = await _httpClient.GetAsync($"https://eventing/events/past?page={page}&pageSize={pageSize}");
+            response.EnsureSuccessStatusCode();
+
+            var events = await response.Content.ReadFromJsonAsync<List<Event>>() ?? new List<Event>();
+            var viewModels = events.Select(EventViewModel.FromEvent).ToList();
+
+            // Cache only on successful fetch
+            _cache.Set(cacheKey, viewModels, new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromHours(1)
+            });
+
+            return viewModels;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch past events (HTTP error). page={Page} size={PageSize}", page, pageSize);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Timeout fetching past events. page={Page} size={PageSize}", page, pageSize);
+        }
+
+        // Fallback: return empty list (do not cache failures)
+        return new List<EventViewModel>();
+    }
+}
 \\\
-
-**Production (Build-time)**:
-1. Install Tailwind CLI as dev dependency
-2. Create \	ailwind.config.js\ with Hackerspace color palette
-3. Add MSBuild target to run Tailwind CLI during build
-4. Output minified CSS to \wwwroot/css/app.css\
-
 ### Alternatives Considered
 
 - **Ant Design Blazor**: Rejected - Doesn't match Hackerspace design system, heavier bundle size
@@ -86,7 +146,8 @@
 
 ### Implementation Approach
 
-\\\azor
+\\\
+azor
 @* Visage.FrontEnd.Shared/Pages/Home.razor *@
 @page \"/\"
 @rendermode InteractiveAuto
@@ -101,7 +162,8 @@
 }
 \\\
 
-\\\azor
+\\\
+azor
 @* Visage.FrontEnd.Shared/Pages/EventDetails.razor *@
 @page \"/events/{eventId}\"
 @* No render mode specified - defaults to Static SSR *@
@@ -147,7 +209,8 @@
 
 ### Implementation Approach
 
-\\\azor
+\\\
+azor
 @* Visage.FrontEnd.Shared/Components/Events/EventGrid.razor *@
 <div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4\">
     @foreach (var evt in Events)
@@ -161,7 +224,8 @@
 }
 \\\
 
-\\\azor
+\\\
+azor
 @* Visage.FrontEnd.Shared/Components/Events/EventCard.razor *@
 <div class=\"card card-compact bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300\">
     <figure class=\"aspect-video bg-base-300\">
@@ -207,8 +271,8 @@
 ### Touch Target Compliance
 
 - **Card Tap Area**: Entire card is clickable (min 280px height × 100% width on mobile)
-- **Button Size**: DaisyUI \tn-sm\ class ensures 44x44px minimum
-- **Link Spacing**: \gap-4\ between interactive elements (16px separation)
+- **Button Size**: DaisyUI btn-sm class ensures 44x44px minimum
+- **Link Spacing**: gap-4 between interactive elements (16px separation)
 
 ### Alternatives Considered
 
@@ -239,7 +303,8 @@
 ### Implementation Approach
 
 **Virtualized Event List**:
-\\\azor
+\\\
+azor
 @* Visage.FrontEnd.Shared/Components/Events/EventList.razor *@
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 
@@ -266,7 +331,8 @@
 \\\
 
 **Lazy-Loaded Images**:
-\\\azor
+\\\
+azor
 @* EventCard.razor - Updated figure element *@
 <figure class=\"aspect-video bg-base-300\">
     @if (!string.IsNullOrEmpty(Event.CoverImageUrl))
@@ -379,6 +445,17 @@ public class EventService
 }
 \\\
 
+#### Cache Invalidation Strategy (conceptual)
+
+The examples above use time-based sliding expiration only. To avoid stale lists when events are created/updated/deleted, add explicit, event-driven invalidation:
+
+- Publish/subscribe or SignalR notification on event create/update/delete to trigger cache busting on subscribers.
+- Expose an authenticated cache-bust endpoint (e.g., `POST /cache/bust/events`) or run a background subscriber to clear keys in-memory or in a distributed cache when domain events are processed.
+- Target keys using the existing pattern `past-events-{page}-{pageSize}`; for broad invalidation remove all keys matching `past-events-*`.
+- Tuning: shorten sliding expirations for frequently-changing lists, use a distributed cache (e.g., Redis) across instances, and consider tag-based/namespaced keys (e.g., `events:past:`) to target groups of keys efficiently.
+
+Result: lists refresh promptly on changes while retaining the performance benefits of caching between updates.
+
 ### API Enhancements Needed
 
 **None** - Existing API already provides all required data for the homepage display.
@@ -388,12 +465,12 @@ Future enhancements (out of scope for this feature):
 - Full-text search endpoint for event filtering
 - Favorite/bookmark events (requires authentication)
 
-### Alternatives Considered
+### Alternatives Considered (API Integration)
 
 - **Direct Database Access from Frontend**: Rejected - Violates service architecture, breaks Aspire orchestration
 - **GraphQL API**: Rejected - Overkill for simple CRUD operations, adds complexity
 
-### References
+### References (API Integration)
 
 - [Existing API Documentation](../../../services/Visage.Services.Eventing/README.md) (to be created)
 - [Aspire Service Discovery](https://learn.microsoft.com/en-us/dotnet/aspire/service-discovery/overview)

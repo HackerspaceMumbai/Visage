@@ -24,7 +24,14 @@ Visage is a modular, Aspire-orchestrated .NET 9 solution for managing large-scal
   - Security: OWASP ZAP
   - Mutation: Stryker
   - Unit: Only for critical Blazor components (bunit)
-- **Run Locally:** Use Aspire for orchestration. All services must be referenced in `Visage.AppHost/Program.cs` and use `.WaitFor()` to ensure correct startup order.
+- **Run Locally:** Use Aspire for orchestration. All services must be referenced in `Visage.AppHost/AppHost.cs` and use `.WaitFor()` to ensure correct startup order.- **Aspire Commands (9.5+):** 
+  - `aspire exec --resource <resource-name> -- <command>`: Execute commands with automatic environment variable injection (connection strings, service discovery URIs)
+    - Enable with: `aspire config set features.execCommandEnabled true`
+    - Use `--workdir` flag to specify working directory: `aspire exec --resource <name> --workdir /app/tools -- <command>`
+    - Use `--start-resource` to wait for resource to be running before executing
+  - `aspire update` (preview): Automatically update Aspire packages and templates across your solution
+  - `aspire config set <key> <value>`: Manage feature flags and CLI settings
+  - **Failure Protocol**: If `aspire run` fails repeatedly (2+ consecutive failures), STOP immediately and report the error details to the user. Do not continue silent debugging cycles that waste time.
 
 ### Styling and DaisyUI (project-specific guidance)
 
@@ -41,6 +48,64 @@ pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared run buildcss
 Add this to your CI pipeline so `output.css` is regenerated during CI builds.
 
 - **API Testing:** Use `.http` files in each service for ad-hoc API calls.
+- **EF Core Migrations:** Always use `aspire exec` to run EF Core commands in the context of Aspire resources:
+  ```pwsh
+  # Enable aspire exec feature (one-time setup)
+  aspire config set features.execCommandEnabled true
+  
+  # Drop database
+  aspire exec --resource eventing -- dotnet ef database drop --force
+  
+  # Add migration
+  aspire exec --resource eventing -- dotnet ef migrations add MigrationName
+  
+  # Update database
+  aspire exec --resource eventing -- dotnet ef database update
+  
+  # Use --workdir flag for commands in specific directories (Aspire 9.5+)
+  aspire exec --resource eventing --workdir /app/migrations -- dotnet ef migrations script
+  
+  # Wait for resource to start before executing (Aspire 9.5+)
+  aspire exec --start-resource eventing -- dotnet ef database update
+  ```
+  This ensures connection strings and other environment variables are correctly injected from the Aspire app model.
+
+### Aspire 9.5 Features
+Visage uses .NET Aspire 9.5+ which includes several enhancements relevant to our development workflow:
+
+- **Enhanced `aspire exec`**: 
+  - `--workdir` (`-w`) flag for running commands in specific directories
+  - `--start-resource` waits for resource to be running before executing
+  - Improved error messages and fail-fast argument validation
+  - Better help text for developer experience
+
+- **`aspire update` (preview)**: Automatically detect and update outdated Aspire packages and templates
+  ```pwsh
+  # Update all Aspire packages to latest compatible versions
+  aspire update
+  ```
+
+- **HTTP Health Probes**: Configure startup, readiness, and liveness probes for resources
+  ```csharp
+  var api = builder.AddProject<Projects.Api>("api")
+      .WithHttpProbe(ProbeType.Readiness, "/health/ready");
+  ```
+
+- **Resource Lifecycle Events**: Register callbacks for resource stopped events
+  ```csharp
+  var api = builder.AddProject<Projects.Api>("api")
+      .OnResourceStopped(async (resource, stoppedEvent, cancellationToken) =>
+      {
+          await ResetSystemState();
+      });
+  ```
+
+- **Enhanced Wait Patterns**: 
+  - `WaitFor`: Waits for dependency to be Running AND pass all health checks
+  - `WaitForStart`: Waits only for dependency to reach Running (ignores health checks)
+  - `WaitForCompletion`: Waits for dependency to reach terminal state
+
+For complete Aspire 9.5 features, see [What's new in Aspire 9.5](https://learn.microsoft.com/en-us/dotnet/aspire/whats-new/dotnet-aspire-9.5)
 - **Containerization:** All services are containerized for local and cloud deployment. Node services use `nodemon` for hot reload.
 
 ## Project Conventions & Patterns
@@ -86,7 +151,7 @@ Add this to your CI pipeline so `output.css` is regenerated during CI builds.
 
 ## References
 - [README.md](../README.md) for architecture, testing, and deployment overview
-- [Visage.AppHost/Program.cs](../Visage.AppHost/Program.cs) for orchestration patterns
+- [Visage.AppHost/AppHost.cs](../Visage.AppHost/AppHost.cs) for orchestration patterns
 - [Visage.ServiceDefaults/Extensions.cs](../Visage.ServiceDefaults/Extensions.cs) for service defaults
 - [services/CloudinaryImageSigning/app.js](../services/CloudinaryImageSigning/app.js) for Node integration
 

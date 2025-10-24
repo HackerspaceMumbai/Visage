@@ -3,7 +3,7 @@
 
 function Get-RepoRoot {
     try {
-        $result = git rev-parse --show-toplevel 2>$null
+        $result = git rev-parse --show-toplevel 2>&1
         if ($LASTEXITCODE -eq 0) {
             return $result
         }
@@ -12,17 +12,21 @@ function Get-RepoRoot {
     }
     
     # Fall back to script location for non-git repos
-    return (Resolve-Path (Join-Path $PSScriptRoot "../../..")).Path
+    try {
+        return (Resolve-Path (Join-Path $PSScriptRoot "../../..") -ErrorAction Stop).Path
+    } catch {
+        return $PSScriptRoot
+    }
 }
 
 function Get-CurrentBranch {
     # First check if SPECIFY_FEATURE environment variable is set
     if ($env:SPECIFY_FEATURE) {
-        return $env:SPECIFY_FEATURE
-    }
-    
-    # Then check git if available
     try {
+        $result = git rev-parse --abbrev-ref HEAD 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return $result
+        }
         $result = git rev-parse --abbrev-ref HEAD 2>$null
         if ($LASTEXITCODE -eq 0) {
             return $result
@@ -60,7 +64,7 @@ function Get-CurrentBranch {
 
 function Test-HasGit {
     try {
-        git rev-parse --show-toplevel 2>$null | Out-Null
+        git rev-parse --show-toplevel 2>&1 | Out-Null
         return ($LASTEXITCODE -eq 0)
     } catch {
         return $false

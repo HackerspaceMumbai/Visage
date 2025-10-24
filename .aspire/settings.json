@@ -1,3 +1,6 @@
 {
-  "appHostPath": "../Visage.AppHost/Visage.AppHost.csproj"
+  "appHostPath": "../Visage.AppHost/Visage.AppHost.csproj",
+  "features": {
+    "execCommandEnabled": "true"
+  }
 }

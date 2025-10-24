@@ -14,8 +14,10 @@ public class Event
     [StringLength(100, ErrorMessage = "Event Name must be less than 100 characters")]
     public string Title { get; set; } = string.Empty;
 
+    [StringLength(50, ErrorMessage = "Type must be less than 50 characters")]
     public string? Type { get; set; }
 
+    [StringLength(2000, ErrorMessage = "Description must be less than 2000 characters")]
     public string? Description { get; set; }
 
     [Required]
@@ -30,23 +32,18 @@ public class Event
     [Required]
     public TimeOnly EndTime { get; set; }
 
+    [StringLength(500, ErrorMessage = "Location must be less than 500 characters")]
     public string? Location { get; set; }
 
-
-    // Deprecated: Use CoverPicture for the Cloudinary image URL
-    [Obsolete("Use CoverPicture property instead.")]
-    public string? CoverPictureLocation { get; set; }
-
-    [Obsolete("Use CoverPicture property instead.")]
-    public string? CoverPictureFileName { get; set; }
-
-    public int? AttendeesPercentage { get; set; }
-
-    // New properties
-    public string? Hashtag { get; set; }
-
-    public string? Theme { get; set; }
-
-    // New property for cover picture URL
+    // Cover picture as Cloudinary URL
+    [StringLength(500, ErrorMessage = "Cover picture URL must be less than 500 characters")]
     public string? CoverPicture { get; set; }
+
+    public decimal? AttendeesPercentage { get; set; }
+
+    [StringLength(100, ErrorMessage = "Hashtag must be less than 100 characters")]
+    public string? Hashtag { get; set; }
+    
+    [StringLength(200, ErrorMessage = "Theme must be less than 200 characters")]
+    public string? Theme { get; set; }
 }

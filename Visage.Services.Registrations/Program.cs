@@ -53,10 +53,18 @@ var app = builder.Build();
 // T026: Run EF Core migrations automatically on service startup
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<RegistrantDB>();
+    var registrantDb = scope.ServiceProvider.GetRequiredService<RegistrantDB>();
     Console.WriteLine("Running EF Core migrations...");
-    await db.Database.MigrateAsync();
-    Console.WriteLine("Migrations completed successfully.");
+    try
+    {
+        await registrantDb.Database.MigrateAsync();
+        Console.WriteLine("Migrations completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration failed: {ex.Message}");
+        throw;
+    }
 }
 
 // Configure the HTTP request pipeline.
