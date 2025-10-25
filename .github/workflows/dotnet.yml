@@ -22,3 +22,6 @@ jobs:
 
       - name: Display dotnet version
         run: dotnet --version
+
+      - name: Restore dependencies
+        run: dotnet restore
