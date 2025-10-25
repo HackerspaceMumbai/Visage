@@ -14,6 +14,11 @@ jobs:
         with:
           global-json-file: global.json
           cache: true
+          cache-dependency-path: |
+            **/*.sln
+            **/*.csproj
+            **/packages.lock.json
+            Directory.Packages.props
 
       - name: Display dotnet version
         run: dotnet --version
