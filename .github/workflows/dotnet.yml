@@ -23,5 +23,12 @@ jobs:
       - name: Display dotnet version
         run: dotnet --version
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore dependencies (excluding MAUI)
+        run: |
+          dotnet restore Visage.AppHost/Visage.AppHost.csproj
+          dotnet restore Visage.ServiceDefaults/Visage.ServiceDefaults.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Web/Visage.FrontEnd.Web.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Web.Client/Visage.FrontEnd.Web.Client.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.csproj
+          dotnet restore services/Visage.Services.Eventing/Visage.Services.Eventing.csproj
+          dotnet restore Visage.Services.Registrations/Visage.Services.Registrations.csproj
