@@ -4,18 +4,31 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: [ '10.0.x']
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup dotnet ${{ matrix.dotnet-version }}
+
+      - name: Setup .NET from global.json
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.100-rc.1.25451.107'
-      # You can test your matrix by printing the current dotnet version
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            **/*.sln
+            **/*.csproj
+            **/packages.lock.json
+            Directory.Packages.props
+
       - name: Display dotnet version
         run: dotnet --version
+
+      - name: Restore dependencies (excluding MAUI)
+        run: |
+          dotnet restore Visage.AppHost/Visage.AppHost.csproj
+          dotnet restore Visage.ServiceDefaults/Visage.ServiceDefaults.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Web/Visage.FrontEnd.Web.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Web.Client/Visage.FrontEnd.Web.Client.csproj
+          dotnet restore Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.csproj
+          dotnet restore services/Visage.Services.Eventing/Visage.Services.Eventing.csproj
+          dotnet restore Visage.Services.Registrations/Visage.Services.Registrations.csproj

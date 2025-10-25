@@ -15,7 +15,20 @@ var iamAudience = builder.AddParameter("auth0-audience"); //For API access
 #endregion
 
 #region database
-var VisageSQL = builder.AddConnectionString("visagesql");
+
+// T012: Register SQL Server as a first-class Aspire resource and pin image tag to avoid 2025-latest pulls
+var sqlServer = builder.AddSqlServer("sql")
+                                                 .WithLifetime(ContainerLifetime.Persistent);
+
+
+// T013: Register registrationdb as a database on the SQL Server instance
+var registrationDb = sqlServer.AddDatabase("registrationdb");
+
+// T014: Register eventingdb as a database on the SQL Server instance
+var eventingDb = sqlServer.AddDatabase("eventingdb");
+
+// Legacy connection string - to be removed after full migration
+var visageSQL = builder.AddConnectionString("visagesql");
 #endregion
 
 #region Clarity
@@ -26,26 +39,30 @@ var clarityProjectId = builder.AddParameter("clarity-projectid", secret: false);
 
 #region EventAPI
 
-var EventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("event-api")
-                                            .WithUrlForEndpoint("http",
-                               url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly) // Hide the plain-HTTP link from the Resources grid
-                                            .WithUrlForEndpoint("https", url =>
-                                            {
-                                                url.DisplayText = "Event API Scalar OpenAPI";
-                                                url.Url += "/scalar/v1";
-                                            }); 
-               
-                 
+// Register the Eventing service under the canonical name "eventing" so
+// Aspire service discovery exposes the hostname `https://eventing` that
+// the frontend and documentation expect.
+var eventAPI = builder.AddProject<Projects.Visage_Services_Eventing>("eventing")
+    .WithReference(eventingDb)
+    .WaitFor(eventingDb)
+    .WithUrlForEndpoint("http", url => url.DisplayLocation = UrlDisplayLocation.DetailsOnly)
+    .WithUrlForEndpoint("https", url =>
+    {
+        url.DisplayText = "Event API Scalar OpenAPI";
+        url.Url += "/scalar/v1";
+    });
 
 #endregion
 
 
 #region RegistrationAPI
 
+// T022-T023: Wire Registration service to Aspire-managed registrationdb
 var registrationAPI = builder.AddProject<Projects.Visage_Services_Registrations>("registrations-api")
     .WithEnvironment("Auth0__Domain", iamDomain)
     .WithEnvironment("Auth0__Audience", iamAudience)
-    .WithReference(VisageSQL);
+    .WithReference(registrationDb)  // Aspire-managed database connection
+    .WaitFor(registrationDb);  // Ensure database is ready before service starts
 
 #endregion
 
@@ -60,7 +77,6 @@ var scalar = builder.AddScalarApiReference(options =>
     // You can add more options here (title, sidebar, etc.)
 })
 .WithLifetime(ContainerLifetime.Persistent);
-;
 
 // Register your APIs with Scalar
 scalar
@@ -108,8 +124,8 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
     .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
     .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
     .WithEnvironment("Clarity__ProjectId", clarityProjectId)
-    .WithReference(EventAPI)
-    .WaitFor(EventAPI)
+    .WithReference(eventAPI)
+    .WaitFor(eventAPI)
     .WithReference(registrationAPI)
     .WaitFor(registrationAPI)
     .WithReference(cloudinaryImageSigning)
@@ -117,5 +133,6 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
     .WithExternalHttpEndpoints();
 
 #endregion
+
 
 builder.Build().Run();

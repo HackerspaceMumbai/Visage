@@ -22,11 +22,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Visage.AppHost\Visage.AppHost.csproj" />
+    <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="System.Net" />
     <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Aspire.Hosting" />
     <Using Include="Aspire.Hosting.ApplicationModel" />
     <Using Include="Aspire.Hosting.Testing" />
     <Using Include="TUnit" />

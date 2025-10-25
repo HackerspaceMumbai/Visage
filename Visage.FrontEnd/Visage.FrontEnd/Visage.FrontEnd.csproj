@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
-    <!-- For local builds on Windows, target only Windows to avoid compiling other platform files. -->
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-  </PropertyGroup>
-
   <PropertyGroup>
-    <!-- On macOS or Linux you can update the file to set the appropriate TargetFramework. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
     <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
     <!-- <TargetFrameworks>$(TargetFrameworks);net10.0-tizen</TargetFrameworks> -->
 
@@ -61,25 +58,12 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Remove explicit Microsoft.Maui.* package versions that target older frameworks.
-         The SDK / workload provides the correct MAUI assemblies for net10.0.
-         If you must keep explicit versions, update them to the .NET 10 MAUI package versions. -->
-  <!--<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1" />-->
-  <!--<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.0-rc.1" />-->
-  <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
-  <!-- Ensure MAUI assemblies are referenced for the targeted TFM. Versions are managed centrally. -->
-  <PackageReference Include="Microsoft.Maui.Controls" />
-  <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" />
+   <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.2.25502.107" />
   </ItemGroup>
 
-  <!-- When building on Windows, exclude other platform source files to avoid duplicate symbol errors. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
-    <Compile Remove="Platforms\Android\**\*.cs" />
-    <Compile Remove="Platforms\iOS\**\*.cs" />
-    <Compile Remove="Platforms\MacCatalyst\**\*.cs" />
-    <Compile Remove="Platforms\Tizen\**\*.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Visage.FrontEnd.Shared\Visage.FrontEnd.Shared.csproj" />

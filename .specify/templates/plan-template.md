@@ -36,8 +36,11 @@
 - [ ] **Integration Testing Priority**: Integration tests planned (not just unit tests)?
 - [ ] **Blazor Hybrid UI**: Shared components in correct directories? No platform-specific duplication?
 - [ ] **Observability**: OpenTelemetry traces/metrics planned for new endpoints?
-- [ ] **Security & Privacy**: Auth0 scopes defined? Input validation planned? DPDP compliance considered?
-- [ ] **Technology Showcase**: Uses latest .NET 9/Aspire/Blazor features appropriately?
+- [ ] **Security & Privacy**: Authentication scopes defined? Input validation planned? DPDP compliance considered?
+- [ ] **Technology Showcase**: Uses latest .NET 10/Aspire/Blazor features appropriately?
+- [ ] **Blazor Render Mode Strategy**: Appropriate render modes selected (Static SSR/InteractiveServer/InteractiveWebAssembly/InteractiveAuto) based on security and performance needs?
+- [ ] **Identity Provider Abstraction**: Authentication logic behind interfaces? No direct IdP SDK references in business logic or shared UI? Works with any OIDC provider?
+- [ ] **DaisyUI Styling**: UI components use DaisyUI classes for consistency and accessibility?
 
 *If any checks fail, justify in Complexity Tracking section below.*
 

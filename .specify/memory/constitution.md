@@ -1,19 +1,38 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: Initial → 1.0.0
-Modified principles: N/A (initial version)
+Version change: 1.0.0 → 1.1.0
+@@Version change: 1.1.0 → 1.2.0
+Modified principles: 
+  - Principle IV: Blazor Hybrid UI Consistency → Expanded with render mode strategy
+  - Principle VI: Security & Privacy by Design → Expanded with IdP abstraction
+@@  - Principle VIII: Blazor Render Mode Strategy → Expanded with navigation best practices and architectural guidance
+@@  - Technology Stack Requirements: Approved Patterns → Added form validation, DateTime comparison, and UI consistency patterns
+@@  - Code Quality Gates → Added render mode verification, form validation checks, and DateTime validation requirements
 Added sections:
-  - Core Principles (7 principles)
-  - Technology Stack Requirements
-  - Development Workflow & Quality Gates
-  - Governance
+  - Principle VIII: Blazor Render Mode Strategy (new)
+  - Principle IX: Identity Provider Abstraction (new)
+  - DaisyUI styling requirements in Technology Stack
+  - Three new prohibited patterns (IdP coupling, WASM for auth, render mode mixing)
+  - Two new quality gates (render mode, DaisyUI styling)
+@@  - Blazor render mode navigation rules (mixing modes breaks SPA routing)
+@@  - Form validation pattern: EditForm + DataAnnotationsValidator + ValidationMessageStore + inline ValidationMessage
+@@  - DateTime comparison pattern: Use full DateTime (not DateOnly) for time-sensitive logic
+@@  - UI consistency rule: Maintain visual styling across component states
+@@  - Architectural guidance for Visage: InteractiveServer app-wide default for Auth0/Aspire
 Removed sections: N/A
 Templates status:
-  ✅ plan-template.md - Updated (added Visage-specific constitution checks)
-  ✅ spec-template.md - Compatible (user stories align with integration testing focus)
-  ✅ tasks-template.md - Updated (Visage testing requirements, .NET paths, Aspire patterns)
-Follow-up TODOs: None
+  ✅ plan-template.md - Updated (added render mode, IdP abstraction, and DaisyUI checks)
+  @@  ✅ plan-template.md - Review recommended (render mode navigation checks)
+  ✅ spec-template.md - Compatible (no changes needed)
+  ✅ tasks-template.md - Compatible (no changes needed)
+Follow-up TODOs:
+  - Review copilot-instructions.md for IdP abstraction guidance (manual review recommended)
+  - Add Blazor render mode decision guide to blazor-guidance.md (manual task)
+  - Document DaisyUI integration pattern in frontend documentation (manual task)
+@@  - ✅ copilot-instructions.md updated with render mode, form validation, and DateTime patterns
+@@  - Consider adding Blazor navigation troubleshooting guide to documentation
+@@  - Consider documenting form validation pattern examples in frontend documentation
 -->
 
 # Visage Constitution
@@ -118,6 +137,81 @@ The solution MUST showcase the latest .NET 10 features:
 **Rationale**: Visage serves as a reference implementation for the OSS community in Mumbai,
 demonstrating .NET 10's capabilities for building modern, scalable, distributed applications.
 
+### VIII. Blazor Render Mode Strategy
+
+Blazor components MUST use the appropriate render mode based on their security and performance requirements:
+
+- **Static SSR (default)**: Public pages without user interaction (marketing, docs, landing pages)
+- **InteractiveServer**: Authenticated pages requiring real-time updates, secure data access, or server-side validation (user profiles, admin dashboards, check-in flows)
+- **InteractiveWebAssembly**: Client-side interactive features that don't require server data or authentication (theme toggles, UI animations, offline-capable features)
+
+### IX. DaisyUI Build (INPUT → OUTPUT)
+
+- **Input file**: The DaisyUI / Tailwind source used by the frontend is `Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css` (this is the LLM-friendly, human-editable source that imports Tailwind and the DaisyUI plugins). Do not create an alternate input file; this is the single source of truth for DaisyUI theme configuration.
+- **Generated output**: The compiled stylesheet consumed by the web project is `Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css`.
+- **How to regenerate**: Run the Tailwind CLI via pnpx from the repository root to compile `input.css` into `output.css`. Example command (uses Tailwind v4 as required by DaisyUI 5):
+
+```pwsh
+pnpx tailwindcss@4 -i Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css -o Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css --minify
+```
+
+- **CI / developer note**: Add this command to your local dev workflow or CI pipeline so `output.css` is regenerated whenever `input.css` (or the theme config in `input.css`) changes. The repository currently includes a committed `output.css` for convenience — treat it as a generated artifact and regenerate when making style/theme edits.
+- **Reference**: For DaisyUI usage rules, conventions, and plugin configuration, see the LLM-friendly guide at `.vscode/daisyui.md` in the repo. Follow that guidance when editing `input.css` (theme blocks, plugins, and allowed patterns).
+
+#### Migration & Component Styling Guidance (added 2025-10-21)
+
+- **Single source of truth**: Do not duplicate theme variables in multiple files. Migrate any existing theme files (for example `wwwroot/css/daisy-theme.css`) into the canonical `input.css` so the compiled `output.css` contains the authoritative styling.
+- **Component-scoped styles**: Prefer component-scoped CSS files for Blazor components (`Component.razor.css`) placed next to the component. Use these files for component-specific visual rules (focus rings, layout tweaks, minor overrides) rather than sprinkling bespoke styles into global stylesheets.
+- **Remove redundant links**: Do not include duplicate theme stylesheet links in `App.razor` or other host pages if their variables are already compiled into `_content/Visage.FrontEnd.Shared/output.css`.
+- **CI / pipeline**: Add a pipeline step that runs the Tailwind build before the .NET build. Example (PowerShell / Azure Pipelines) to run from repository root:
+
+```pwsh
+pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared install
+pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared run buildcss
+```
+
+- **Generated artifact policy**: `Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css` is a generated artifact. It may be committed for convenience in local development, but CI and release pipelines MUST regenerate it from `input.css` before packaging/deploying.
+
+
+- **InteractiveAuto**: Pages requiring initial fast load with subsequent rich interactivity (event listings with filtering, registration forms with client validation)
+
+Components MUST NOT:
+
+- Use InteractiveWebAssembly for pages accessing secure APIs or user data
+- Use InteractiveServer for purely cosmetic interactions (increases server load unnecessarily)
+- Mix render modes within a single component without justification
+@@- Mix render modes across navigation boundaries (e.g., InteractiveAuto → InteractiveServer) as this breaks Blazor's SPA routing
+@@- Override app-wide render mode settings on individual pages unless explicitly justified and documented
+
+**Rationale**: Correct render mode selection ensures optimal security (server-side for auth),
+performance (client-side for UI), and resource efficiency. As a high-traffic event platform,
+minimizing server connections for non-critical features reduces infrastructure costs while
+maintaining security for sensitive operations.
+@@Consistent render mode strategy prevents navigation issues and runtime errors when navigating between pages.
+@@
+@@**Architectural Guidance for Visage**:
+@@- Set InteractiveServer as the app-wide default in `App.razor` on the `<Routes>` component for applications using Auth0 server-side authentication and Aspire service discovery
+@@- Use InteractiveAuto sparingly and only when justified (e.g., initial fast load with subsequent rich interactivity)
+@@- Avoid per-page render mode overrides; centralize render mode strategy for predictable navigation behavior
+
+### X. Identity Provider Abstraction
+
+Authentication MUST be implemented through an abstraction layer to enable IdP replacement:
+
+- All authentication logic MUST be encapsulated behind interfaces (e.g., `IAuthenticationService`, `IUserClaimsProvider`)
+- Auth0-specific code MUST be isolated in implementation classes, never in business logic or UI
+- JWT validation, claims extraction, and scope checking MUST work with any OIDC-compliant provider
+- Configuration MUST use generic keys (`Authentication:Authority`, `Authentication:ClientId`) mapped to provider-specific values
+- No direct references to Auth0 SDK types in shared models, DTOs, or domain logic
+
+**Design Goal**: Enable migration to Keycloak, Microsoft Entra ID, or other OIDC providers with
+configuration changes and single implementation class updates—no business logic rewrites.
+
+**Rationale**: As an OSS project, Visage may be deployed by communities using different IdPs.
+By abstracting authentication, we enable deployment flexibility while maintaining the same
+codebase. This also future-proofs against vendor lock-in and demonstrates enterprise-grade
+architectural patterns.
+
 ## Technology Stack Requirements
 
 ### Mandatory Stack
@@ -126,7 +220,8 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - **Orchestration**: .NET Aspire
 - **Backend**: Minimal APIs, EF Core 10, StrictId
 - **Frontend**: Blazor Hybrid (Web + MAUI)
-- **Authentication**: Auth0
+- **UI Framework**: DaisyUI 5 (Tailwind CSS components) for consistent, accessible UI
+- **Authentication**: Auth0 (abstracted via interfaces for provider replaceability)
 - **Image Storage**: Cloudinary (via Node.js signing service)
 - **Testing**: TUnit, Fluent Assertions, Playwright, NBomber, OWASP ZAP, Stryker, bunit
 - **Mocking**: NSubstitute
@@ -137,7 +232,18 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - Repository and Unit of Work for data access
 - Service Defaults for cross-cutting concerns (health, telemetry, discovery)
 - Shared models in `Visage.Shared/` for backend DTOs
-- Shared UI components in `Visage.FrontEnd.Shared/`
+- Shared UI components in `Visage.FrontEnd.Shared/` styled with DaisyUI
+- Authentication abstraction via interfaces (`IAuthenticationService`, `IUserClaimsProvider`)
+- Blazor render modes: Static SSR (default), InteractiveServer (auth/secure), InteractiveWebAssembly (client-side), InteractiveAuto (hybrid)
+@@- Form validation: EditForm with DataAnnotationsValidator + custom ValidationMessageStore + inline ValidationMessage components for field-specific errors
+@@- DateTime comparisons: Use full DateTime for event status classification (not DateOnly) to prevent same-day future events from being misclassified
+@@- UI consistency: Maintain consistent visual styling across component states (e.g., buttons for both active/disabled states)
+- Aspire CLI tools (9.5+):
+  - `aspire exec --resource <name> -- <command>`: Execute commands in resource context with automatic environment variable injection (requires feature flag)
+  - `aspire exec --workdir /path -- <command>`: Run commands in specific working directory (Aspire 9.5+)
+  - `aspire update`: Keep Aspire packages and templates current (preview)
+  - `aspire config`: Manage feature flags and CLI configuration
+  - `aspire run` failure protocol: If aspire run fails repeatedly (2+ attempts), STOP and report the issue with error details to the user immediately. Do not continue debugging in silence.
 - Containerization for all services (Docker/Podman)
 
 ### Prohibited Patterns
@@ -147,6 +253,9 @@ demonstrating .NET 10's capabilities for building modern, scalable, distributed 
 - Synchronous I/O in API endpoints
 - Unscoped service injection in singleton services
 - Hard-coded secrets or connection strings
+- Direct Auth0 SDK references in business logic, domain models, or shared UI components
+- InteractiveWebAssembly render mode for authenticated or secure pages
+- Mixing render modes without architectural justification
 
 ## Development Workflow & Quality Gates
 
@@ -160,7 +269,14 @@ Before merging any PR:
 4. `.http` files MUST include examples for new endpoints
 5. Service registration in AppHost MUST be correct with proper `.WaitFor()` dependencies
 6. Observability: New endpoints MUST emit appropriate traces and metrics
-7. Security: Auth0 scopes MUST be correctly applied to protected endpoints
+7. Security: Authentication scopes MUST be correctly applied to protected endpoints (no provider-specific code in business logic)
+8. Blazor components: Render mode MUST be appropriate for security/performance requirements
+@@   - App-wide render mode MUST be documented in App.razor
+@@   - Per-page overrides MUST be justified in PR description
+@@   - Navigation between pages with different render modes MUST be tested
+9. UI components: MUST use DaisyUI classes for styling consistency and accessibility
+@@10. Form validation: MUST include both ValidationSummary and inline ValidationMessage components
+@@11. DateTime logic: MUST use full DateTime (not DateOnly) for time-sensitive business logic like event status classification
 
 ### Commit Conventions
 
@@ -176,7 +292,7 @@ Before merging any PR:
 
 ### Performance Expectations
 
-- API endpoints: < 200ms p95 latency for typical requests
+@@**Version**: 1.2.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-23
 - Blazor UI: Initial load < 2 seconds, interactions < 100ms perceived latency
 - Database queries: Use indexes, avoid N+1 queries
 - Load testing: MUST handle 1000 concurrent users for registration surges
@@ -213,4 +329,4 @@ Before merging any PR:
   in `.github/prompts/`
 - Complexity must be justified: if constitution rules are violated, document in plan.md
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-17
+**Version**: 1.1.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-19

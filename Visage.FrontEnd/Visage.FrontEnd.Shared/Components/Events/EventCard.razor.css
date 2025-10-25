@@ -1,0 +1,20 @@
+/* Scoped styles for EventCard component */
+:host {
+  display: block;
+}
+
+/* Ensure the image area maintains aspect and covers the card */
+.card .aspect-video img {
+  object-fit: cover;
+}
+
+/* Slightly larger focus ring for keyboard users */
+.card:focus {
+  outline: 3px solid rgba(250, 204, 21, 0.25); /* uses hackmum-primary tint */
+  outline-offset: 2px;
+}
+
+/* Ensure the title has a consistent min height to avoid layout shift */
+.card .card-title {
+  min-height: 3.5rem;
+}

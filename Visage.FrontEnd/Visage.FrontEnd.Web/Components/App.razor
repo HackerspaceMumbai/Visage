@@ -1,4 +1,7 @@
 ﻿@inject ClarityConfig ClarityConfig
+@using Microsoft.AspNetCore.Components.Web
+@using Visage.FrontEnd.Shared
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,9 +10,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <Microsoft.AspNetCore.Components.Web.ResourcePreloader />
+
     <link rel="stylesheet" href="_content/Visage.FrontEnd.Shared/output.css" />
     <link rel="icon" type="image/png" href="_content/Visage.FrontEnd.Shared/favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer"/>
+    
+    <!-- Project theme variables are compiled into _content/Visage.FrontEnd.Shared/output.css -->
+    <Microsoft.AspNetCore.Components.Web.ImportMap />
+    <Microsoft.AspNetCore.Components.Web.HeadOutlet />
     @if (!string.IsNullOrEmpty(ClarityConfig.ProjectId))
     {
         <script type="text/javascript">
@@ -23,8 +31,9 @@
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer"/>
-    <script src="_framework/blazor.web.js"></script>
+    <Visage.FrontEnd.Shared.Routes @rendermode="InteractiveServer" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
+ 
