@@ -1,0 +1,36 @@
+@using Microsoft.AspNetCore.Authentication
+@using Visage.FrontEnd.Web.Services
+@inject IHttpContextAccessor HttpContextAccessor
+@inject CircuitAccessTokenProvider TokenProvider
+@inject ILogger<TokenInitializer> Logger
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var accessToken = await httpContext.GetTokenAsync("access_token");
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    TokenProvider.AccessToken = accessToken;
+                    Logger.LogInformation("TokenInitializer: Successfully cached access token (length: {Length})", accessToken.Length);
+                }
+                else
+                {
+                    Logger.LogWarning("TokenInitializer: Access token is null or empty from HttpContext");
+                }
+            }
+            else
+            {
+                Logger.LogWarning("TokenInitializer: HttpContext is null");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "TokenInitializer: Error caching access token");
+        }
+    }
+}

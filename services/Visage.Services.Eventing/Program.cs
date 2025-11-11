@@ -141,6 +141,8 @@ events.MapPost("/", ScheduleEvent)
     .WithName("Schedule Event")
     .WithOpenApi();
 
+app.MapDefaultEndpoints();
+
 app.Run();
 
 

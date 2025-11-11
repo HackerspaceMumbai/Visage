@@ -18,18 +18,14 @@ public class SqlServerIntegrationTests
     public async Task SqlServer_Resource_Should_Appear_In_Aspire_Dashboard()
     {
         // Arrange
-        var builder = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.Visage_AppHost>();
+        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
-        builder.Services.Should().NotBeNull("Aspire AppHost services should be configured");
+        // Act - Wait for SQL server to be running
+        await resourceNotificationService.WaitForResourceAsync("sql", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(60));
         
-        // Act
-        await using var app = await builder.BuildAsync();
-        await app.StartAsync();
-        
-        // Assert
-        var sqlResource = builder.Resources.FirstOrDefault(r => r.Name == "sql");
-        sqlResource.Should().NotBeNull("SQL Server resource should be registered with name 'sql'");
+        // Assert - If we can wait for it, it's registered
+        TestAppContext.App.Should().NotBeNull("Aspire app should be available");
     }
 
     /// <summary>
@@ -39,16 +35,14 @@ public class SqlServerIntegrationTests
     public async Task RegistrationDb_Database_Should_Be_Available()
     {
         // Arrange
-        var builder = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.Visage_AppHost>();
+        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
-        // Act
-        await using var app = await builder.BuildAsync();
-        await app.StartAsync();
+        // Act - Wait for registrationdb to be running
+        await resourceNotificationService.WaitForResourceAsync("registrationdb", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(60));
         
-        // Assert
-        var registrationDbResource = builder.Resources.FirstOrDefault(r => r.Name == "registrationdb");
-        registrationDbResource.Should().NotBeNull("registrationdb should be registered as a database resource");
+        // Assert - If we can wait for it, it's registered and available
+        TestAppContext.App.Should().NotBeNull("Aspire app should be available");
     }
 
     /// <summary>
@@ -58,16 +52,14 @@ public class SqlServerIntegrationTests
     public async Task EventingDb_Database_Should_Be_Available()
     {
         // Arrange
-        var builder = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.Visage_AppHost>();
+        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
-        // Act
-        await using var app = await builder.BuildAsync();
-        await app.StartAsync();
+        // Act - Wait for eventingdb to be running
+        await resourceNotificationService.WaitForResourceAsync("eventingdb", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(60));
         
-        // Assert
-        var eventingDbResource = builder.Resources.FirstOrDefault(r => r.Name == "eventingdb");
-        eventingDbResource.Should().NotBeNull("eventingdb should be registered as a database resource");
+        // Assert - If we can wait for it, it's registered and available
+        TestAppContext.App.Should().NotBeNull("Aspire app should be available");
     }
 
     /// <summary>

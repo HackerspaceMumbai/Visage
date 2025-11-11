@@ -53,8 +53,8 @@ builder.Services.AddMemoryCache();
 
 // Add the delegating handler
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CircuitAccessTokenProvider>(); // Token cache for Blazor Server circuit
 builder.Services.AddScoped<AuthenticationDelegatingHandler>();
-builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 // Image CDN transformation options and service
 builder.Services.Configure<ImageCdnOptions>(builder.Configuration.GetSection("ImageCdn"));
@@ -88,7 +88,19 @@ builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client
     client.BaseAddress = new Uri("https+http://registrations-api");
 });
 
-                                                        
+// T034: Register HttpClient for ProfileService calling backend API directly
+// In Blazor Server, ProfileService runs server-side and can use AuthenticationDelegatingHandler
+builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+})
+.AddHttpMessageHandler<AuthenticationDelegatingHandler>();
+
+// BFF endpoint for profile completion status
+builder.Services.AddHttpClient("registrations-api-bff", client =>
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+});
 
 
 
@@ -148,6 +160,47 @@ app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
 
 app.UseAuthentication(); // This should come before UseAuthorization
 app.UseAuthorization();  // This requires AddAuthorization() to be called
+
+// BFF endpoint for profile completion status - must be after UseAuthentication/UseAuthorization
+app.MapGet("/bff/profile/completion-status", async (HttpContext httpContext, IHttpClientFactory httpClientFactory, ILogger<Program> logger) =>
+{
+    logger.LogInformation("[BFF] /bff/profile/completion-status called");
+    
+    if (!httpContext.User.Identity?.IsAuthenticated == true)
+    {
+        logger.LogWarning("[BFF] User not authenticated");
+        return Results.Unauthorized();
+    }
+
+    var userId = httpContext.User.FindFirst("sub")?.Value ?? httpContext.User.Identity.Name;
+    logger.LogInformation("[BFF] Authenticated user: {UserId}", userId);
+
+    var accessToken = await httpContext.GetTokenAsync("access_token");
+    if (string.IsNullOrWhiteSpace(accessToken))
+    {
+        logger.LogWarning("[BFF] No access token found");
+        return Results.Unauthorized();
+    }
+
+    logger.LogInformation("[BFF] Access token retrieved (length: {Length})", accessToken.Length);
+
+    var client = httpClientFactory.CreateClient("registrations-api-bff");
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+    
+    logger.LogInformation("[BFF] Calling backend API: {BaseAddress}/api/profile/completion-status", client.BaseAddress);
+    var response = await client.GetAsync("/api/profile/completion-status");
+    
+    logger.LogInformation("[BFF] Backend API response: {StatusCode}", response.StatusCode);
+    
+    // Return the response content with proper status code
+    var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/json";
+    var content = await response.Content.ReadAsStringAsync();
+    
+    logger.LogInformation("[BFF] Returning response to client (status: {StatusCode}, content length: {Length})", 
+        (int)response.StatusCode, content.Length);
+    
+    return Results.Content(content, contentType, statusCode: (int)response.StatusCode);
+}).RequireAuthorization();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

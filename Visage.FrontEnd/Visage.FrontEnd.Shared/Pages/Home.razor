@@ -6,13 +6,25 @@
 @using Visage.FrontEnd.Shared.Models
 @using Visage.FrontEnd.Shared.Components
 @using Visage.FrontEnd.Shared.Components.Events
+@using Visage.Shared.Models
+@using Microsoft.JSInterop
 @inject NavigationManager NavigationManager
 @inject IFormFactor FormFactor
 @inject IEventService EventService
 @inject IImageUrlTransformer ImageUrlTransformer
 @inject ILogger<Home> Logger
+@inject IProfileService ProfileService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Visage - Hackerspace Mumbai Events</PageTitle>
+
+<!-- T024: AIDE Completion Banner (show if mandatory complete but AIDE incomplete) -->
+@if (profileCompletionStatus != null)
+{
+    <AideCompletionBanner 
+        IsProfileComplete="@profileCompletionStatus.IsProfileComplete" 
+        IsAideProfileComplete="@profileCompletionStatus.IsAideProfileComplete" />
+}
 
 <!-- T020-T025: Upcoming Events Section -->
 <section class="p-4 md:p-6 lg:p-8">
@@ -90,13 +102,55 @@
     private List<EventViewModel>? pastEventViewModels;
     private string? errorMessage;
     private string? Username;
-    private bool RequiresRegistrationRedirect = false;
-    private bool IsNewUser;
-    private bool HasCompletedRegistration;
+    private ProfileCompletionStatusDto? profileCompletionStatus;
+    private bool hasCheckedProfileCompletion;
 
     // T021: Inject EventService and load upcoming events
+    // T036: Check profile completion DURING PRERENDER when HttpContext is available
     protected override async Task OnInitializedAsync()
     {
+        // Check profile completion first (during prerender when HttpContext is available)
+        if (authenticationState != null)
+        {
+            try
+            {
+                var authState = await authenticationState;
+                var user = authState?.User;
+
+                if (user?.Identity is not null && user.Identity.IsAuthenticated)
+                {
+                    Username = user.Identity.Name ?? string.Empty;
+                    Logger.LogInformation("Home: Authenticated user {Username}, checking profile completion during prerender", Username);
+
+                    // Call ProfileService during prerender when HttpContext is available
+                    profileCompletionStatus = await ProfileService.GetCompletionStatusAsync();
+
+                    if (profileCompletionStatus == null)
+                    {
+                        Logger.LogWarning("Home: ProfileService returned null during prerender");
+                    }
+                    else if (!profileCompletionStatus.IsProfileComplete)
+                    {
+                        Logger.LogInformation("Home: User {Username} has incomplete profile, redirecting IMMEDIATELY", Username);
+                        // Redirect immediately during prerender - don't wait for OnAfterRenderAsync
+                        NavigationManager.NavigateTo("/registration/mandatory", forceLoad: true);
+                        return; // Stop processing
+                    }
+                    else
+                    {
+                        Logger.LogInformation("Home: User {Username} has complete profile", Username);
+                    }
+
+                    hasCheckedProfileCompletion = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error checking profile completion during prerender");
+            }
+        }
+
+        // Load events only if we didn't redirect
         await LoadEventsAsync();
     }
 
@@ -120,41 +174,6 @@
             Console.WriteLine("Home RenderInfo: " + RendererInfo.Name);
             Console.WriteLine("Is Home Component Interactive? " + RendererInfo.IsInteractive);
             Console.WriteLine("AssignedRenderMode: " + AssignedRenderMode);
-
-            // Authentication logic (existing)
-            if (authenticationState is not null)
-            {
-                var authState = await authenticationState;
-                var user = authState?.User;
-
-                if (user?.Identity is not null && user.Identity.IsAuthenticated)
-                {
-                    Username = user.Identity.Name ?? string.Empty;
-
-                    if (!bool.TryParse(
-                        user.Claims?.FirstOrDefault(c => c.Type == "is_new_user")?.Value ?? "false",
-                        out IsNewUser))
-                    {
-                        IsNewUser = false;
-                    }
-
-                    if (!bool.TryParse(
-                        user.Claims?.FirstOrDefault(c => c.Type == "registration_complete")?.Value ?? "false",
-                        out HasCompletedRegistration))
-                    {
-                        HasCompletedRegistration = false;
-                    }
-
-                    Logger.LogInformation("Home RendererInfo IsInteractive?: {Interactive}", RendererInfo.IsInteractive);
-                    Logger.LogInformation("Home RenderInfo.Name: {RenderName}", RendererInfo.Name);
-
-                    if (IsNewUser || !HasCompletedRegistration)
-                    {
-                        Logger.LogInformation("Home New user detected: {Username}, needs registration", Username);
-                        RequiresRegistrationRedirect = true;
-                    }
-                }
-            }
         }
         catch (Exception ex)
         {
@@ -164,22 +183,7 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        try
-        {
-            if (RequiresRegistrationRedirect)
-            {
-                Logger.LogInformation("Redirecting new user to registration page");
-                RequiresRegistrationRedirect = false;
-                NavigationManager.NavigateTo("/user-registration", forceLoad: false);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error in Home component OnAfterRenderAsync");
-        }
-    }
+
 
     // T022: Retry button handler
     private async Task RetryLoadEvents()
@@ -190,7 +194,7 @@
     }
 
     // T025: Helper method to map Event to EventViewModel with image URL transformation
-    private List<EventViewModel> MapToViewModels(List<Event> events)
+    private List<EventViewModel> MapToViewModels(List<Visage.FrontEnd.Shared.Models.Event> events)
     {
         var viewModels = events.Select(evt => {
             Logger.LogInformation("Mapping event: {Title}, CoverPicture: {CoverPicture}", 

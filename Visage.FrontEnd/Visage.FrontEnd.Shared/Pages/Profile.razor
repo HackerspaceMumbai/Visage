@@ -1,6 +1,7 @@
 @page "/profile/{UserId}"
 @attribute [Authorize]
-@inject IUserProfileService UserProfileService
+@inject IProfileService ProfileService
+@inject ILogger<Profile> Logger
 
 @using Visage.FrontEnd.Shared.Services
 @using Visage.Shared.Models
@@ -26,9 +27,15 @@ else if (UserProfile is not null)
         <form @onsubmit="HandleValidSubmit" @onsubmit:preventDefault="true">
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text">Name</span>
+                    <span class="label-text">First Name</span>
                 </label>
-                <input class="input input-bordered" @bind="UserProfile.Name" required />
+                <input class="input input-bordered" @bind="UserProfile.FirstName" required />
+            </div>
+            <div class="form-control mb-4">
+                <label class="label">
+                    <span class="label-text">Last Name</span>
+                </label>
+                <input class="input input-bordered" @bind="UserProfile.LastName" required />
             </div>
             <div class="form-control mb-4">
                 <label class="label">
@@ -40,19 +47,19 @@ else if (UserProfile is not null)
                 <label class="label">
                     <span class="label-text">LinkedIn</span>
                 </label>
-                <input class="input input-bordered" @bind="UserProfile.LinkedIn" />
+                <input class="input input-bordered" @bind="UserProfile.LinkedInProfile" />
             </div>
             <div class="form-control mb-4">
                 <label class="label">
                     <span class="label-text">GitHub</span>
                 </label>
-                <input class="input input-bordered" @bind="UserProfile.GitHub" />
+                <input class="input input-bordered" @bind="UserProfile.GitHubProfile" />
             </div>
             <div class="form-control mb-4">
                 <label class="label">
-                    <span class="label-text">Registration Date</span>
+                    <span class="label-text">Profile Status</span>
                 </label>
-                <input class="input input-bordered" value="@UserProfile.RegistrationDate.ToString("yyyy-MM-dd HH:mm")" readonly />
+                <input class="input input-bordered" value="@(UserProfile.IsProfileComplete ? "Complete" : "Incomplete")" readonly />
             </div>
             <div class="flex gap-4 mt-6">
                 <button class="btn btn-primary" type="submit" disabled="@IsSaving">
@@ -81,8 +88,8 @@ else if (UserProfile is not null)
 }
 
 @code {
-    private UserProfileDto? UserProfile;
-    private UserProfileDto? OriginalProfile;
+    private Visage.Shared.Models.Registrant? UserProfile;
+    private Visage.Shared.Models.Registrant? OriginalProfile;
     private bool IsLoading = true;
     private bool HasError = false;
     private bool IsSaving = false;
@@ -90,18 +97,34 @@ else if (UserProfile is not null)
     private bool SaveError = false;
 
     [Parameter]
-    public string UserId { get; set; }
+    public string UserId { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            UserProfile = await UserProfileService.GetUserProfileAsync(UserId);
-            OriginalProfile = UserProfile?.Clone();
+            Logger.LogInformation("Profile: Loading profile");
+            UserProfile = await ProfileService.GetProfileAsync();
+            
+            if (UserProfile != null)
+            {
+                // Create a copy for reset functionality
+                OriginalProfile = new Visage.Shared.Models.Registrant
+                {
+                    Id = UserProfile.Id,
+                    FirstName = UserProfile.FirstName,
+                    LastName = UserProfile.LastName,
+                    Email = UserProfile.Email,
+                    LinkedInProfile = UserProfile.LinkedInProfile,
+                    GitHubProfile = UserProfile.GitHubProfile,
+                    IsProfileComplete = UserProfile.IsProfileComplete
+                };
+            }
             HasError = false;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading profile");
             HasError = true;
         }
         finally
@@ -119,13 +142,31 @@ else if (UserProfile is not null)
         {
             if (UserProfile is not null)
             {
-                await UserProfileService.UpdateCurrentUserProfileAsync(UserProfile);
-                SaveSuccess = true;
-                OriginalProfile = UserProfile.Clone();
+                var success = await ProfileService.UpdateProfileAsync(UserProfile);
+                if (success)
+                {
+                    SaveSuccess = true;
+                    // Update original profile copy
+                    OriginalProfile = new Visage.Shared.Models.Registrant
+                    {
+                        Id = UserProfile.Id,
+                        FirstName = UserProfile.FirstName,
+                        LastName = UserProfile.LastName,
+                        Email = UserProfile.Email,
+                        LinkedInProfile = UserProfile.LinkedInProfile,
+                        GitHubProfile = UserProfile.GitHubProfile,
+                        IsProfileComplete = UserProfile.IsProfileComplete
+                    };
+                }
+                else
+                {
+                    SaveError = true;
+                }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Error saving profile");
             SaveError = true;
         }
         finally
@@ -136,9 +177,12 @@ else if (UserProfile is not null)
 
     private void ResetForm()
     {
-        if (OriginalProfile is not null)
+        if (OriginalProfile is not null && UserProfile is not null)
         {
-            UserProfile = OriginalProfile.Clone();
+            UserProfile.FirstName = OriginalProfile.FirstName;
+            UserProfile.LastName = OriginalProfile.LastName;
+            UserProfile.LinkedInProfile = OriginalProfile.LinkedInProfile;
+            UserProfile.GitHubProfile = OriginalProfile.GitHubProfile;
         }
         SaveSuccess = false;
         SaveError = false;

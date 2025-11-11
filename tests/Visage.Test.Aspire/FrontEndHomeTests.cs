@@ -9,6 +9,7 @@ using Visage.Shared.Models;
 using Microsoft.Playwright;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using Visage.Test.Aspire;
 
 namespace Visage.Tests.Frontend.Web
 {
@@ -21,11 +22,7 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task AspireServiceDiscoveryExposesRequiredBackendServices()
         {
-            var hostBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Visage_AppHost>();
-            hostBuilder.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-            await using var app = await hostBuilder.BuildAsync();
-            var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
-            await app.StartAsync();
+            var resourceNotificationService = TestAppContext.ResourceNotificationService;
             
             // Wait for all backend services
             await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
@@ -35,15 +32,15 @@ namespace Visage.Tests.Frontend.Web
             
             // Validate that HttpClients can be created for all expected service names
             // This exercises the same code path that Program.cs uses
-            var eventingClient = app.CreateHttpClient("eventing");
+            var eventingClient = TestAppContext.CreateHttpClient("eventing");
             eventingClient.Should().NotBeNull("eventing service should be discoverable");
             eventingClient.BaseAddress.Should().NotBeNull("eventing service should have a base address");
             
-            var registrationsClient = app.CreateHttpClient("registrations-api");
+            var registrationsClient = TestAppContext.CreateHttpClient("registrations-api");
             registrationsClient.Should().NotBeNull("registrations-api service should be discoverable");
             registrationsClient.BaseAddress.Should().NotBeNull("registrations-api service should have a base address");
             
-            var cloudinaryClient = app.CreateHttpClient("cloudinary-image-signing");
+            var cloudinaryClient = TestAppContext.CreateHttpClient("cloudinary-image-signing");
             cloudinaryClient.Should().NotBeNull("cloudinary-image-signing service should be discoverable");
             cloudinaryClient.BaseAddress.Should().NotBeNull("cloudinary-image-signing service should have a base address");
             
@@ -58,13 +55,9 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task ShouldDisplayCorrectPageTitle()
         {
-            var hostBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Visage_AppHost>();
-            hostBuilder.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-            await using var app = await hostBuilder.BuildAsync();
-            var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
-            await app.StartAsync();
+            var resourceNotificationService = TestAppContext.ResourceNotificationService;
             await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            var feClient = app.CreateHttpClient("frontendweb");
+            var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
             using var playwright = await Playwright.CreateAsync();
@@ -79,11 +72,7 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task ShouldShowUpcomingAndPastEventsAfterSeeding()
         {
-            var hostBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Visage_AppHost>();
-            hostBuilder.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-            await using var app = await hostBuilder.BuildAsync();
-            var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
-            await app.StartAsync();
+            var resourceNotificationService = TestAppContext.ResourceNotificationService;
             
             // CRITICAL: Wait for ALL services the frontend depends on, not just the frontend itself
             await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
@@ -91,7 +80,7 @@ namespace Visage.Tests.Frontend.Web
             await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
 
             // Seed data via Event API
-            var apiClient = app.CreateHttpClient("eventing");
+            var apiClient = TestAppContext.CreateHttpClient("eventing");
 
             var upcoming = new Event
             {
@@ -122,7 +111,7 @@ namespace Visage.Tests.Frontend.Web
             var pastResp = await apiClient.PostAsJsonAsync("/events", past);
             pastResp.EnsureSuccessStatusCode();
 
-            var feClient = app.CreateHttpClient("frontendweb");
+            var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
             using var playwright = await Playwright.CreateAsync();
@@ -186,17 +175,13 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task ShouldShowEmptyStatesWhenNoEvents()
         {
-            var hostBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Visage_AppHost>();
-            hostBuilder.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-            await using var app = await hostBuilder.BuildAsync();
-            var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
-            await app.StartAsync();
+            var resourceNotificationService = TestAppContext.ResourceNotificationService;
             
             // Wait for backend services
             await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
             await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
             await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            var feClient = app.CreateHttpClient("frontendweb");
+            var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
             using var playwright = await Playwright.CreateAsync();
@@ -214,11 +199,7 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task EventCardShowsNameLocationAndRsvp()
         {
-            var hostBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Visage_AppHost>();
-            hostBuilder.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-            await using var app = await hostBuilder.BuildAsync();
-            var resourceNotificationService = app.Services.GetRequiredService<ResourceNotificationService>();
-            await app.StartAsync();
+            var resourceNotificationService = TestAppContext.ResourceNotificationService;
             
             // Wait for backend services before frontend
             await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
@@ -226,7 +207,7 @@ namespace Visage.Tests.Frontend.Web
             await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
 
             // Seed one upcoming event
-            var apiClient = app.CreateHttpClient("eventing");
+            var apiClient = TestAppContext.CreateHttpClient("eventing");
             var evt = new Event
             {
                 Title = "Card Detail Test",
@@ -241,7 +222,7 @@ namespace Visage.Tests.Frontend.Web
             var resp = await apiClient.PostAsJsonAsync("/events", evt);
             resp.EnsureSuccessStatusCode();
 
-            var feClient = app.CreateHttpClient("frontendweb");
+            var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
             using var playwright = await Playwright.CreateAsync();
