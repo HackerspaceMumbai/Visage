@@ -179,6 +179,16 @@ public partial class MandatoryRegistration : ComponentBase
             _ = await ProfileService.GetCompletionStatusAsync();
 
         }
+        catch (HttpRequestException ex)
+        {
+            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+        catch (TaskCanceledException ex)
+        {
+            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
         catch (Exception ex)
         {
             customErrors.Add($"An unexpected error occurred: {ex.Message}");

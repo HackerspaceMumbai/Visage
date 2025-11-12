@@ -234,6 +234,16 @@ public class ProfileService : IProfileService
                 return null;
             }
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "GetProfileAsync: Network error fetching profile");
+            return null;
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "GetProfileAsync: Request timeout fetching profile");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetProfileAsync: Error fetching profile");
@@ -268,6 +278,16 @@ public class ProfileService : IProfileService
                     response.StatusCode, errorContent);
                 return false;
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "UpdateProfileAsync: Network error updating profile");
+            return false;
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "UpdateProfileAsync: Request timeout updating profile");
+            return false;
         }
         catch (Exception ex)
         {
