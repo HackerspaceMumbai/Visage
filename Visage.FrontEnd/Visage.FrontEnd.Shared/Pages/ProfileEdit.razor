@@ -1,0 +1,786 @@
+@*
+    T021: ProfileEdit.razor - Unified profile editor
+    Shows mandatory fields (readonly) and AIDE fields (editable).
+    Allows users to complete optional accessibility/inclusiveness information.
+*@
+@page "/profile/edit"
+@using Visage.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Web
+@using Visage.FrontEnd.Shared.Services
+@inject NavigationManager Navigation
+@inject IProfileService ProfileService
+@inject ILogger<ProfileEdit> Logger
+@implements IDisposable
+
+<PageTitle>Edit Profile - Visage</PageTitle>
+
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="card card-border bg-base-100">
+        <div class="card-body">
+            <h1 class="card-title text-3xl mb-2">Your Profile</h1>
+            <p class="text-base-content/70 mb-6">
+                Your mandatory profile is complete! Optionally, you can enhance your experience by completing accessibility and inclusiveness information below.
+            </p>
+
+            @if (isSubmitting)
+            {
+                <div class="flex justify-center items-center py-8">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                    <span class="ml-4 text-lg">Saving your changes...</span>
+                </div>
+            }
+            else if (registrant == null)
+            {
+                <div class="flex justify-center items-center py-8">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                    <span class="ml-4 text-lg">Loading your profile...</span>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@registrant" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    
+                    @* T021: Mandatory Information Section (Readonly) *@
+                    <div class="collapse collapse-open border border-base-300 mb-4 bg-base-200/50">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium">
+                            ✅ Mandatory Information <span class="badge badge-success badge-sm ml-2">Complete</span>
+                        </div>
+                        <div class="collapse-content">
+                            <p class="text-sm text-base-content/70 mb-4">
+                                These fields are locked and cannot be edited here. Contact support if you need to update mandatory information.
+                            </p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <label class="form-control">
+                                    <span class="label">First Name</span>
+                                    <input type="text" value="@registrant.FirstName" class="input input-bordered" readonly disabled />
+                                </label>
+                                
+                                <label class="form-control">
+                                    <span class="label">Last Name</span>
+                                    <input type="text" value="@registrant.LastName" class="input input-bordered" readonly disabled />
+                                </label>
+                                
+                                <label class="form-control">
+                                    <span class="label">Email</span>
+                                    <input type="email" value="@registrant.Email" class="input input-bordered" readonly disabled />
+                                </label>
+                                
+                                <label class="form-control">
+                                    <span class="label">Mobile Number</span>
+                                    <input type="tel" value="@registrant.MobileNumber" class="input input-bordered" readonly disabled />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* T021: AIDE Section (Editable) *@
+                    <div class="collapse collapse-open border border-primary/30 mb-4">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium bg-primary/10 flex items-center justify-between">
+                            <span>
+                                ♿ Accessibility & Inclusiveness (AIDE) <span class="badge badge-primary badge-sm ml-2">Optional</span>
+                            </span>
+                            @* T045: Auto-save status indicator *@
+                            <span>
+                                @if (_showDraftSaved)
+                                {
+                                    <span class="text-sm font-normal text-success ml-4 animate-pulse">
+                                        💾 Draft saved
+                                    </span>
+                                }
+                                else if (_isDraftRestored && _lastAutoSaveTime.HasValue)
+                                {
+                                    <span class="text-sm font-normal text-info ml-4">
+                                        📥 Draft restored
+                                    </span>
+                                }
+                            </span>
+                        </div>
+                        <div class="collapse-content">
+                            <p class="text-sm text-base-content/70 mb-4">
+                                Share information about your accessibility needs and preferences to help us create more inclusive events.
+                                All fields are optional and will be kept confidential.
+                            </p>
+                            
+                            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6">
+                                @* Gender Identity *@
+                                <div class="sm:col-span-2">
+                                    <label for="genderIdentity" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Gender Identity</span>
+                                        </div>
+                                        <InputSelect id="genderIdentity" @bind-Value="registrant.GenderIdentity" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Non-binary">Non-binary</option>
+                                            <option value="Transgender">Transgender</option>
+                                            <option value="Prefer to self-describe">Prefer to self-describe</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                    @if (registrant.GenderIdentity == "Prefer to self-describe")
+                                    {
+                                        <label for="selfDescribeGender" class="form-control">
+                                            <div class="label">
+                                                <span class="label-text">Self-Describe Gender</span>
+                                            </div>
+                                            <InputText id="selfDescribeGender" @bind-Value="registrant.SelfDescribeGender" class="block input input-bordered focus:input-primary" placeholder="Please specify" />
+                                        </label>
+                                    }
+                                </div>
+
+                                @* Age Range *@
+                                <div class="sm:col-span-2">
+                                    <label for="ageRange" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Age Range</span>
+                                        </div>
+                                        <InputSelect id="ageRange" @bind-Value="registrant.AgeRange" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Under 18">Under 18</option>
+                                            <option value="18–24">18–24</option>
+                                            <option value="25–34">25–34</option>
+                                            <option value="35–44">35–44</option>
+                                            <option value="45–54">45–54</option>
+                                            <option value="55–64">55–64</option>
+                                            <option value="65+">65+</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Ethnicity *@
+                                <div class="sm:col-span-2">
+                                    <label for="ethnicity" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Ethnicity/Cultural Background</span>
+                                        </div>
+                                        <InputSelect id="ethnicity" @bind-Value="registrant.Ethnicity" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Marathi">Marathi</option>
+                                            <option value="Gujarati">Gujarati</option>
+                                            <option value="Hindi-speaking communities">Hindi-speaking communities</option>
+                                            <option value="Bengali">Bengali</option>
+                                            <option value="Tamil">Tamil</option>
+                                            <option value="Telugu">Telugu</option>
+                                            <option value="Kannada">Kannada</option>
+                                            <option value="Malayali">Malayali</option>
+                                            <option value="Punjabi">Punjabi</option>
+                                            <option value="Sindhi">Sindhi</option>
+                                            <option value="Parsi/Zoroastrian">Parsi/Zoroastrian</option>
+                                            <option value="Konkani">Konkani</option>
+                                            <option value="Anglo-Indian">Anglo-Indian</option>
+                                            <option value="Assamese">Assamese</option>
+                                            <option value="Odia">Odia</option>
+                                            <option value="Rajasthani">Rajasthani</option>
+                                            <option value="Bihari">Bihari</option>
+                                            <option value="Manipuri">Manipuri</option>
+                                            <option value="Kashmiri">Kashmiri</option>
+                                            <option value="Nepali">Nepali</option>
+                                            <option value="Tribal/Adivasi communities">Tribal/Adivasi communities</option>
+                                            <option value="Bhil">Bhil</option>
+                                            <option value="Gond">Gond</option>
+                                            <option value="Santhal">Santhal</option>
+                                            <option value="Warli">Warli</option>
+                                            <option value="Others from the Indian subcontinent">Others from the Indian subcontinent</option>
+                                            <option value="Pakistani">Pakistani</option>
+                                            <option value="Bangladeshi">Bangladeshi</option>
+                                            <option value="Sri Lankan">Sri Lankan</option>
+                                            <option value="International Origin">International Origin</option>
+                                            <option value="African">African</option>
+                                            <option value="East Asian">East Asian</option>
+                                            <option value="European">European</option>
+                                            <option value="Middle Eastern">Middle Eastern</option>
+                                            <option value="Other">Other</option>
+                                            <option value="Prefer to self-describe">Prefer to self-describe</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                    @if (registrant.Ethnicity == "Prefer to self-describe")
+                                    {
+                                        <label for="selfDescribeEthnicity" class="form-control">
+                                            <div class="label">
+                                                <span class="label-text">Self-Describe Ethnicity</span>
+                                            </div>
+                                            <InputText id="selfDescribeEthnicity" @bind-Value="registrant.SelfDescribeEthnicity" class="block input input-bordered focus:input-primary" placeholder="Please specify" />
+                                        </label>
+                                    }
+                                </div>
+
+                                @* Language Proficiency *@
+                                <div class="sm:col-span-2">
+                                    <label for="languageProficiency" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Language Proficiency</span>
+                                        </div>
+                                        <InputSelect id="languageProficiency" @bind-Value="registrant.LanguageProficiency" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Marathi">Marathi</option>
+                                            <option value="English">English</option>
+                                            <option value="Gujarati">Gujarati</option>
+                                            <option value="Bengali">Bengali</option>
+                                            <option value="Tamil">Tamil</option>
+                                            <option value="Telugu">Telugu</option>
+                                            <option value="Kannada">Kannada</option>
+                                            <option value="Urdu">Urdu</option>
+                                            <option value="Other">Other</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Educational Background *@
+                                <div class="sm:col-span-2">
+                                    <label for="educationalBackground" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Educational Background</span>
+                                        </div>
+                                        <InputSelect id="educationalBackground" @bind-Value="registrant.EducationalBackground" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="High school or equivalent">High school or equivalent</option>
+                                            <option value="Bachelor's degree">Bachelor's degree</option>
+                                            <option value="Master's degree">Master's degree</option>
+                                            <option value="Doctorate">Doctorate</option>
+                                            <option value="Other">Other</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                    @if (registrant.EducationalBackground == "Other")
+                                    {
+                                        <label for="selfDescribeEducation" class="form-control">
+                                            <div class="label">
+                                                <span class="label-text">Self-Describe Education</span>
+                                            </div>
+                                            <InputText id="selfDescribeEducation" @bind-Value="registrant.SelfDescribeEducation" class="block input input-bordered focus:input-primary" placeholder="Please specify" />
+                                        </label>
+                                    }
+                                </div>
+
+                                @* Disability *@
+                                <div class="sm:col-span-2">
+                                    <label for="disability" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Disability and Accessibility Needs</span>
+                                        </div>
+                                        <InputSelect id="disability" @bind-Value="registrant.Disability" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Visual impairment">Visual impairment</option>
+                                            <option value="Hearing impairment">Hearing impairment</option>
+                                            <option value="Mobility impairment">Mobility impairment</option>
+                                            <option value="Cognitive/learning disability">Cognitive/learning disability</option>
+                                            <option value="Multiple disabilities">Multiple disabilities</option>
+                                            <option value="None">None</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Disability Details (conditional) *@
+                                @if (!string.IsNullOrWhiteSpace(registrant.Disability) && registrant.Disability != "None" && registrant.Disability != "Prefer not to say")
+                                {
+                                    <div class="sm:col-span-2">
+                                        <label for="disabilityDetails" class="form-control">
+                                            <div class="label">
+                                                <span class="label-text font-bold">Disability Details / Support Needed</span>
+                                            </div>
+                                            <InputTextArea id="disabilityDetails" @bind-Value="registrant.DisabilityDetails" class="block input input-bordered focus:input-primary" rows="3" placeholder="Please describe any specific accommodations" />
+                                        </label>
+                                    </div>
+                                }
+
+                                @* Dietary Requirements *@
+                                <div class="sm:col-span-2">
+                                    <label for="dietaryRequirements" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Dietary Requirements</span>
+                                        </div>
+                                        <InputSelect id="dietaryRequirements" @bind-Value="registrant.DietaryRequirements" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="None">None</option>
+                                            <option value="Vegetarian">Vegetarian</option>
+                                            <option value="Vegan">Vegan</option>
+                                            <option value="Halal">Halal</option>
+                                            <option value="Jain">Jain</option>
+                                            <option value="Gluten-free">Gluten-free</option>
+                                            <option value="Lactose-free">Lactose-free</option>
+                                            <option value="Nut allergies">Nut allergies</option>
+                                            <option value="Other">Other</option>
+                                        </InputSelect>
+                                    </label>
+                                    @if (!string.IsNullOrWhiteSpace(registrant.DietaryRequirements) && registrant.DietaryRequirements != "None")
+                                    {
+                                        <label for="selfDescribeDietary" class="form-control">
+                                            <div class="label">
+                                                <span class="label-text">Specific Dietary Needs</span>
+                                            </div>
+                                            <InputText id="selfDescribeDietary" @bind-Value="registrant.SelfDescribeDietary" class="block input input-bordered focus:input-primary" placeholder="Allergies, preferences, etc." />
+                                        </label>
+                                    }
+                                </div>
+
+                                @* LGBTQ+ Identity *@
+                                <div class="sm:col-span-2">
+                                    <label for="lgbtqIdentity" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">LGBTQ+ Identity</span>
+                                        </div>
+                                        <InputSelect id="lgbtqIdentity" @bind-Value="registrant.LgbtqIdentity" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Parental Status *@
+                                <div class="sm:col-span-2">
+                                    <label for="parentalStatus" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Parental/Guardian Status</span>
+                                        </div>
+                                        <InputSelect id="parentalStatus" @bind-Value="registrant.ParentalStatus" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Parent">Parent</option>
+                                            <option value="Guardian">Guardian</option>
+                                            <option value="None">None</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Socioeconomic Background *@
+                                <div class="sm:col-span-2">
+                                    <label for="howDidYouHear" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Socioeconomic Background</span>
+                                        </div>
+                                        <InputSelect id="socioeconomicBackground" @bind-Value="registrant.SocioeconomicBackground" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Lower income">Lower income</option>
+                                            <option value="Lower-middle income">Lower-middle income</option>
+                                            <option value="Middle income">Middle income</option>
+                                            <option value="Upper-middle income">Upper-middle income</option>
+                                            <option value="Upper income">Upper income</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Neurodiversity *@
+                                <div class="sm:col-span-2">
+                                    <label for="neurodiversity" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Neurodiversity</span>
+                                        </div>
+                                        <InputSelect id="neurodiversity" @bind-Value="registrant.Neurodiversity" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Neurotypical">Neurotypical</option>
+                                            <option value="ADHD">ADHD</option>
+                                            <option value="Autism Spectrum">Autism Spectrum</option>
+                                            <option value="Dyslexia">Dyslexia</option>
+                                            <option value="Other neurodivergent">Other neurodivergent</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Caregiving Responsibilities *@
+                                <div class="sm:col-span-2">
+                                    <label for="caregivingResponsibilities" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Caregiving Responsibilities</span>
+                                        </div>
+                                        <InputSelect id="caregivingResponsibilities" @bind-Value="registrant.CaregivingResponsibilities" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="None">None</option>
+                                            <option value="Children">Children</option>
+                                            <option value="Elderly parents/relatives">Elderly parents/relatives</option>
+                                            <option value="Family member with disability">Family member with disability</option>
+                                            <option value="Multiple caregiving roles">Multiple caregiving roles</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Additional Support *@
+                                <div class="sm:col-span-2">
+                                    <label for="additionalSupport" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Additional Support or Accommodations</span>
+                                        </div>
+                                        <InputTextArea id="additionalSupport" @bind-Value="registrant.AdditionalSupport" class="block input input-bordered focus:input-primary" rows="3" placeholder="Any other needs or requests" />
+                                    </label>
+                                </div>
+
+                                @* Religion *@
+                                <div class="sm:col-span-2">
+                                    <label for="religion" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Religion</span>
+                                        </div>
+                                        <InputSelect id="religion" @bind-Value="registrant.Religion" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Hinduism">Hinduism</option>
+                                            <option value="Islam">Islam</option>
+                                            <option value="Christianity">Christianity</option>
+                                            <option value="Sikhism">Sikhism</option>
+                                            <option value="Buddhism">Buddhism</option>
+                                            <option value="Jainism">Jainism</option>
+                                            <option value="Other">Other</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Caste *@
+                                <div class="sm:col-span-2">
+                                    <label for="caste" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Caste</span>
+                                        </div>
+                                        <InputSelect id="caste" @bind-Value="registrant.Caste" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="General">General</option>
+                                            <option value="OBC">OBC</option>
+                                            <option value="SC">SC</option>
+                                            <option value="ST">ST</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Neighborhood *@
+                                <div class="sm:col-span-2">
+                                    <label for="neighborhood" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Neighborhood/Area</span>
+                                        </div>
+                                        <InputSelect id="neighborhood" @bind-Value="registrant.Neighborhood" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="South Mumbai (Colaba - Churchgate)">South Mumbai (Colaba - Churchgate)</option>
+                                            <option value="Churchgate/VT - Dadar/Matunga">Churchgate/VT - Dadar/Matunga</option>
+                                            <option value="Central Mumbai (Dadar - Mahim)">Central Mumbai (Dadar - Mahim)</option>
+                                            <option value="Bandra - Andheri">Bandra - Andheri</option>
+                                            <option value="Jogeshwari - Borivali/Dahisar">Jogeshwari - Borivali/Dahisar</option>
+                                            <option value="Mira Road - Virar">Mira Road - Virar</option>
+                                            <option value="Kurla - Vikhroli (including Ghatkopar)">Kurla - Vikhroli (including Ghatkopar)</option>
+                                            <option value="Harbour Line (Wadala - Mankhurd)">Harbour Line (Wadala - Mankhurd)</option>
+                                            <option value="Navi Mumbai">Navi Mumbai</option>
+                                            <option value="Thane - Kalyan/Dombivli">Thane - Kalyan/Dombivli</option>
+                                            <option value="Karjat/Kasara">Karjat/Kasara</option>
+                                            <option value="Panvel - Roha">Panvel - Roha</option>
+                                            <option value="Pune">Pune</option>
+                                            <option value="Konkan">Konkan</option>
+                                            <option value="Other Maharashtra">Other Maharashtra</option>
+                                            <option value="Gujarat">Gujarat</option>
+                                            <option value="Other India">Other India</option>
+                                            <option value="International">International</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+
+                                @* Mode of Transportation *@
+                                <div class="sm:col-span-2">
+                                    <label for="modeOfTransportation" class="form-control">
+                                        <div class="label">
+                                            <span class="label-text font-bold">Mode of Transportation</span>
+                                        </div>
+                                        <InputSelect id="modeOfTransportation" @bind-Value="registrant.ModeOfTransportation" class="block input input-bordered focus:input-primary">
+                                            <option value="">Select...</option>
+                                            <option value="Local train">Local train</option>
+                                            <option value="Bus">Bus</option>
+                                            <option value="Car">Car</option>
+                                            <option value="Bike">Bike</option>
+                                            <option value="Walking">Walking</option>
+                                        </InputSelect>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Validation Summary *@
+                    @if (customErrors.Any())
+                    {
+                        <div class="alert alert-error mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <ul class="list-disc list-inside">
+                                @foreach (var error in customErrors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @* Action Buttons *@
+                    <div class="card-actions justify-end mt-6">
+                        <button type="button" class="btn btn-ghost" @onclick="@(() => Navigation.NavigateTo("/"))">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="loading loading-spinner loading-sm"></span>
+                            }
+                            Save Changes
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Visage.Shared.Models.Registrant? registrant;
+    private bool isSubmitting = false;
+    private List<string> customErrors = new();
+    
+    // T045: Auto-save infrastructure
+    private System.Threading.Timer? _autoSaveTimer;
+    private DateTime? _lastAutoSaveTime;
+    private bool _isDraftRestored = false;
+    private bool _showDraftSaved = false;
+    private const int AutoSaveIntervalSeconds = 30; // FR-008: 30-second auto-save
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Logger.LogInformation("ProfileEdit: Loading profile");
+            
+            registrant = await ProfileService.GetProfileAsync();
+            
+            if (registrant == null)
+            {
+                customErrors.Add("Profile not found. Please complete your mandatory registration first.");
+                Logger.LogWarning("ProfileEdit: ProfileService returned null");
+                return;
+            }
+            
+            Logger.LogInformation("ProfileEdit: Profile loaded successfully for {Id}", registrant.Id);
+            
+            // T046: Attempt to restore draft on page load
+            await RestoreDraftAsync();
+            
+            // T045: Start auto-save timer (30-second interval per FR-008)
+            _autoSaveTimer = new System.Threading.Timer(
+                async _ => await InvokeAsync(async () => await AutoSaveAsync()),
+                null,
+                TimeSpan.FromSeconds(AutoSaveIntervalSeconds),
+                TimeSpan.FromSeconds(AutoSaveIntervalSeconds)
+            );
+            
+            Logger.LogInformation("ProfileEdit: Auto-save timer started (interval: {Interval}s)", AutoSaveIntervalSeconds);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading profile in ProfileEdit");
+            customErrors.Add($"An unexpected error occurred: {ex.Message}");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            isSubmitting = true;
+            customErrors.Clear();
+
+            var success = await ProfileService.UpdateProfileAsync(registrant!);
+
+            if (!success)
+            {
+                customErrors.Add("Failed to save changes. Please try again.");
+                return;
+            }
+
+            Logger.LogInformation("ProfileEdit: Profile updated successfully, redirecting to home");
+            
+            // T047: Delete draft after successful submission
+            await DeleteDraftAsync();
+
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving profile in ProfileEdit");
+            customErrors.Add($"An unexpected error occurred: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // T045: Auto-save AIDE draft every 30 seconds
+    private async Task AutoSaveAsync()
+    {
+        try
+        {
+            Logger.LogInformation("ProfileEdit: AutoSaveAsync triggered - registrant={Registrant}, isSubmitting={IsSubmitting}", registrant?.Id, isSubmitting);
+            
+            if (registrant == null || isSubmitting) return;
+
+            // Serialize AIDE fields to JSON
+            var draftData = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                registrant.GenderIdentity,
+                registrant.SelfDescribeGender,
+                registrant.AgeRange,
+                registrant.Ethnicity,
+                registrant.SelfDescribeEthnicity,
+                registrant.LanguageProficiency,
+                registrant.SelfDescribeLanguage,
+                registrant.EducationalBackground,
+                registrant.SelfDescribeEducation,
+                registrant.Disability,
+                registrant.DisabilityDetails,
+                registrant.DietaryRequirements,
+                registrant.SelfDescribeDietary,
+                registrant.LgbtqIdentity,
+                registrant.ParentalStatus,
+                registrant.HowDidYouHear,
+                registrant.SelfDescribeHowDidYouHear,
+                registrant.AdditionalSupport,
+                registrant.Religion,
+                registrant.Caste,
+                registrant.Neighborhood,
+                registrant.ModeOfTransportation,
+                registrant.SocioeconomicBackground,
+                registrant.Neurodiversity,
+                registrant.CaregivingResponsibilities,
+                registrant.LinkedInProfile,
+                registrant.GitHubProfile
+            });
+
+            Logger.LogInformation("ProfileEdit: Calling ProfileService.SaveDraftAsync with {DataLength} bytes", draftData.Length);
+            
+            var success = await ProfileService.SaveDraftAsync("aide", draftData);
+            
+            Logger.LogInformation("ProfileEdit: SaveDraftAsync returned {Success}", success);
+            
+            if (success)
+            {
+                _lastAutoSaveTime = DateTime.UtcNow;
+                _showDraftSaved = true;
+                _isDraftRestored = false; // Clear restored flag after first save
+                Logger.LogInformation("ProfileEdit: Auto-saved AIDE draft at {Time}, _showDraftSaved={ShowDraftSaved}", _lastAutoSaveTime, _showDraftSaved);
+                
+                await InvokeAsync(StateHasChanged); // Ensure UI update on correct thread
+                
+                // Hide the indicator after 3 seconds
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(3000);
+                    await InvokeAsync(() =>
+                    {
+                        _showDraftSaved = false;
+                        Logger.LogInformation("ProfileEdit: Hiding draft saved indicator");
+                        StateHasChanged();
+                    });
+                });
+            }
+            else
+            {
+                Logger.LogWarning("ProfileEdit: Auto-save failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Auto-save failed");
+        }
+    }
+
+    // T046: Restore draft on page load
+    private async Task RestoreDraftAsync()
+    {
+        try
+        {
+            if (registrant == null) return;
+
+            var draftDataJson = await ProfileService.GetDraftAsync("aide");
+            
+            if (!string.IsNullOrWhiteSpace(draftDataJson))
+            {
+                var draftData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(draftDataJson);
+                
+                if (draftData != null)
+                {
+                    // Restore AIDE fields from draft (using null-coalescing to handle nulls)
+                    registrant.GenderIdentity = draftData.TryGetValue("GenderIdentity", out var val1) ? val1.GetString() ?? string.Empty : registrant.GenderIdentity;
+                    registrant.SelfDescribeGender = draftData.TryGetValue("SelfDescribeGender", out var val2) ? val2.GetString() ?? string.Empty : registrant.SelfDescribeGender;
+                    registrant.AgeRange = draftData.TryGetValue("AgeRange", out var val3) ? val3.GetString() ?? string.Empty : registrant.AgeRange;
+                    registrant.Ethnicity = draftData.TryGetValue("Ethnicity", out var val4) ? val4.GetString() ?? string.Empty : registrant.Ethnicity;
+                    registrant.SelfDescribeEthnicity = draftData.TryGetValue("SelfDescribeEthnicity", out var val5) ? val5.GetString() ?? string.Empty : registrant.SelfDescribeEthnicity;
+                    registrant.LanguageProficiency = draftData.TryGetValue("LanguageProficiency", out var val6) ? val6.GetString() ?? string.Empty : registrant.LanguageProficiency;
+                    registrant.SelfDescribeLanguage = draftData.TryGetValue("SelfDescribeLanguage", out var val7) ? val7.GetString() ?? string.Empty : registrant.SelfDescribeLanguage;
+                    registrant.EducationalBackground = draftData.TryGetValue("EducationalBackground", out var val8) ? val8.GetString() ?? string.Empty : registrant.EducationalBackground;
+                    registrant.SelfDescribeEducation = draftData.TryGetValue("SelfDescribeEducation", out var val9) ? val9.GetString() ?? string.Empty : registrant.SelfDescribeEducation;
+                    registrant.Disability = draftData.TryGetValue("Disability", out var val10) ? val10.GetString() ?? string.Empty : registrant.Disability;
+                    registrant.DisabilityDetails = draftData.TryGetValue("DisabilityDetails", out var val11) ? val11.GetString() ?? string.Empty : registrant.DisabilityDetails;
+                    registrant.DietaryRequirements = draftData.TryGetValue("DietaryRequirements", out var val12) ? val12.GetString() ?? string.Empty : registrant.DietaryRequirements;
+                    registrant.SelfDescribeDietary = draftData.TryGetValue("SelfDescribeDietary", out var val13) ? val13.GetString() ?? string.Empty : registrant.SelfDescribeDietary;
+                    registrant.LgbtqIdentity = draftData.TryGetValue("LgbtqIdentity", out var val14) ? val14.GetString() ?? string.Empty : registrant.LgbtqIdentity;
+                    registrant.ParentalStatus = draftData.TryGetValue("ParentalStatus", out var val15) ? val15.GetString() ?? string.Empty : registrant.ParentalStatus;
+                    registrant.HowDidYouHear = draftData.TryGetValue("HowDidYouHear", out var val16) ? val16.GetString() ?? string.Empty : registrant.HowDidYouHear;
+                    registrant.SelfDescribeHowDidYouHear = draftData.TryGetValue("SelfDescribeHowDidYouHear", out var val17) ? val17.GetString() ?? string.Empty : registrant.SelfDescribeHowDidYouHear;
+                    registrant.AdditionalSupport = draftData.TryGetValue("AdditionalSupport", out var val18) ? val18.GetString() ?? string.Empty : registrant.AdditionalSupport;
+                    registrant.Religion = draftData.TryGetValue("Religion", out var val19) ? val19.GetString() ?? string.Empty : registrant.Religion;
+                    registrant.Caste = draftData.TryGetValue("Caste", out var val20) ? val20.GetString() ?? string.Empty : registrant.Caste;
+                    registrant.Neighborhood = draftData.TryGetValue("Neighborhood", out var val21) ? val21.GetString() ?? string.Empty : registrant.Neighborhood;
+                    registrant.ModeOfTransportation = draftData.TryGetValue("ModeOfTransportation", out var val22) ? val22.GetString() ?? string.Empty : registrant.ModeOfTransportation;
+                    registrant.SocioeconomicBackground = draftData.TryGetValue("SocioeconomicBackground", out var val23) ? val23.GetString() ?? string.Empty : registrant.SocioeconomicBackground;
+                    registrant.Neurodiversity = draftData.TryGetValue("Neurodiversity", out var val24) ? val24.GetString() ?? string.Empty : registrant.Neurodiversity;
+                    registrant.CaregivingResponsibilities = draftData.TryGetValue("CaregivingResponsibilities", out var val25) ? val25.GetString() ?? string.Empty : registrant.CaregivingResponsibilities;
+                    registrant.LinkedInProfile = draftData.TryGetValue("LinkedInProfile", out var val26) ? val26.GetString() ?? string.Empty : registrant.LinkedInProfile;
+                    registrant.GitHubProfile = draftData.TryGetValue("GitHubProfile", out var val27) ? val27.GetString() ?? string.Empty : registrant.GitHubProfile;
+                    
+                    _isDraftRestored = true;
+                    _lastAutoSaveTime = DateTime.UtcNow;
+                    
+                    Logger.LogInformation("ProfileEdit: Draft restored successfully");
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Draft restoration failed");
+            // Don't show error to user - draft restoration is optional
+        }
+    }
+
+    // T047: Delete draft after successful submission
+    private async Task DeleteDraftAsync()
+    {
+        try
+        {
+            var success = await ProfileService.DeleteDraftAsync("aide");
+            
+            if (success)
+            {
+                Logger.LogInformation("ProfileEdit: Draft deleted after successful submission");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "ProfileEdit: Failed to delete draft after submission");
+            // Non-critical - draft will expire naturally
+        }
+    }
+
+    public void Dispose()
+    {
+        _autoSaveTimer?.Dispose();
+        Logger.LogInformation("ProfileEdit: Auto-save timer disposed");
+    }
+}

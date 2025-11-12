@@ -1,0 +1,118 @@
+@*
+    T022: AideCompletionBanner.razor - Dismissible banner to encourage AIDE profile completion
+    Shows when mandatory profile complete but AIDE fields incomplete.
+    Dismissal stored server-side in UserPreferences table with 30-day suppression.
+*@
+@using Visage.Shared.Models
+@inject HttpClient Http
+@inject ILogger<AideCompletionBanner> Logger
+
+@if (isVisible && !isDismissed)
+{
+    <div class="alert alert-info mb-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="font-bold">Complete Your Accessibility Profile</h3>
+                <div class="text-sm">
+                    Help us make events more inclusive! Share your accessibility needs and preferences for better event matching.
+                    <a href="/profile/edit" class="link link-primary ml-2">Complete AIDE Profile →</a>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-ghost" @onclick="HandleDismiss" disabled="@isDismissing">
+            @if (isDismissing)
+            {
+                <span class="loading loading-spinner loading-xs"></span>
+            }
+            else
+            {
+                <span>✕</span>
+            }
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsProfileComplete { get; set; }
+
+    [Parameter]
+    public bool IsAideProfileComplete { get; set; }
+
+    private bool isVisible = false;
+    private bool isDismissed = false;
+    private bool isDismissing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // T022: Show banner if mandatory complete but AIDE incomplete
+        if (IsProfileComplete && !IsAideProfileComplete)
+        {
+            // T022: Check if banner was dismissed recently (within 30 days)
+            try
+            {
+                var response = await Http.GetAsync("/api/profile/preferences/aide-banner");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var preference = await response.Content.ReadFromJsonAsync<UserPreferencesDto>();
+                    
+                    if (preference?.AideBannerDismissedAt != null)
+                    {
+                        var daysSinceDismissal = (DateTime.UtcNow - preference.AideBannerDismissedAt.Value).TotalDays;
+                        
+                        if (daysSinceDismissal < 30)
+                        {
+                            // Banner was dismissed within 30 days - keep hidden
+                            isDismissed = true;
+                            Logger.LogInformation("AIDE banner dismissed {Days} days ago, keeping hidden", daysSinceDismissal);
+                            return;
+                        }
+                    }
+                }
+                
+                // Show banner if not dismissed or dismissal expired
+                isVisible = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error checking AIDE banner dismissal status");
+                // On error, show banner (fail open)
+                isVisible = true;
+            }
+        }
+    }
+
+    private async Task HandleDismiss()
+    {
+        try
+        {
+            isDismissing = true;
+            
+            // T022: Call dismissal API endpoint
+            var response = await Http.PostAsync("/api/profile/preferences/aide-banner/dismiss", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                isDismissed = true;
+                isVisible = false;
+                Logger.LogInformation("AIDE banner dismissed successfully");
+            }
+            else
+            {
+                Logger.LogWarning("Failed to dismiss AIDE banner: {StatusCode}", response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error dismissing AIDE banner");
+        }
+        finally
+        {
+            isDismissing = false;
+        }
+    }
+}

@@ -1,0 +1,18 @@
+@* T018: EmptyState component for no events scenario *@
+
+<div class="flex flex-col items-center justify-center p-12 text-center">
+    <div class="text-6xl mb-4">@Icon</div>
+    <h3 class="text-2xl font-bold text-base-content mb-2">@Title</h3>
+    <p class="text-base-content/70 max-w-md">@Message</p>
+</div>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = "📭";
+    
+    [Parameter]
+    public string Title { get; set; } = "No Events Available";
+    
+    [Parameter]
+    public string Message { get; set; } = "Check back soon for upcoming events!";
+}

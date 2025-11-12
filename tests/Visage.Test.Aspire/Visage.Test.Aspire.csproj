@@ -6,27 +6,30 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <UserSecretsId>2b32647f-8dda-454d-a335-a22184824f4f</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Testing" Version="9.3.1" />
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentAssertions" Version="7.2.0" />
-    <PackageReference Include="System.Text.Json" Version="9.0.6" />
-    <PackageReference Include="TUnit" Version="0.25.21" />
-    <PackageReference Include="TUnit.Playwright" Version="0.25.21" />
+    <PackageReference Include="FluentAssertions" />
+  <!-- System.Text.Json removed; runtime provides this and central package management should control versions when necessary -->
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Playwright" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Visage.AppHost\Visage.AppHost.csproj" />
+    <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="System.Net" />
     <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Aspire.Hosting" />
     <Using Include="Aspire.Hosting.ApplicationModel" />
     <Using Include="Aspire.Hosting.Testing" />
     <Using Include="TUnit" />

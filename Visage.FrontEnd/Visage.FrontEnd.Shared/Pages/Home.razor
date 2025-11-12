@@ -1,106 +1,118 @@
 @page "/"
+@* T020: Updated Home.razor with InteractiveAuto render mode and event sections *@
+@* Inherit default InteractiveServer from App.razor *@
 @using Visage.FrontEnd.Shared.Services
+@using Microsoft.AspNetCore.Components.Routing
 @using Visage.FrontEnd.Shared.Models
 @using Visage.FrontEnd.Shared.Components
+@using Visage.FrontEnd.Shared.Components.Events
+@using Visage.Shared.Models
+@using Microsoft.JSInterop
 @inject NavigationManager NavigationManager
 @inject IFormFactor FormFactor
 @inject IEventService EventService
+@inject IImageUrlTransformer ImageUrlTransformer
 @inject ILogger<Home> Logger
+@inject IProfileService ProfileService
+@inject IJSRuntime JSRuntime
 
+<PageTitle>Visage - Hackerspace Mumbai Events</PageTitle>
 
+<!-- T024: AIDE Completion Banner (show if mandatory complete but AIDE incomplete) -->
+@if (profileCompletionStatus != null)
+{
+    <AideCompletionBanner 
+        IsProfileComplete="@profileCompletionStatus.IsProfileComplete" 
+        IsAideProfileComplete="@profileCompletionStatus.IsAideProfileComplete" />
+}
 
-<PageTitle>Visage</PageTitle>
-
-
-<div class="flex justify-between mb-4">
-    <h2 class="text-2xl font-extrabold mb-4">Upcoming Events</h2>
-
-    @if(AssignedRenderMode is null)
+<!-- T020-T025: Upcoming Events Section -->
+<section class="p-4 md:p-6 lg:p-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-base-content">Upcoming Events</h2>
+        
+        <NavLink class="btn btn-primary btn-sm" href="/schedule-event"> 
+            <span>➕</span> Schedule Event
+        </NavLink>
+    </div>
+    
+    <!-- T021: Load upcoming events with error handling -->
+    @if (errorMessage != null)
     {
-        <a class="link link-primary" href="/schedule-event" Match="NavLinkMatch.All"> ++Schedule new event</a>
+        <div class="alert alert-error mb-4">
+            <span>⚠️ @errorMessage</span>
+            <button class="btn btn-sm" @onclick="RetryLoadEvents">Retry</button>
+        </div>
     }
-
-    else{
-        <NavLink class="link link-primary" href="/schedule-event" Match="NavLinkMatch.All"> +Schedule new event</NavLink>
-    }
-</div>
-@if (upcomingEvents == null || !upcomingEvents.Any())
-{
-    <p>No upcoming events. <a href="/create-event">Create a new event</a></p>
-}
-else
-{
-    <ul class="grid w-full gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-3 xxl:grid-cols-4">
-
-        @foreach (var upcomingEvent in upcomingEvents)
-        {
-            <EventCard Title="@upcomingEvent.Title" CoverPicture="@upcomingEvent.CoverPicture" Date="@upcomingEvent.StartDate" Venue="@upcomingEvent.Location" />
-        }
-    </ul>
-}
-
-<h2>Past Events</h2>
-@if (pastEvents == null || !pastEvents.Any())
-{
-    <p>No past events.</p>
-}
-else
-{
-    @foreach (var pastEvent in pastEvents)
+    else if (upcomingEventViewModels == null)
     {
-        <EventCard Title="@pastEvent.Title" CoverPicture="@pastEvent.CoverPicture" Date="@pastEvent.StartDate" Venue="@pastEvent.Location" AttendeesPercentage="@pastEvent.AttendeesPercentage" />
+        <!-- T022: Loading skeleton -->
+        <EventList Events="null" SkeletonCount="6" />
     }
-}
+    else if (!upcomingEventViewModels.Any())
+    {
+        <!-- T022: Empty state -->
+        <EmptyState 
+            Icon="📅"
+            Title="No Upcoming Events"
+            Message="Check back soon for exciting new events from Hackerspace Mumbai!" />
+    }
+    else
+    {
+        <EventList 
+            Events="@upcomingEventViewModels"
+            EmptyIcon="📅"
+            EmptyTitle="No Upcoming Events"
+            EmptyMessage="Check back soon for exciting new events from Hackerspace Mumbai!" />
+    }
+</section>
 
-<h1 class="text-3xl font-bold underline">
-    Hello world! Its me!!!
-</h1>
-
-Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
-
-<button class="btn">Button</button>
-<button class="btn btn-neutral">Neutral</button>
-<button class="btn btn-primary">Primary</button>
-<button class="btn btn-secondary">Secondary</button>
-<button class="btn btn-accent">Accent</button>
-<button class="btn btn-ghost">Ghost</button>
-<button class="btn btn-link">Link</button>
-<button class="btn btn-lg btn-warning">Warning</button>
-<div class="alert alert-error ">Eror</div>
+<!-- Past Events Section (to be enhanced in Phase 4) -->
+<section class="p-4 md:p-6 lg:p-8 mt-8">
+    <h2 class="text-3xl font-bold text-base-content mb-6">Past Events</h2>
+    
+    @if (pastEventViewModels == null)
+    {
+        <EventList Events="null" SkeletonCount="4" />
+    }
+    else if (!pastEventViewModels.Any())
+    {
+        <EmptyState 
+            Icon="📚"
+            Title="No Past Events"
+            Message="Our event history will appear here." />
+    }
+    else
+    {
+        <EventList 
+            Events="@pastEventViewModels"
+            EmptyIcon="📚"
+            EmptyTitle="No Past Events"
+            EmptyMessage="Our event history will appear here." />
+    }
+</section>
 
 
 
 @code {
-
-
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationState { get; set; }
 
-    private string factor => FormFactor.GetFormFactor();
-    private string platform => FormFactor.GetPlatform();
-    private List<Event> upcomingEvents = null;
-    private List<Event> pastEvents = null;
+    private List<EventViewModel>? upcomingEventViewModels;
+    private List<EventViewModel>? pastEventViewModels;
+    private string? errorMessage;
     private string? Username;
-    private bool RequiresRegistrationRedirect = false;
-    private bool IsNewUser;
-    private bool HasCompletedRegistration;
+    private ProfileCompletionStatusDto? profileCompletionStatus;
+    private bool hasCheckedProfileCompletion;
 
-
-
-
+    // T021: Inject EventService and load upcoming events
+    // T036: Check profile completion DURING PRERENDER when HttpContext is available
     protected override async Task OnInitializedAsync()
     {
-        upcomingEvents = await EventService.GetUpcomingEvents();
-        pastEvents = await EventService.GetPastEvents();
-
-        Console.WriteLine("Home Component Initialized called");
-        Console.WriteLine("Home RenderInfo "+ RendererInfo.Name);
-        Console.WriteLine("Is Home Component Interactive? " + RendererInfo.IsInteractive);
-        Console.WriteLine("AssignedRenderMode " + AssignedRenderMode);
-
-        try
+        // Check profile completion first (during prerender when HttpContext is available)
+        if (authenticationState != null)
         {
-            if (authenticationState is not null)
+            try
             {
                 var authState = await authenticationState;
                 var user = authState?.User;
@@ -108,60 +120,110 @@ Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
                 if (user?.Identity is not null && user.Identity.IsAuthenticated)
                 {
                     Username = user.Identity.Name ?? string.Empty;
+                    Logger.LogInformation("Home: Authenticated user {Username}, checking profile completion during prerender", Username);
 
-                    // Check Auth0 custom claims
-                    if (!bool.TryParse(
-                        user.Claims?.FirstOrDefault(c => c.Type == "is_new_user")?.Value ?? "false",
-                        out IsNewUser))
+                    // Call ProfileService during prerender when HttpContext is available
+                    profileCompletionStatus = await ProfileService.GetCompletionStatusAsync();
+
+                    if (profileCompletionStatus == null)
                     {
-                        IsNewUser = false;
+                        Logger.LogWarning("Home: ProfileService returned null during prerender");
+                    }
+                    else if (!profileCompletionStatus.IsProfileComplete)
+                    {
+                        Logger.LogInformation("Home: User {Username} has incomplete profile, redirecting IMMEDIATELY", Username);
+                        // Redirect immediately during prerender - don't wait for OnAfterRenderAsync
+                        NavigationManager.NavigateTo("/registration/mandatory", forceLoad: true);
+                        return; // Stop processing
+                    }
+                    else
+                    {
+                        Logger.LogInformation("Home: User {Username} has complete profile", Username);
                     }
 
-                    if (!bool.TryParse(
-                        user.Claims?.FirstOrDefault(c => c.Type == "registration_complete")?.Value ?? "false",
-                        out HasCompletedRegistration))
-                    {
-                        HasCompletedRegistration = false;
-                    }
-
-                    Logger.LogInformation("Home RendererInfo IsInteractive? :{Interactive}", RendererInfo.IsInteractive);
-                    Logger.LogInformation("Home RenderInfo.Name: {RenderName}", RendererInfo.Name);
-
-                    if (IsNewUser || !HasCompletedRegistration)
-                    {
-                        // Log detection of new user
-                        Logger.LogInformation("Home New user detected: {Username}, needs registration", Username);
-                        RequiresRegistrationRedirect = true;
-                    }
+                    hasCheckedProfileCompletion = true;
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error during Home component initialization");
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error checking profile completion during prerender");
+            }
         }
 
-    
-
-      
+        // Load events only if we didn't redirect
+        await LoadEventsAsync();
     }
 
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    // Extract event-loading logic to avoid manually calling lifecycle methods
+    private async Task LoadEventsAsync()
     {
         try
         {
-                        // Only redirect if we're in interactive mode to avoid prerendering issues
-            if (RequiresRegistrationRedirect)
-            {
-                Logger.LogInformation("Redirecting new user to registration page");
-                RequiresRegistrationRedirect = false;
-                NavigationManager.NavigateTo("/user-registration", forceLoad: false);
-            }
+            // Clear any previous error state
+            errorMessage = null;
+            
+            // T021: Load events with error handling (T022)
+            var upcomingEvents = await EventService.GetUpcomingEvents();
+            var pastEvents = await EventService.GetPastEvents();
+            
+            // T025: Map Event to EventViewModel with computed properties
+            upcomingEventViewModels = MapToViewModels(upcomingEvents);
+            pastEventViewModels = MapToViewModels(pastEvents);
+
+            Console.WriteLine("Home Component Initialized");
+            Console.WriteLine("Home RenderInfo: " + RendererInfo.Name);
+            Console.WriteLine("Is Home Component Interactive? " + RendererInfo.IsInteractive);
+            Console.WriteLine("AssignedRenderMode: " + AssignedRenderMode);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error in Login component OnAfterRenderAsync");
+            // T022: Error handling with user-friendly message
+            Logger.LogError(ex, "Error loading events in Home component");
+            errorMessage = "Unable to load events. Please try again.";
         }
+    }
+
+
+
+    // T022: Retry button handler
+    private async Task RetryLoadEvents()
+    {
+        upcomingEventViewModels = null;
+        pastEventViewModels = null;
+        await LoadEventsAsync();
+    }
+
+    // T025: Helper method to map Event to EventViewModel with image URL transformation
+    private List<EventViewModel> MapToViewModels(List<Visage.FrontEnd.Shared.Models.Event> events)
+    {
+        var viewModels = events.Select(evt => {
+            Logger.LogInformation("Mapping event: {Title}, CoverPicture: {CoverPicture}", 
+                evt.Title, evt.CoverPicture ?? "(null)");
+            
+            var eventDateTime = evt.StartDate.ToDateTime(evt.StartTime);
+            
+            // Apply CDN transformation to image URL using injected transformer
+            var optimizedImageUrl = ImageUrlTransformer.Transform(evt.CoverPicture);
+            
+            return new EventViewModel
+            {
+                Id = evt.Id.Value.ToGuid(), // Convert StrictId's Ulid to Guid
+                Name = evt.Title,
+                Date = eventDateTime,
+                Location = evt.Location ?? "TBA",
+                CoverImageUrl = evt.CoverPicture,
+                OptimizedImageUrl = optimizedImageUrl,
+                Description = evt.Description ?? "",
+                RsvpLink = null, // Not available in current Event model
+                AttendeeCount = 0, // Not available in current Event model
+                // Assuming eventDateTime is already in UTC, or convert as needed:
+                Status = eventDateTime > DateTime.UtcNow 
+                    ? EventStatus.Upcoming 
+                    : EventStatus.Completed
+            };
+        }).ToList();
+        
+        Logger.LogInformation("Mapped {Count} events to view models", viewModels.Count);
+        return viewModels;
     }
 }

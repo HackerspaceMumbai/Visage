@@ -1,0 +1,325 @@
+@*
+    T015: MandatoryRegistration.razor - First-time user mandatory profile completion
+    Displays only 13 mandatory fields without overwhelming users with AIDE fields.
+    Uses EditForm with DataAnnotationsValidator and ValidationMessageStore for server-side validation.
+*@
+@page "/registration/mandatory"
+@using Visage.Shared.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@using Visage.FrontEnd.Shared.Services
+@inject NavigationManager Navigation
+@inject IRegistrationService RegistrationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IProfileService ProfileService
+
+<PageTitle>Complete Your Profile - Visage</PageTitle>
+as
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="card card-border bg-base-100 mandatory-form">
+        <div class="card-body">
+            <h1 class="card-title text-3xl mb-2">Welcome! Let's Get You Registered</h1>
+            <p class="text-base-content/70 mb-6">
+                Please complete these essential details to access the platform. 
+                This should take less than 3 minutes. ⏱️
+            </p>
+
+            @if (registrationSuccessful)
+            {
+                <div class="alert alert-success mb-6" role="status" aria-live="polite">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-6 w-full">
+                        <div class="flex-1">
+                            <h2 class="text-lg font-semibold">Your profile is complete!</h2>
+                            <p class="text-sm text-base-content/70">
+                                Thanks for sharing your details. You can head back to the dashboard or enhance your accessibility preferences now.
+                            </p>
+                        </div>
+                        <div class="flex flex-col gap-2 md:flex-row">
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="NavigateToHome">
+                                Go to home
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm" @onclick="NavigateToProfileEdit">
+                                Update accessibility profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (isSubmitting)
+            {
+                <div class="flex justify-center items-center py-8">
+                    <span class="loading loading-spinner loading-lg text-primary"></span>
+                    <span class="ml-4 text-lg">Saving your profile...</span>
+                </div>
+            }
+            else if (editContext is not null)
+            {
+                <EditForm EditContext="@editContext" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="@HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    
+                    @* T015: Government ID Section (moved to top to emphasize importance) *@
+                    <div class="collapse collapse-open border border-base-300 mb-4">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium bg-primary/10">
+                            🆔 Government ID <span class="badge badge-primary badge-sm ml-2">Required</span>
+                        </div>
+                        <div class="collapse-content bg-base-100">
+                            <div class="grid grid-cols-1 gap-y-4 md:grid-cols-2 md:gap-x-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">ID Type <span class="text-error">*</span></span></label>
+                                    <InputSelect @bind-Value="govtIdType" class="select select-bordered mandatory-select w-full h-12 text-base-content" aria-label="Government ID type">
+                                        <option value="">-- Select --</option>
+                                        <option value="Aadhaar">Aadhaar</option>
+                                        <option value="PAN">PAN</option>
+                                        <option value="Passport">Passport</option>
+                                        <option value="VoterID">Voter ID</option>
+                                    </InputSelect>
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">Last 4 Digits <span class="text-error">*</span></span></label>
+                                    <InputText @bind-Value="registrant.GovtIdLast4Digits" class="input input-bordered w-full h-12" maxlength="4" placeholder="Enter the last four digits" autocomplete="off" />
+                                </div>
+
+                                <!-- We intentionally do NOT collect the full Government ID to avoid capturing PII. -->
+                                <div class="form-control md:col-span-2">
+                                    <p class="text-sm text-base-content/70">Please select the ID type and enter the last four digits only. We never store the full ID number.</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-base-content/60 mt-2">
+                                ℹ️ Your government ID is encrypted and stored securely. We use this for event compliance only.
+                            </p>
+                        </div>
+                    </div>
+
+                    @* T015: Personal Information Section *@
+                    <div class="collapse collapse-open border border-base-300 mb-4">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium bg-primary/10">
+                            📋 Personal Information <span class="badge badge-primary badge-sm ml-2">Required</span>
+                        </div>
+                        <div class="collapse-content bg-base-100">
+                            <div class="grid grid-cols-1 gap-y-4 md:grid-cols-2 md:gap-x-6 pt-4">
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">First Name <span class="text-error">*</span></span></label>
+                                    <InputText @bind-Value="registrant.FirstName" class="input input-bordered w-full h-12" placeholder="Enter your first name as on your ID" autocomplete="given-name" />
+                                    <ValidationMessage For="@(() => registrant.FirstName)" class="text-error text-sm mt-2" />
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">Last Name <span class="text-error">*</span></span></label>
+                                    <InputText @bind-Value="registrant.LastName" class="input input-bordered w-full h-12" placeholder="Enter your last name" autocomplete="family-name" />
+                                    <ValidationMessage For="@(() => registrant.LastName)" class="text-error text-sm mt-2" />
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">Middle Name <span class="text-xs text-base-content/70">(Optional)</span></span></label>
+                                    <InputText @bind-Value="registrant.MiddleName" class="input input-bordered w-full h-12" placeholder="Enter your middle name (optional)" autocomplete="additional-name" />
+                                </div>
+
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">Mobile <span class="text-error">*</span></span></label>
+                                    <InputText @bind-Value="registrant.MobileNumber" class="input input-bordered w-full h-12" placeholder="Enter your mobile number" autocomplete="tel" />
+                                    <ValidationMessage For="@(() => registrant.MobileNumber)" class="text-error text-sm mt-2" />
+                                </div>
+
+                                <div class="form-control md:col-span-2">
+                                    <label class="label"><span class="label-text">Email <span class="text-error">*</span></span></label>
+                                    <InputText type="email" @bind-Value="registrant.Email" class="input input-bordered w-full h-12" placeholder="Enter your email address" autocomplete="email" />
+                                    <ValidationMessage For="@(() => registrant.Email)" class="text-error text-sm mt-2" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* T015: Address Section *@
+                    <div class="collapse collapse-open border border-base-300 mb-4">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium bg-primary/10">
+                            🏠 Address <span class="badge badge-primary badge-sm ml-2">Required</span>
+                        </div>
+                        <div class="collapse-content bg-base-100">
+                            <div class="grid grid-cols-1 gap-y-4 pt-4">
+                                <div class="form-control">
+                                    <label class="label"><span class="label-text">Address Line 1 <span class="text-error">*</span></span></label>
+                                    <InputText @bind-Value="registrant.AddressLine1" class="input input-bordered w-full h-12" placeholder="Enter your address line 1" />
+                                    <ValidationMessage For="@(() => registrant.AddressLine1)" class="text-error text-sm mt-2" />
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-y-4 md:grid-cols-3 md:gap-x-6">
+                                    <div class="form-control">
+                                        <label class="label"><span class="label-text">City <span class="text-error">*</span></span></label>
+                                        <InputText @bind-Value="registrant.City" class="input input-bordered w-full h-12" placeholder="Enter your city" />
+                                        <ValidationMessage For="@(() => registrant.City)" class="text-error text-sm mt-2" />
+                                    </div>
+
+                                    <div class="form-control">
+                                        <label class="label"><span class="label-text">State <span class="text-error">*</span></span></label>
+                                        <InputText @bind-Value="registrant.State" class="input input-bordered w-full h-12" placeholder="Enter your state" />
+                                        <ValidationMessage For="@(() => registrant.State)" class="text-error text-sm mt-2" />
+                                    </div>
+
+                                    <div class="form-control">
+                                        <label class="label"><span class="label-text">Postal Code <span class="text-error">*</span></span></label>
+                                        <InputText @bind-Value="registrant.PostalCode" class="input input-bordered w-full h-12" placeholder="Enter your postal code" />
+                                        <ValidationMessage For="@(() => registrant.PostalCode)" class="text-error text-sm mt-2" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+
+                    @* T015: Professional Information Section *@
+                    <div class="collapse collapse-open border border-base-300 mb-6">
+                        <input type="checkbox" checked="checked" disabled />
+                        <div class="collapse-title text-xl font-medium bg-primary/10">
+                            💼 Professional Information <span class="badge badge-primary badge-sm ml-2">Required</span>
+                        </div>
+                        <div class="collapse-content bg-base-100">
+                            <div class="grid grid-cols-1 gap-y-4 md:grid-cols-2 md:gap-x-6 pt-4 items-start">
+                                <div class="form-control md:col-span-1">
+                                    <label class="label"><span class="label-text">Occupation Status <span class="text-error">*</span></span></label>
+                                    <InputSelect @bind-Value="registrant.OccupationStatus" class="select select-bordered mandatory-select w-full h-12 text-base-content">
+                                        <option value="">-- Select --</option>
+                                        <option value="Employed">Employed</option>
+                                        <option value="Student">Student</option>
+                                        <option value="Unemployed">Unemployed</option>
+                                        <option value="Self-Employed">Self-Employed</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => registrant.OccupationStatus)" class="text-error text-sm mt-2" />
+                                </div>
+
+                                @if (registrant.OccupationStatus == "Employed" || registrant.OccupationStatus == "Self-Employed")
+                                {
+                                    <div class="form-control md:col-span-2">
+                                        <label class="label"><span class="label-text">Company Name <span class="text-error">*</span></span></label>
+                                        <InputText @bind-Value="registrant.CompanyName" class="input input-bordered w-full h-12" placeholder="Enter your company name" />
+                                        <ValidationMessage For="@(() => registrant.CompanyName)" class="text-error text-sm mt-2" />
+                                    </div>
+                                }
+
+                                @if (registrant.OccupationStatus == "Student")
+                                {
+                                    <div class="form-control md:col-span-2">
+                                        <label class="label"><span class="label-text">Educational Institution <span class="text-error">*</span></span></label>
+                                        <InputText @bind-Value="registrant.EducationalInstituteName" class="input input-bordered w-full h-12" placeholder="Enter your educational institution name" />
+                                        <ValidationMessage For="@(() => registrant.EducationalInstituteName)" class="text-error text-sm mt-2" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @* T015: Validation Summary *@
+                    @if (customErrors.Any())
+                    {
+                        <div class="alert alert-error mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">Please correct the following errors:</h3>
+                                <ul class="list-disc list-inside">
+                                    @foreach (var error in customErrors)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+
+                    @* T015: Submit Actions *@
+                    <div class="card-actions justify-end">
+                        <button type="submit" class="btn btn-primary btn-lg" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="loading loading-spinner"></span>
+                            }
+                            Complete Registration →
+                        </button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <div class="py-6 text-center">
+                    <span class="loading loading-spinner loading-md"></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (registrationSuccessful)
+    {
+        <div class="alert alert-info mt-6" role="status" aria-live="polite">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>
+                Prefer tailored experiences? Keep going and share your accessibility and inclusiveness preferences so we can welcome you better.
+            </span>
+        </div>
+    }
+    else
+    {
+        @* T015: Encouragement Footer *@
+        <div class="alert alert-info mt-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>
+                <strong>What's next?</strong> After registration, you can optionally complete your accessibility profile 
+                to help us provide better event experiences tailored to your needs.
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    // Component logic is in MandatoryRegistration.razor.cs (T016)
+}
+
+<style>
+    /* Ensure native select options remain legible on both light and dark themes */
+    .mandatory-form select {
+        color: hsl(var(--bc));
+    }
+
+    .mandatory-form select option {
+        color: #1f2937 !important; /* High-contrast neutral text */
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+        font-weight: 500;
+    }
+
+    .mandatory-form select option:hover,
+    .mandatory-form select option:checked,
+    .mandatory-form select option:focus {
+        background-color: hsl(var(--p)) !important;
+        color: hsl(var(--pc)) !important;
+    }
+
+    .mandatory-form .mandatory-select {
+        border-width: 1px;
+        border-radius: 0.75rem;
+        min-height: 0;
+        padding-inline: 1rem;
+    }
+
+    .mandatory-form select:focus-visible,
+    .mandatory-form .mandatory-select:focus-visible {
+        outline: 3px solid hsl(var(--p));
+        outline-offset: 2px;
+    }
+
+    .mandatory-form input::placeholder,
+    .mandatory-form textarea::placeholder {
+        color: hsl(var(--bc) / 0.6);
+    }
+</style>

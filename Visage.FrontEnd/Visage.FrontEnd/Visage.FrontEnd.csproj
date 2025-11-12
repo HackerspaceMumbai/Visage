@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-      <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
-      <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
-      <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
     <!-- <TargetFrameworks>$(TargetFrameworks);net10.0-tizen</TargetFrameworks> -->
 
     <!-- Note for MacCatalyst:
@@ -57,14 +58,13 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Remove explicit Microsoft.Maui.* package versions that target older frameworks.
-         The SDK / workload provides the correct MAUI assemblies for net10.0.
-         If you must keep explicit versions, update them to the .NET 10 MAUI package versions. -->
-    <!--<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.0-rc.1" />-->
-    <!--<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.0-rc.1" />-->
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.1" />
+   <ItemGroup>
+    <PackageReference Include="Auth0.OidcClient.MAUI" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.2.25502.107" />
   </ItemGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\Visage.FrontEnd.Shared\Visage.FrontEnd.Shared.csproj" />

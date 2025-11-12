@@ -43,12 +43,14 @@
         [Phone]
         public string MobileNumber { get; set; } = string.Empty;
 
-        [Required]
         public string GovtId { get; set; } = string.Empty;
 
         [Required]
         [StringLength(4, MinimumLength = 4, ErrorMessage = "Must be 4 digits only.")]
         public string GovtIdLast4Digits { get; set; } = string.Empty;
+
+        // Type of government ID (Aadhaar, PAN, Passport, VoterID) - store type, not full PII
+        public string GovtIdType { get; set; } = string.Empty;
 
         [Required]
         public string OccupationStatus { get; set; } = string.Empty;
@@ -111,4 +113,15 @@
         public string Caste { get; set; } = string.Empty;
         public string Neighborhood { get; set; } = string.Empty;
         public string ModeOfTransportation { get; set; } = string.Empty;
+
+        // Additional AIDE fields for inclusiveness
+        public string SocioeconomicBackground { get; set; } = string.Empty;
+        public string Neurodiversity { get; set; } = string.Empty;
+        public string CaregivingResponsibilities { get; set; } = string.Empty;
+
+        // Profile completion tracking (T002)
+        public bool IsProfileComplete { get; set; } = false;
+        public DateTime? ProfileCompletedAt { get; set; }
+        public bool IsAideProfileComplete { get; set; } = false;
+        public DateTime? AideProfileCompletedAt { get; set; }
     }

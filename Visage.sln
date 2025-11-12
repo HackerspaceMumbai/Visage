@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visage.Shared", "Visage.Sha
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D0CEFD08-0F49-45ED-9B30-9B1B1BEA648E}"
 	ProjectSection(SolutionItems) = preProject
-		.env = .env
+		Directory.Packages.props = Directory.Packages.props
 		global.json = global.json
 	EndProjectSection
 EndProject

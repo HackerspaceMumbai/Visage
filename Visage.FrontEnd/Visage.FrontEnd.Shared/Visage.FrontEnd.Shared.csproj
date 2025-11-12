@@ -11,10 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.6" />
-    <PackageReference Include="Refit" Version="8.0.0" />
-    <PackageReference Include="StrictId" Version="1.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+    <PackageReference Include="Refit" />
+    <PackageReference Include="StrictId" />
   </ItemGroup>
 
   <ItemGroup>

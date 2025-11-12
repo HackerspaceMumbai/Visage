@@ -1,4 +1,11 @@
 ﻿@inject ClarityConfig ClarityConfig
+@inject PersistentComponentState ApplicationState
+@using Microsoft.AspNetCore.Components.Web
+@using Visage.FrontEnd.Shared
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Authentication
+@using Visage.FrontEnd.Web.Services
+@implements IDisposable
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,9 +14,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <Microsoft.AspNetCore.Components.Web.ResourcePreloader />
+
     <link rel="stylesheet" href="_content/Visage.FrontEnd.Shared/output.css" />
     <link rel="icon" type="image/png" href="_content/Visage.FrontEnd.Shared/favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer"/>
+    
+    <!-- Project theme variables are compiled into _content/Visage.FrontEnd.Shared/output.css -->
+    <Microsoft.AspNetCore.Components.Web.ImportMap />
+    <Microsoft.AspNetCore.Components.Web.HeadOutlet />
     @if (!string.IsNullOrEmpty(ClarityConfig.ProjectId))
     {
         <script type="text/javascript">
@@ -23,8 +35,77 @@
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer"/>
-    <script src="_framework/blazor.web.js"></script>
+    <TokenInitializer />
+    <Visage.FrontEnd.Shared.Routes @rendermode="InteractiveServer" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
+
+@code {
+    [Inject]
+    private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
+
+    [Inject]
+    private CircuitAccessTokenProvider TokenProvider { get; set; } = default!;
+
+    [Inject]
+    private ILogger<App> Logger { get; set; } = default!;
+
+    private PersistingComponentStateSubscription _persistingSubscription;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Register a handler to persist the token when prerendering
+        _persistingSubscription = ApplicationState.RegisterOnPersisting(PersistToken);
+
+        // Try to restore the token from persisted state (interactive mode)
+        if (!ApplicationState.TryTakeFromJson<string>("access_token", out var restoredToken))
+        {
+            // We're in prerendering mode - get token from HttpContext
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                Logger.LogError("[TOKEN DEBUG] App: About to call httpContext.GetTokenAsync");
+                var accessToken = await httpContext.GetTokenAsync("access_token");
+                Logger.LogError("[TOKEN DEBUG] App: Got token from HttpContext - IsNull: {IsNull}, Length: {Length}", 
+                    accessToken == null, accessToken?.Length ?? 0);
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    TokenProvider.AccessToken = accessToken;
+                    Logger.LogError("[TOKEN DEBUG] App: Captured and stored access token (length: {Length})", accessToken.Length);
+                }
+                else
+                {
+                    Logger.LogError("[TOKEN DEBUG] App: Access token is null or empty from HttpContext");
+                }
+            }
+            else
+            {
+                Logger.LogWarning("App: HttpContext is null during prerendering");
+            }
+        }
+        else
+        {
+            // We're in interactive mode - use restored token
+            TokenProvider.AccessToken = restoredToken;
+            Logger.LogInformation("App: Restored access token from persisted state (length: {Length})", restoredToken?.Length ?? 0);
+        }
+    }
+
+    private Task PersistToken()
+    {
+        // Persist the token so it can be restored in interactive mode
+        if (!string.IsNullOrEmpty(TokenProvider.AccessToken))
+        {
+            ApplicationState.PersistAsJson("access_token", TokenProvider.AccessToken);
+            Logger.LogInformation("App: Persisted access token for interactive mode");
+        }
+        return Task.CompletedTask;
+    }
+
+    void IDisposable.Dispose()
+    {
+        _persistingSubscription.Dispose();
+    }
+}

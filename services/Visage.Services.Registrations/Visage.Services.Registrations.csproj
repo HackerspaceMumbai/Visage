@@ -1,20 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
-    <PackageReference Include="TUnit" Version="1.0.0" />
-    <PackageReference Include="FluentAssertions" Version="6.0.0" />
+    <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\tests\Visage.Tests.Integration\Visage.Tests.Integration.csproj" />
     <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
+    <ProjectReference Include="..\..\Visage.ServiceDefaults\Visage.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

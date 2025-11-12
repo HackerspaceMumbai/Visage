@@ -1,6 +1,16 @@
 ﻿@import "tailwindcss";
 @source "./**/*.{razor,html}";
 
+/* Project palette (migrated from Visage.FrontEnd.Web/wwwroot/css/daisy-theme.css)
+     These variables are used by the daisyUI theme below so we keep a single source
+     of truth in the Tailwind input file (avoids repeating colors across files). */
+:root {
+    --hackmum-primary: #FFC107;
+    --hackmum-secondary: #4DB6AC;
+    --hackmum-accent: #7986CB;
+    --hackmum-dark: #1A1A1A;
+}
+
 @plugin "daisyui" {
     themes: light --default, dark --prefersdark;
     logs: true;
@@ -42,8 +52,10 @@
 @plugin "daisyui/theme" {
     name: "light";
     default: true;  
-    --color-primary: #facc15;
-    --color-secondary: #003366;
+    /* map daisyUI semantic tokens to project palette variables */
+    --color-primary: var(--hackmum-primary);
+    --color-secondary: var(--hackmum-secondary);
+    --color-accent: var(--hackmum-accent);
     --color-success: #22c55e;
 }
 
