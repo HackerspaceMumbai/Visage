@@ -805,15 +805,8 @@ public static class ProfileApi
 
     private static string? ResolveEmail(ClaimsPrincipal user)
     {
-        foreach (var claimType in EmailClaimTypes)
-        {
-            var claimValue = user.FindFirst(claimType)?.Value;
-            if (!string.IsNullOrWhiteSpace(claimValue))
-            {
-                return claimValue;
-            }
-        }
-
-        return null;
+        return EmailClaimTypes
+            .Select(claimType => user.FindFirst(claimType)?.Value)
+            .FirstOrDefault(claimValue => !string.IsNullOrWhiteSpace(claimValue));
     }
 }

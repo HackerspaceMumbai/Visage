@@ -542,7 +542,7 @@
 @code {
     private Visage.Shared.Models.Registrant? registrant;
     private bool isSubmitting = false;
-    private List<string> customErrors = new();
+    private readonly List<string> customErrors = new();
     
     // T045: Auto-save infrastructure
     private System.Threading.Timer? _autoSaveTimer;
