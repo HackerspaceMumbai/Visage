@@ -407,8 +407,8 @@ public static class ProfileApi
             {
                 Name = registrant.FirstName + " " + registrant.LastName,
                 Email = registrant.Email,
-                LinkedIn = registrant.LinkedInProfile,
-                GitHub = registrant.GitHubProfile,
+                LinkedIn = registrant.LinkedInProfile ?? string.Empty,
+                GitHub = registrant.GitHubProfile ?? string.Empty,
                 //RegistrationDate = registrant
             });
         });
@@ -445,7 +445,6 @@ public static class ProfileApi
             // Defensive null check for compiler nullability analysis
             if (!parsedUserId.HasValue)
             {
-                logger.LogError("Profile card PUT: parsedUserId is unexpectedly null");
                 return Results.Problem("Internal error processing user ID");
             }
 
@@ -578,7 +577,7 @@ public static class ProfileApi
 
             var dto = new UserPreferencesDto
             {
-                UserId = parsedUserId.ToString(),
+                UserId = parsedUserId.Value.ToString(),
                 AideBannerDismissedAt = preferences?.AideBannerDismissedAt,
                 UpdatedAt = preferences?.UpdatedAt ?? DateTime.UtcNow
             };
@@ -778,7 +777,7 @@ public static class ProfileApi
 
             var response = new RegistrationDraftDto
             {
-                UserId = parsedUserId.ToString(),
+                UserId = parsedUserId.Value.ToString(),
                 DraftData = draft.DraftData,
                 Section = draft.Section,
                 SavedAt = draft.UpdatedAt,
