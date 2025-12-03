@@ -2725,6 +2725,12 @@
       }
     }
   }
+  .focus\:outline-none {
+    &:focus {
+      --tw-outline-style: none;
+      outline-style: none;
+    }
+  }
   .focus\:input-primary {
     &:focus {
       @layer daisyui.modifier {

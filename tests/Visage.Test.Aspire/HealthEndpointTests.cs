@@ -9,6 +9,10 @@ namespace Visage.Test.Aspire;
 /// Automated health endpoint tests for all Aspire services
 /// Tests verify that all services expose /health and /alive endpoints as required by constitution
 /// </summary>
+// These tests verify infrastructure health endpoints and are intentionally
+// kept out of the default test runs. Use the Category filter to run them
+// explicitly: dotnet test --filter "Category=AspireHealth"
+[Category("AspireHealth")]
 public class HealthEndpointTests
 {
     /// <summary>
@@ -18,7 +22,7 @@ public class HealthEndpointTests
     public async Task RegistrationApi_Health_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
         
         // Act
         var response = await httpClient.GetAsync("/health");
@@ -36,7 +40,7 @@ public class HealthEndpointTests
     public async Task RegistrationApi_Alive_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
         
         // Act
         var response = await httpClient.GetAsync("/alive");
@@ -54,7 +58,7 @@ public class HealthEndpointTests
     public async Task EventingApi_Health_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("eventing");
+        var httpClient = TestAppContext.CreateHttpClient("eventing");
         
         // Act
         var response = await httpClient.GetAsync("/health");
@@ -72,7 +76,7 @@ public class HealthEndpointTests
     public async Task EventingApi_Alive_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("eventing");
+        var httpClient = TestAppContext.CreateHttpClient("eventing");
         
         // Act
         var response = await httpClient.GetAsync("/alive");
@@ -90,7 +94,7 @@ public class HealthEndpointTests
     public async Task FrontendWeb_Health_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("frontendweb");
+        var httpClient = TestAppContext.CreateHttpClient("frontendweb");
         
         // Act
         var response = await httpClient.GetAsync("/health");
@@ -108,7 +112,7 @@ public class HealthEndpointTests
     public async Task FrontendWeb_Alive_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.App.CreateHttpClient("frontendweb");
+        var httpClient = TestAppContext.CreateHttpClient("frontendweb");
         
         // Act
         var response = await httpClient.GetAsync("/alive");
@@ -135,7 +139,7 @@ public class HealthEndpointTests
         {
             try
             {
-                var httpClient = TestAppContext.App.CreateHttpClient(resourceName);
+                var httpClient = TestAppContext.CreateHttpClient(resourceName);
                 
                 var healthResponse = await httpClient.GetAsync("/health");
                 if (!healthResponse.IsSuccessStatusCode)

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Net.Http.Headers;
 using TUnit.Core;
 using Visage.Shared.Models;
 
@@ -15,6 +16,9 @@ namespace Visage.Test.Aspire;
 /// Integration tests for draft save functionality (US4 - Partial Progress Save)
 /// Tests T050: POST /api/profile/draft endpoint validation
 /// </summary>
+// Requires Auth0 - mark tests explicitly to avoid running in default CI test runs
+[Category("RequiresAuth")]
+[NotInParallel]
 public class DraftSaveTests
 {
     /// <summary>
@@ -25,11 +29,12 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Create_New_Draft_With_30Day_Expiration()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+
+        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
 
         // Create a test registrant first to get a valid userId
         var registrant = new Registrant
@@ -95,9 +100,7 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Update_Existing_Draft_Instead_Of_Creating_Duplicate()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -164,9 +167,7 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Reject_Invalid_Section_Name()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -210,9 +211,7 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Work_With_Email_Based_User_Lookup()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -269,9 +268,7 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Work_For_Mandatory_Section()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -324,9 +321,7 @@ public class DraftSaveTests
     public async Task Draft_Save_Should_Handle_Concurrent_Saves_Without_Data_Loss()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 

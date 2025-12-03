@@ -1,0 +1,63 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  default-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET from global.json
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: Display dotnet version
+        run: dotnet --version
+
+      - name: Verify Docker Availability
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "Docker is not available on runner. Aborting tests to avoid wasted resources."; exit 1;
+          fi
+
+      - name: Run default smoke tests
+        run: dotnet test --filter "Category=Smoke"
+
+  requires-auth-tests:
+    runs-on: ubuntu-latest
+    needs: default-tests
+    if: success()
+    env:
+      AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+      AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+      AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET from global.json
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+
+      - name: Display dotnet version
+        run: dotnet --version
+
+      - name: Verify Docker Availability
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            echo "Docker is not available on runner. Aborting tests to avoid wasted resources."; exit 1;
+          fi
+
+      - name: Run RequiresAuth tests
+        run: dotnet test --filter "Category=RequiresAuth"

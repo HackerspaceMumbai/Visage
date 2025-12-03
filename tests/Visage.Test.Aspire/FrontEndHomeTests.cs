@@ -22,13 +22,11 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task AspireServiceDiscoveryExposesRequiredBackendServices()
         {
-            var resourceNotificationService = TestAppContext.ResourceNotificationService;
-            
             // Wait for all backend services
-            await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("cloudinary-image-signing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("cloudinary-image-signing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             
             // Validate that HttpClients can be created for all expected service names
             // This exercises the same code path that Program.cs uses
@@ -53,10 +51,10 @@ namespace Visage.Tests.Frontend.Web
         }
 
         [Test]
+        [Category("Smoke")]
         public async Task ShouldDisplayCorrectPageTitle()
         {
-            var resourceNotificationService = TestAppContext.ResourceNotificationService;
-            await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
@@ -72,12 +70,10 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task ShouldShowUpcomingAndPastEventsAfterSeeding()
         {
-            var resourceNotificationService = TestAppContext.ResourceNotificationService;
-            
             // CRITICAL: Wait for ALL services the frontend depends on, not just the frontend itself
-            await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
 
             // Seed data via Event API
             var apiClient = TestAppContext.CreateHttpClient("eventing");
@@ -175,12 +171,10 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task ShouldShowEmptyStatesWhenNoEvents()
         {
-            var resourceNotificationService = TestAppContext.ResourceNotificationService;
-            
             // Wait for backend services
-            await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
 
@@ -199,12 +193,10 @@ namespace Visage.Tests.Frontend.Web
         [Test]
         public async Task EventCardShowsNameLocationAndRsvp()
         {
-            var resourceNotificationService = TestAppContext.ResourceNotificationService;
-            
             // Wait for backend services before frontend
-            await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
-            await resourceNotificationService.WaitForResourceAsync("frontendweb", KnownResourceStates.Running).WaitAsync(TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
 
             // Seed one upcoming event
             var apiClient = TestAppContext.CreateHttpClient("eventing");

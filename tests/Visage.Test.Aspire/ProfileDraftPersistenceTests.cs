@@ -23,8 +23,11 @@ namespace Visage.Test.Aspire;
 /// 4. Start Aspire app: dotnet run --project Visage.AppHost/Visage.AppHost.csproj
 /// 5. Run tests: dotnet test --filter "Category=E2E"
 /// </summary>
+// Requires Auth0 - these E2E Playwright tests use Auth0 resource owner grant and should
+// be executed explicitly when Auth0 is available for CI or local run.
 [Category("E2E")]
 [Category("DraftPersistence")]
+[Category("RequiresAuth")]
 [NotInParallel] // E2E tests should run sequentially to avoid state conflicts
 public class ProfileDraftPersistenceTests : IAsyncDisposable
 {
@@ -105,7 +108,7 @@ public class ProfileDraftPersistenceTests : IAsyncDisposable
             throw new InvalidOperationException("Page not initialized. Setup did not run.");
         
         // 1. Authenticate via Auth0 token (bypasses UI login for reliability)
-        var accessToken = await Auth0TestHelper.GetTestAccessTokenAsync();
+        var accessToken = await TestAppContext.GetAuthTokenAsync();
 
         // 2. Navigate to profile page first (this ensures Context is initialized)
         await _page.GotoAsync($"{BaseUrl}/profile/edit");
@@ -158,7 +161,7 @@ public class ProfileDraftPersistenceTests : IAsyncDisposable
             throw new InvalidOperationException("Page not initialized. Setup did not run.");
         
         // 1. Authenticate via Auth0 token
-        var accessToken = await Auth0TestHelper.GetTestAccessTokenAsync();
+        var accessToken = await TestAppContext.GetAuthTokenAsync();
         
         // 2. Navigate to profile page first
         await _page.GotoAsync($"{BaseUrl}/profile/edit");
