@@ -68,7 +68,19 @@ dotnet test --filter "Category=DraftPersistence"
 
 # Run smoke tests only (quick sanity check)
 dotnet test --filter "Category=Smoke"
+Alternatively, run locally using the helper script:
+	pwsh -File tests/Visage.Test.Aspire/scripts/smoke-test.ps1
 ```
+
+### Excluding Auth0-dependent tests from default runs
+
+If you want to run the test suite but exclude tests that need an Auth0 tenant or external dependencies, use the `RequiresAuth` category filter:
+
+```pwsh
+# Run all tests in this project but exclude tests that require Auth0
+dotnet test --filter "Category!=RequiresAuth"
+```
+
 
 ---
 

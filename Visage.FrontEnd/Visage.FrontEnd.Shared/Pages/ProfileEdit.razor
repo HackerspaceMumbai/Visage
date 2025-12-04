@@ -542,7 +542,7 @@
 @code {
     private Visage.Shared.Models.Registrant? registrant;
     private bool isSubmitting = false;
-    private List<string> customErrors = new();
+    private readonly List<string> customErrors = new();
     
     // T045: Auto-save infrastructure
     private System.Threading.Timer? _autoSaveTimer;
@@ -581,6 +581,16 @@
             
             Logger.LogInformation("ProfileEdit: Auto-save timer started (interval: {Interval}s)", AutoSaveIntervalSeconds);
         }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Network error loading profile in ProfileEdit");
+            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogError(ex, "Request timeout loading profile in ProfileEdit");
+            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading profile in ProfileEdit");
@@ -609,6 +619,16 @@
             await DeleteDraftAsync();
 
             Navigation.NavigateTo("/", forceLoad: true);
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "Network error saving profile in ProfileEdit");
+            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogError(ex, "Request timeout saving profile in ProfileEdit");
+            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
         }
         catch (Exception ex)
         {
@@ -694,6 +714,14 @@
                 Logger.LogWarning("ProfileEdit: Auto-save failed");
             }
         }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Auto-save network error");
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Auto-save timeout");
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "ProfileEdit: Auto-save failed");
@@ -752,6 +780,16 @@
                 }
             }
         }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Draft restoration network error");
+            // Don't show error to user - draft restoration is optional
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogError(ex, "ProfileEdit: Draft restoration timeout");
+            // Don't show error to user - draft restoration is optional
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "ProfileEdit: Draft restoration failed");
@@ -770,6 +808,16 @@
             {
                 Logger.LogInformation("ProfileEdit: Draft deleted after successful submission");
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogWarning(ex, "ProfileEdit: Network error deleting draft after submission");
+            // Non-critical - draft will expire naturally
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.LogWarning(ex, "ProfileEdit: Timeout deleting draft after submission");
+            // Non-critical - draft will expire naturally
         }
         catch (Exception ex)
         {

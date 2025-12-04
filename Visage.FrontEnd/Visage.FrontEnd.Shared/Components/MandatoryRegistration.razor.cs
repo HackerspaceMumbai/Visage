@@ -20,7 +20,7 @@ public partial class MandatoryRegistration : ComponentBase
 {
     private Registrant registrant = new();
     private bool isSubmitting = false;
-    private List<string> customErrors = new();
+    private readonly List<string> customErrors = new();
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
     private bool registrationSuccessful;
@@ -179,6 +179,16 @@ public partial class MandatoryRegistration : ComponentBase
             _ = await ProfileService.GetCompletionStatusAsync();
 
         }
+        catch (HttpRequestException ex)
+        {
+            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+        catch (TaskCanceledException ex)
+        {
+            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
         catch (Exception ex)
         {
             customErrors.Add($"An unexpected error occurred: {ex.Message}");
@@ -269,32 +279,33 @@ public partial class MandatoryRegistration : ComponentBase
     {
         var errors = new List<string>();
 
-        if (registrant.OccupationStatus == "Employed" || registrant.OccupationStatus == "Self-Employed")
+        switch (registrant.OccupationStatus)
         {
-            if (string.IsNullOrWhiteSpace(registrant.CompanyName))
-            {
-                errors.Add("Company Name is required for employed individuals");
-                if (messageStore is not null && editContext is not null)
+            case "Employed":
+            case "Self-Employed":
+                if (string.IsNullOrWhiteSpace(registrant.CompanyName))
                 {
-                    messageStore.Add(
-                        editContext.Field(nameof(registrant.CompanyName)),
-                        "Company Name is required for your occupation status");
+                    errors.Add("Company Name is required for employed individuals");
+                    if (messageStore is not null && editContext is not null)
+                    {
+                        messageStore.Add(
+                            editContext.Field(nameof(registrant.CompanyName)),
+                            "Company Name is required for your occupation status");
+                    }
                 }
-            }
-        }
-
-        if (registrant.OccupationStatus == "Student")
-        {
-            if (string.IsNullOrWhiteSpace(registrant.EducationalInstituteName))
-            {
-                errors.Add("Educational Institution is required for students");
-                if (messageStore is not null && editContext is not null)
+                break;
+            case "Student":
+                if (string.IsNullOrWhiteSpace(registrant.EducationalInstituteName))
                 {
-                    messageStore.Add(
-                        editContext.Field(nameof(registrant.EducationalInstituteName)),
-                        "Educational Institution is required for students");
+                    errors.Add("Educational Institution is required for students");
+                    if (messageStore is not null && editContext is not null)
+                    {
+                        messageStore.Add(
+                            editContext.Field(nameof(registrant.EducationalInstituteName)),
+                            "Educational Institution is required for students");
+                    }
                 }
-            }
+                break;
         }
 
         return errors;
@@ -307,16 +318,9 @@ public partial class MandatoryRegistration : ComponentBase
             return null;
         }
 
-        foreach (var claimType in userIdClaimTypes)
-        {
-            var claimValue = user.FindFirst(claimType)?.Value;
-            if (!string.IsNullOrWhiteSpace(claimValue))
-            {
-                return claimValue;
-            }
-        }
-
-        return null;
+        return userIdClaimTypes
+            .Select(claimType => user.FindFirst(claimType)?.Value)
+            .FirstOrDefault(claimValue => !string.IsNullOrWhiteSpace(claimValue));
     }
 
     private void NavigateToHome() => Navigation.NavigateTo("/");

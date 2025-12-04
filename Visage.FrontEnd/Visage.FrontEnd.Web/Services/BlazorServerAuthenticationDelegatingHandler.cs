@@ -49,7 +49,7 @@ public class BlazorServerAuthenticationDelegatingHandler : DelegatingHandler
             
             // In Blazor Server, we need to get the token from the server-side authentication state
             // The ServerAuthenticationStateProvider has access to HttpContext via RevalidatingServerAuthenticationStateProvider
-            if (_authenticationStateProvider is RevalidatingServerAuthenticationStateProvider revalidatingProvider)
+            if (_authenticationStateProvider is RevalidatingServerAuthenticationStateProvider)
             {
                 // Unfortunately, RevalidatingServerAuthenticationStateProvider doesn't expose the HttpContext directly
                 // We need to rely on HttpContext being available via IHttpContextAccessor

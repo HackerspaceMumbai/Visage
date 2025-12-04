@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Net.Http.Headers;
 using TUnit.Core;
 using Visage.Shared.Models;
 
@@ -15,6 +16,9 @@ namespace Visage.Test.Aspire;
 /// Integration tests for draft deletion functionality (US4 - Partial Progress Save)
 /// Tests DELETE /api/profile/draft/{section} endpoint validation
 /// </summary>
+// Requires Auth0 - mark tests explicitly to avoid running in default CI test runs
+[Category("RequiresAuth")]
+[NotInParallel]
 public class DraftDeletionTests
 {
     /// <summary>
@@ -25,11 +29,17 @@ public class DraftDeletionTests
     public async Task Draft_Deletion_Should_Remove_Existing_Draft()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+
+        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
+        
+        var email = "deleteemail@example.com";        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
+
+        
 
         // Create test registrant
         var registrant = new Registrant
@@ -82,9 +92,7 @@ public class DraftDeletionTests
     public async Task Draft_Deletion_Should_Handle_Non_Existent_Draft_Gracefully()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -122,9 +130,7 @@ public class DraftDeletionTests
     public async Task Draft_Deletion_Should_Work_With_Email_Based_Lookup()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -178,9 +184,7 @@ public class DraftDeletionTests
     public async Task Draft_Deletion_Should_Work_For_Mandatory_Section()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
@@ -233,9 +237,7 @@ public class DraftDeletionTests
     public async Task Draft_Deletion_Should_Be_Idempotent()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 

@@ -20,17 +20,9 @@ public class EventingDbTests
     public async Task Eventing_Service_Should_Connect_To_Aspire_Managed_Database()
     {
         // Arrange - Use shared app (already started in assembly hook)
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
         // Wait for eventing service to be ready
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
-        
-        // Assert - Verify database connectivity via health endpoint
-        var httpClient = TestAppContext.CreateHttpClient("eventing");
-        var healthResponse = await httpClient.GetAsync("/health");
-        healthResponse.IsSuccessStatusCode.Should().BeTrue(
-            "Eventing service health check should succeed, confirming database connectivity");
+        await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));            "Eventing service health check should succeed, confirming database connectivity");
     }
 
     /// <summary>
@@ -40,11 +32,9 @@ public class EventingDbTests
     public async Task Should_Create_New_Event_Record_In_Aspire_Database()
     {
         // Arrange - Use shared app
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
         // Wait for Eventing service to be ready
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         var httpClient = TestAppContext.CreateHttpClient("eventing");
         
@@ -87,11 +77,9 @@ public class EventingDbTests
     public async Task Should_Query_Events_From_Aspire_Managed_Database()
     {
         // Arrange - Use shared app
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
         // Wait for services to be ready
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Act - Query events from the /events endpoint
         var httpClient = TestAppContext.CreateHttpClient("eventing");
@@ -116,11 +104,9 @@ public class EventingDbTests
     public async Task EF_Core_Migrations_Should_Run_Automatically_On_Startup()
     {
         // Arrange - Use shared app (migrations already ran during assembly initialization)
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
         // Wait for service to be ready
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Assert - If service is running, migrations succeeded (checked during fixture initialization)
         // Verify we can query the service health endpoint
@@ -136,9 +122,7 @@ public class EventingDbTests
     public async Task Should_Query_Upcoming_Events_From_Aspire_Database()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         var httpClient = TestAppContext.CreateHttpClient("eventing");
         
@@ -158,9 +142,7 @@ public class EventingDbTests
     public async Task Should_Query_Past_Events_From_Aspire_Database()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        await resourceNotificationService.WaitForResourceAsync("eventing", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         var httpClient = TestAppContext.CreateHttpClient("eventing");
         

@@ -224,6 +224,9 @@ UpgradeLog*.htm
 *.ldf
 *.ndf
 
+# Temporary SQL query files
+temp-query.sql
+
 # Business Intelligence projects
 *.rdl.data
 *.bim.layout

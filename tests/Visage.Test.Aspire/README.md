@@ -28,6 +28,7 @@ This test suite uses Auth0 Resource Owner Password Grant for automated E2E testi
 ### 🚨 If Password Grant Must Be Disabled
 
 Switch to UI-based authentication in tests:
+
 1. Remove token-based auth calls
 2. Use Playwright to automate Auth0 login UI
 3. Trade-off: Slower tests, more flaky, but no Password Grant required
@@ -44,10 +45,55 @@ Switch to UI-based authentication in tests:
 
 Run this command to verify email whitelist enforcement:
 
-```powershell
+```pwsh
 # Should throw SecurityException
 $env:TEST_USER_EMAIL = "unauthorized@example.com"
 dotnet test --filter "FullyQualifiedName~Auth0TestHelper"
+```
+
+### 🎯 Running tests that require Auth0
+
+Some tests require a valid Auth0 tenant or use the `Auth0TestHelper` via the resource owner password grant.
+These are marked with a `Category` attribute of `RequiresAuth`. To omit them in default runs (e.g., local development or CI), use the following:
+
+```pwsh
+# Run all tests except those requiring Auth0 and health probes
+dotnet test --filter "Category!=RequiresAuth&Category!=AspireHealth"
+```
+
+To run only the Auth0-dependent tests explicitly:
+
+```pwsh
+dotnet test --filter "Category=RequiresAuth"
+```
+
+When running the `RequiresAuth` tests, ensure `AUTH0_*` environment variables are set via `setup-test-env.ps1` or CI secrets.
+
+> ⚠️ Note: When running `dotnet test` the test host is started and TUnit assembly-level hooks may start the Aspire app during discovery/test run. Even if tests are filtered out, test host initialization may still run, which creates resource startup overhead. In CI, use a dedicated job to run `RequiresAuth` tests with secrets configured and separate job for default tests.
+
+Note: The test assembly start hook checks that Docker or Podman is available before attempting to start the Aspire app to prevent resources from being started when no container runtime is available. This reduces wasted resources in CI and local runs.
+
+### CI Example (Azure Pipelines)
+
+Add a separate job with only `RequiresAuth` tests to your pipeline that sets Auth0 secrets and runs after provisioning secrets:
+
+```yaml
+- job: Run_Default_Tests
+   steps:
+   - script: dotnet test --filter "Category!=RequiresAuth&Category!=AspireHealth"
+
+- job: Run_Auth_Tests
+   dependsOn: Run_Default_Tests
+   condition: succeeded()
+   variables:
+      - name: AUTH0_DOMAIN
+         value: $(AUTH0_DOMAIN)
+      - name: AUTH0_CLIENT_ID
+         value: $(AUTH0_CLIENT_ID)
+      - name: AUTH0_CLIENT_SECRET
+         value: $(AUTH0_CLIENT_SECRET)
+   steps:
+   - script: dotnet test --filter "Category=RequiresAuth"
 ```
 
 ### 📚 References

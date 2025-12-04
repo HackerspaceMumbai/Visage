@@ -18,11 +18,7 @@ public class SqlServerIntegrationTests
     public async Task SqlServer_Resource_Should_Appear_In_Aspire_Dashboard()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        
-        // Act - Wait for SQL server to be running
-        await resourceNotificationService.WaitForResourceAsync("sql", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(60));
+        await TestAppContext.WaitForResourceAsync("sql", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
         
         // Assert - If we can wait for it, it's registered
         TestAppContext.App.Should().NotBeNull("Aspire app should be available");
@@ -35,11 +31,7 @@ public class SqlServerIntegrationTests
     public async Task RegistrationDb_Database_Should_Be_Available()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        
-        // Act - Wait for registrationdb to be running
-        await resourceNotificationService.WaitForResourceAsync("registrationdb", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(60));
+        await TestAppContext.WaitForResourceAsync("registrationdb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
         
         // Assert - If we can wait for it, it's registered and available
         TestAppContext.App.Should().NotBeNull("Aspire app should be available");
@@ -52,11 +44,7 @@ public class SqlServerIntegrationTests
     public async Task EventingDb_Database_Should_Be_Available()
     {
         // Arrange
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
-        
-        // Act - Wait for eventingdb to be running
-        await resourceNotificationService.WaitForResourceAsync("eventingdb", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(60));
+        await TestAppContext.WaitForResourceAsync("eventingdb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
         
         // Assert - If we can wait for it, it's registered and available
         TestAppContext.App.Should().NotBeNull("Aspire app should be available");

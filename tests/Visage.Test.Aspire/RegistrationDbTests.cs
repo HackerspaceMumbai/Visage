@@ -22,11 +22,10 @@ public class RegistrationDbTests
     public async Task Registration_Service_Should_Connect_To_Aspire_Managed_Database()
     {
         // Arrange - Use shared app (already started in assembly hook)
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
+        // Using shared TestAppContext for startup synchronization
         
         // Wait for registrations-api to be ready
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Assert - Verify database connectivity via health endpoint
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
@@ -42,11 +41,10 @@ public class RegistrationDbTests
     public async Task Should_Create_New_Registrant_Record_In_Aspire_Database()
     {
         // Arrange - Use shared app
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
+        // Using shared TestAppContext for startup synchronization
         
         // Wait for Registration service to be ready
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
         
@@ -89,11 +87,10 @@ public class RegistrationDbTests
     public async Task Should_Query_Registrants_From_Aspire_Managed_Database()
     {
         // Arrange - Use shared app
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
+        // Using shared TestAppContext for startup synchronization
         
         // Wait for services to be ready
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Act - Query registrants from the /register endpoint
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
@@ -115,10 +112,9 @@ public class RegistrationDbTests
     public async Task RegisterEndpoint_WhenSameEmailPosted_ShouldUpdateExistingRecord()
     {
         // Arrange - Use shared app
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
+        // Using shared TestAppContext for startup synchronization
 
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
         var email = "duplicate-update@example.com";
@@ -184,11 +180,9 @@ public class RegistrationDbTests
     public async Task EF_Core_Migrations_Should_Run_Automatically_On_Startup()
     {
         // Arrange - Use shared app (migrations already ran during assembly initialization)
-        var resourceNotificationService = TestAppContext.ResourceNotificationService;
         
         // Wait for service to be ready
-        await resourceNotificationService.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Assert - If service is running, migrations succeeded (checked during fixture initialization)
         // Verify we can query the service health endpoint

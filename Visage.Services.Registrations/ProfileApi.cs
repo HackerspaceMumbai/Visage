@@ -146,6 +146,13 @@ public static class ProfileApi
                 parsedUserId = tmpParsed;
             }
 
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Profile completion check failed: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             var status = await repo.GetCompletionStatusAsync(parsedUserId.Value);
             if (status is null)
             {
@@ -203,6 +210,13 @@ public static class ProfileApi
                 parsedUserId = tmpId;
             }
             
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Profile GET: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             var registrant = await db.Registrants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
@@ -243,6 +257,13 @@ public static class ProfileApi
                 parsedUserId = tmpId;
             }
             
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Profile PUT: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             var registrant = await db.Registrants
                 .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
             
@@ -368,6 +389,13 @@ public static class ProfileApi
                 parsedUserId = tmpId;
             }
 
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Profile card GET: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             var registrant = await db.Registrants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
@@ -379,8 +407,8 @@ public static class ProfileApi
             {
                 Name = registrant.FirstName + " " + registrant.LastName,
                 Email = registrant.Email,
-                LinkedIn = registrant.LinkedInProfile,
-                GitHub = registrant.GitHubProfile,
+                LinkedIn = registrant.LinkedInProfile ?? string.Empty,
+                GitHub = registrant.GitHubProfile ?? string.Empty,
                 //RegistrationDate = registrant
             });
         });
@@ -412,6 +440,12 @@ public static class ProfileApi
             else
             {
                 parsedUserId = tmpId2;
+            }
+
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                return Results.Problem("Internal error processing user ID");
             }
 
             var registrant = await db.Registrants
@@ -464,6 +498,13 @@ public static class ProfileApi
             else
             {
                 parsedUserId = tmpId3;
+            }
+
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("AIDE banner dismissal: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
             }
 
             await preferencesRepo.DismissAideBannerAsync(parsedUserId.Value);
@@ -525,11 +566,18 @@ public static class ProfileApi
                 parsedUserId = tmpId4;
             }
 
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("AIDE banner status check: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             var preferences = await preferencesRepo.GetByUserIdAsync(parsedUserId.Value);
 
             var dto = new UserPreferencesDto
             {
-                UserId = parsedUserId.ToString(),
+                UserId = parsedUserId.Value.ToString(),
                 AideBannerDismissedAt = preferences?.AideBannerDismissedAt,
                 UpdatedAt = preferences?.UpdatedAt ?? DateTime.UtcNow
             };
@@ -588,6 +636,13 @@ public static class ProfileApi
             {
                 logger.LogWarning("Draft save failed: Invalid section {Section}", draftDto.Section);
                 return Results.BadRequest(new { error = "Section must be 'mandatory' or 'aide'" });
+            }
+
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Draft save: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
             }
 
             var now = DateTime.UtcNow;
@@ -677,6 +732,13 @@ public static class ProfileApi
                 logger.LogInformation("Draft retrieval: Resolved user ID {UserId} from email {Email}", parsedUserId, email);
             }
 
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Draft retrieval: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             // T047: Validate section parameter
             if (section != "mandatory" && section != "aide")
             {
@@ -715,7 +777,7 @@ public static class ProfileApi
 
             var response = new RegistrationDraftDto
             {
-                UserId = parsedUserId.ToString(),
+                UserId = parsedUserId.Value.ToString(),
                 DraftData = draft.DraftData,
                 Section = draft.Section,
                 SavedAt = draft.UpdatedAt,
@@ -770,6 +832,13 @@ public static class ProfileApi
                 logger.LogInformation("Draft deletion: Resolved user ID {UserId} from email {Email}", parsedUserId, email);
             }
 
+            // Defensive null check for compiler nullability analysis
+            if (!parsedUserId.HasValue)
+            {
+                logger.LogError("Draft deletion: parsedUserId is unexpectedly null");
+                return Results.Problem("Internal error processing user ID");
+            }
+
             // Validate section parameter
             if (section != "mandatory" && section != "aide")
             {
@@ -805,15 +874,8 @@ public static class ProfileApi
 
     private static string? ResolveEmail(ClaimsPrincipal user)
     {
-        foreach (var claimType in EmailClaimTypes)
-        {
-            var claimValue = user.FindFirst(claimType)?.Value;
-            if (!string.IsNullOrWhiteSpace(claimValue))
-            {
-                return claimValue;
-            }
-        }
-
-        return null;
+        return EmailClaimTypes
+            .Select(claimType => user.FindFirst(claimType)?.Value)
+            .FirstOrDefault(claimValue => !string.IsNullOrWhiteSpace(claimValue));
     }
 }
