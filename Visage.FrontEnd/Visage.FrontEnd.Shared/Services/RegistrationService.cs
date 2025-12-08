@@ -54,7 +54,7 @@ public class RegistrationService : IRegistrationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while posting registration.");
-            return RegistrationResult.Failure(HttpStatusCode.InternalServerError, ex.Message);
+            return RegistrationResult.Failure(HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again.");
         }
     }
 }

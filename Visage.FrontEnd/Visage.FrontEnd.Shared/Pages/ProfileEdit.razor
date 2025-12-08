@@ -584,17 +584,17 @@
         catch (HttpRequestException ex)
         {
             Logger.LogError(ex, "Network error loading profile in ProfileEdit");
-            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+            customErrors.Add("Network error. Please check your connection and try again.");
         }
         catch (TaskCanceledException ex)
         {
             Logger.LogError(ex, "Request timeout loading profile in ProfileEdit");
-            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
+            customErrors.Add("Request timeout. Please try again.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading profile in ProfileEdit");
-            customErrors.Add($"An unexpected error occurred: {ex.Message}");
+            customErrors.Add("An unexpected error occurred. Please try again.");
         }
     }
 
@@ -623,17 +623,17 @@
         catch (HttpRequestException ex)
         {
             Logger.LogError(ex, "Network error saving profile in ProfileEdit");
-            customErrors.Add($"Network error: {ex.Message}. Please check your connection and try again.");
+            customErrors.Add("Network error. Please check your connection and try again.");
         }
         catch (TaskCanceledException ex)
         {
             Logger.LogError(ex, "Request timeout saving profile in ProfileEdit");
-            customErrors.Add($"Request timeout: {ex.Message}. Please try again.");
+            customErrors.Add("Request timeout. Please try again.");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving profile in ProfileEdit");
-            customErrors.Add($"An unexpected error occurred: {ex.Message}");
+            customErrors.Add("An unexpected error occurred. Please try again.");
         }
         finally
         {

@@ -35,11 +35,6 @@ public class DraftDeletionTests
 
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);
-        
-        var email = "deleteemail@example.com";        // Attach authorization header for protected endpoints
-        await TestAppContext.SetDefaultAuthHeader(httpClient);
-
-        
 
         // Create test registrant
         var registrant = new Registrant
