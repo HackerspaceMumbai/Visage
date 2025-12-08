@@ -98,6 +98,7 @@ To run the integration tests, execute the following command:
 
 ```bash
 dotnet test tests/Visage.Tests.Integration/Visage.Tests.Integration.csproj
+```
 
 Note: To keep `dotnet test` fast for local development, this repository defaults to running `Smoke` tests (home page validation) when running `dotnet test` without any filters. Use `scripts/test-all.ps1` to run the broader test suite locally:
 
@@ -111,7 +112,6 @@ To run full validation (including `RequiresAuth` tests), either use `pwsh -File 
 ```pwsh
 dotnet test --filter "Category!=RequiresAuth&Category!=AspireHealth"
 dotnet test --filter "Category=RequiresAuth" # requires secrets
-```
 ```
 
 ### Configurable Tests

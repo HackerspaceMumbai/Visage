@@ -2,7 +2,8 @@
 
 **Last Updated**: 2025-11-11  
 **Total Tests**: 46  
-**Passing**: 25**Failing**: 19 (documented below)  
+**Passing**: 25  
+**Failing**: 19 (documented below)  
 **Skipped**: 2
 
 ## Purpose

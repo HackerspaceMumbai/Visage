@@ -22,7 +22,15 @@ public class EventingDbTests
         // Arrange - Use shared app (already started in assembly hook)
         
         // Wait for eventing service to be ready
-        await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));            "Eventing service health check should succeed, confirming database connectivity");
+        await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        
+        // Act - Query health endpoint
+        var httpClient = TestAppContext.CreateHttpClient("eventing");
+        var healthResponse = await httpClient.GetAsync("/health");
+        
+        // Assert - Health check should succeed, confirming database connectivity
+        healthResponse.Should().NotBeNull("Eventing service health check should succeed, confirming database connectivity");
+        healthResponse.IsSuccessStatusCode.Should().BeTrue("Eventing service health check should succeed, confirming database connectivity");
     }
 
     /// <summary>
