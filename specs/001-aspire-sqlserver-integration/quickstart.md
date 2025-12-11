@@ -282,6 +282,25 @@ Set values in:
 - **Azure**: App Service configuration or Key Vault
 - **Local production testing**: User secrets (`dotnet user-secrets set sql-password "YourPassword"`)
 
+### Connection Pooling
+
+Aspire automatically configures connection pooling for SQL Server. Default pool size is 100 connections.
+
+**Production Tuning**:
+
+```csharp
+// In Visage.AppHost/Program.cs for production
+var sqlServer = builder.AddSqlServer("sql")
+    .WithConnectionStringParameter("Server=...;Min Pool Size=10;Max Pool Size=200;...");
+```
+
+Recommended settings:
+
+- **Min Pool Size**: 10-20 (maintains warm connections)
+- **Max Pool Size**: 100-500 (based on load testing, depends on concurrent requests)
+- Monitor connection pool exhaustion via Application Insights
+- Run load tests (NBomber) to determine optimal pool size for your workload
+
 ### Environment-Specific Settings
 
 Aspire supports multiple environments:

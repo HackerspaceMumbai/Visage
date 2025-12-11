@@ -45,6 +45,42 @@ We will build a solution on the latest .NET version, that takes full advantage o
 
 For further reading on architecture, please check our website [here](https://hackmum.in)
 
+## Prerequisites
+
+Before running the Visage project, ensure you have the following installed:
+
+- **.NET 10 SDK** - [Download here](https://dotnet.microsoft.com/download/dotnet/10.0)
+- **Docker Desktop** - Required for containerized SQL Server and services ([Download](https://www.docker.com/products/docker-desktop))
+- **Visual Studio 2025** or **VS Code with C# Dev Kit**
+- **Aspire workload** - Install via: `dotnet workload install aspire`
+
+### Running the Project
+
+1. **Start Docker Desktop** - Ensure Docker is running before launching the application
+2. **Run the AppHost**:
+   ```bash
+   cd Visage.AppHost
+   dotnet run
+   ```
+3. **Access the Aspire Dashboard** - Opens automatically at `https://localhost:17044/`
+4. **Verify Health Status**:
+   - ✅ SQL Server resource shows "Healthy" (green)
+   - ✅ Both `registrationdb` and `eventingdb` databases are listed
+   - ✅ Registration and Eventing services show "Healthy"
+   - ✅ Frontend web application is accessible
+
+**Note**: The first run may take longer as Docker downloads SQL Server images. Subsequent runs are faster.
+
+### Database Management
+
+**Aspire automatically manages SQL Server** - no manual installation required! Connection strings are injected automatically via Aspire's service discovery.
+
+- **View database schema**: Connect via connection string shown in Aspire dashboard
+- **Run migrations**: Automatic on service startup (or manually via `dotnet ef database update`)
+- **Reset database**: Stop AppHost → Delete Docker container → Restart AppHost
+
+For detailed setup and troubleshooting, see [Aspire SQL Server Quickstart](./specs/001-aspire-sqlserver-integration/quickstart.md).
+
 ## Testing Guidelines
 
 Since this is an Aspire based solution we are predominantly doing Integration testing  using TUnit, Fluent Assertions, & Playwright. We will strive to have 100% test coverage. External connections are mocked via NSubstitute, and load testing by NBomber. We will also include security testing using OWASP ZAP and Stryker for chaos.
@@ -62,6 +98,20 @@ To run the integration tests, execute the following command:
 
 ```bash
 dotnet test tests/Visage.Tests.Integration/Visage.Tests.Integration.csproj
+```
+
+Note: To keep `dotnet test` fast for local development, this repository defaults to running `Smoke` tests (home page validation) when running `dotnet test` without any filters. Use `scripts/test-all.ps1` to run the broader test suite locally:
+
+```pwsh
+# Run default and non-auth tests
+pwsh -File ./scripts/test-all.ps1
+```
+
+To run full validation (including `RequiresAuth` tests), either use `pwsh -File ./scripts/test-all.ps1 -RunAuth` (with Auth secrets set) or run a direct CLI filter:
+
+```pwsh
+dotnet test --filter "Category!=RequiresAuth&Category!=AspireHealth"
+dotnet test --filter "Category=RequiresAuth" # requires secrets
 ```
 
 ### Configurable Tests

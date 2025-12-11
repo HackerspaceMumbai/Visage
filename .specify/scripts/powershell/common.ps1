@@ -23,6 +23,9 @@ function Get-RepoRoot {
 function Get-CurrentBranch {
     # First check if SPECIFY_FEATURE environment variable is set
     if ($env:SPECIFY_FEATURE) {
+        return $env:SPECIFY_FEATURE
+    }
+    
     try {
         $result = git rev-parse --abbrev-ref HEAD 2>&1
         if ($LASTEXITCODE -eq 0) {

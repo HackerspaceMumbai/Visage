@@ -1,7 +1,51 @@
 # For more info on HTTP files go to https://aka.ms/vs/httpfile
 @Visage.Services.Registrations_HostAddress = https://localhost:62687
+@auth0Token = YOUR_AUTH0_JWT_TOKEN_HERE
 
+### T012: Get Profile Completion Status (requires valid JWT)
+# Expected: 200 OK with ProfileCompletionStatusDto
+# Returns isProfileComplete, isAideProfileComplete, and list of incomplete mandatory fields
+GET {{Visage.Services.Registrations_HostAddress}}/api/profile/completion-status
+Authorization: Bearer {{auth0Token}}
 
+###
+
+### T012: Get Profile Completion Status - Missing Auth (should fail with 401)
+# Expected: 401 Unauthorized
+GET {{Visage.Services.Registrations_HostAddress}}/api/profile/completion-status
+
+###
+
+### T012: Get Profile Completion Status - Invalid Token (should fail with 401)
+# Expected: 401 Unauthorized
+GET {{Visage.Services.Registrations_HostAddress}}/api/profile/completion-status
+Authorization: Bearer invalid_token_here
+
+###
+
+### T029: Dismiss AIDE Banner (requires valid JWT)
+# Expected: 200 OK with success message
+# Dismisses AIDE completion banner for 30 days
+POST {{Visage.Services.Registrations_HostAddress}}/api/profile/preferences/aide-banner/dismiss
+Authorization: Bearer {{auth0Token}}
+
+###
+
+### T029: Get AIDE Banner Status (requires valid JWT)
+# Expected: 200 OK with UserPreferencesDto
+# Returns aideBannerDismissedAt (null if never dismissed, or timestamp)
+GET {{Visage.Services.Registrations_HostAddress}}/api/profile/preferences/aide-banner
+Authorization: Bearer {{auth0Token}}
+
+###
+
+### T029: Dismiss AIDE Banner - Missing Auth (should fail with 401)
+# Expected: 401 Unauthorized
+POST {{Visage.Services.Registrations_HostAddress}}/api/profile/preferences/aide-banner/dismiss
+
+###
+
+### Existing Endpoints (for reference)
 
 GET {{Visage.Services.Registrations_HostAddress}}/register
 

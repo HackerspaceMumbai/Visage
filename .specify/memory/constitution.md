@@ -3,12 +3,17 @@ SYNC IMPACT REPORT
 ==================
 Version change: 1.0.0 → 1.1.0
 @@Version change: 1.1.0 → 1.2.0
+@@Version change: 1.2.0 → 1.3.0
+@@Version change: 1.3.0 → 1.4.0
 Modified principles: 
   - Principle IV: Blazor Hybrid UI Consistency → Expanded with render mode strategy
   - Principle VI: Security & Privacy by Design → Expanded with IdP abstraction
 @@  - Principle VIII: Blazor Render Mode Strategy → Expanded with navigation best practices and architectural guidance
+@@  - Principle I: Aspire-First Architecture → Added mandatory health endpoint testing requirement
+@@  - Principle III: Integration Testing → Promoted health endpoint testing to mandatory priority #2
 @@  - Technology Stack Requirements: Approved Patterns → Added form validation, DateTime comparison, and UI consistency patterns
 @@  - Code Quality Gates → Added render mode verification, form validation checks, and DateTime validation requirements
+@@  - Code Quality Gates → Added mandatory health endpoint testing gate (Gate #2)
 Added sections:
   - Principle VIII: Blazor Render Mode Strategy (new)
   - Principle IX: Identity Provider Abstraction (new)
@@ -20,10 +25,14 @@ Added sections:
 @@  - DateTime comparison pattern: Use full DateTime (not DateOnly) for time-sensitive logic
 @@  - UI consistency rule: Maintain visual styling across component states
 @@  - Architectural guidance for Visage: InteractiveServer app-wide default for Auth0/Aspire
+@@  - Mandatory health endpoint testing in Principle I (all Aspire services)
+@@  - Automated health endpoint test suite requirement in Principle III (#2 priority)
+@@  - Quality gate #2: All health endpoint tests must pass before merge
 Removed sections: N/A
 Templates status:
   ✅ plan-template.md - Updated (added render mode, IdP abstraction, and DaisyUI checks)
   @@  ✅ plan-template.md - Review recommended (render mode navigation checks)
+  @@  ✅ plan-template.md - Review recommended (health endpoint testing checklist)
   ✅ spec-template.md - Compatible (no changes needed)
   ✅ tasks-template.md - Compatible (no changes needed)
 Follow-up TODOs:
@@ -31,8 +40,25 @@ Follow-up TODOs:
   - Add Blazor render mode decision guide to blazor-guidance.md (manual task)
   - Document DaisyUI integration pattern in frontend documentation (manual task)
 @@  - ✅ copilot-instructions.md updated with render mode, form validation, and DateTime patterns
+@@  - ✅ copilot-instructions.md updated with mandatory health endpoint testing pattern and examples
 @@  - Consider adding Blazor navigation troubleshooting guide to documentation
 @@  - Consider documenting form validation pattern examples in frontend documentation
+@@  - Verify all existing Aspire services have health endpoint tests (T051 automated)
+@@Version 1.4.0 Changes (2025-11-11):
+@@  - Added Principle XI: Test-Driven Workflow Discipline (NEW)
+@@  - Quality Gates: Added Gate #0 - Baseline verification with TEST-BASELINE.md requirement
+@@  - Efficiency protocols: Token budget awareness, context-first reading, minimal documentation
+@@  - Test execution discipline: Stop after 2 failures, compare against baseline, isolate test runs
+@@  - Documentation policy: Only create docs when explicitly requested or establishing new patterns
+@@Follow-up TODOs:
+@@  - Create tests/TEST-BASELINE.md documenting current 19 pre-existing test failures
+@@  - Update copilot-instructions.md with test-driven workflow patterns
+@@  - Consider adding test execution checklists to developer documentation
+@@Version 1.4.0 Changes Continued:
+@@  - Principle IX: Added UI Change Verification Protocol (MANDATORY: run Tailwind CLI before viewing UI changes)
+@@  - Principle IX-B: Blazor Prerendering State Management (NEW) - double lifecycle pattern for InteractiveServer/Auto
+@@  - Anti-patterns: HttpContext access without null checks, state initialization without persistence
+@@  - State persistence pattern: Check HttpContext availability, cache data between render phases
 -->
 
 # Visage Constitution
@@ -47,11 +73,13 @@ Every service MUST be orchestrated through .NET Aspire. All services MUST:
 - Use `.WaitFor()` to declare startup dependencies explicitly
 - Call `AddServiceDefaults()` to enable health checks, OpenTelemetry, and service discovery
 - Expose health endpoints at `/health` and `/alive` in development environments
+- **Have automated health endpoint tests** in `tests/Visage.Test.Aspire/HealthEndpointTests.cs` verifying both `/health` and `/alive` return 200 OK
 - Be containerizable for local development and cloud deployment
 
 **Rationale**: Aspire orchestration ensures consistent service discovery, observability, and
 deployment patterns across the entire solution, showcasing .NET 10's modern distributed
-application capabilities.
+application capabilities. Automated health endpoint tests ensure all services meet operational
+readiness requirements and prevent deployment of misconfigured services.
 
 ### II. Minimal API Design
 
@@ -73,15 +101,18 @@ Testing strategy MUST prioritize:
 
 1. **Integration tests** (primary) - Use TUnit and Fluent Assertions for API endpoints,
    database interactions, and service-to-service communication
-2. **E2E tests** - Use Playwright for critical user journeys across the Blazor Hybrid UI
-3. **Load tests** - Use NBomber for performance validation under expected load
-4. **Security tests** - Use OWASP ZAP for vulnerability scanning
-5. **Mutation tests** - Use Stryker for test quality validation
-6. **Unit tests** (minimal) - Use bunit ONLY for critical Blazor components
+2. **Health endpoint tests** (mandatory) - All Aspire services MUST have automated tests verifying
+   `/health` and `/alive` endpoints return 200 OK in `tests/Visage.Test.Aspire/HealthEndpointTests.cs`
+3. **E2E tests** - Use Playwright for critical user journeys across the Blazor Hybrid UI
+4. **Load tests** - Use NBomber for performance validation under expected load
+5. **Security tests** - Use OWASP ZAP for vulnerability scanning
+6. **Mutation tests** - Use Stryker for test quality validation
+7. **Unit tests** (minimal) - Use bunit ONLY for critical Blazor components
 
 **Rationale**: As a real-world meetup management platform with over-subscribed events,
-integration tests validate actual behavior across service boundaries and data stores. This
-approach prioritizes confidence in production behavior over isolated component testing.
+integration tests validate actual behavior across service boundaries and data stores. Health
+endpoint tests ensure operational readiness and prevent deployment of misconfigured services.
+This approach prioritizes confidence in production behavior over isolated component testing.
 
 ### IV. Blazor Hybrid UI Consistency
 
@@ -172,6 +203,24 @@ pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared run buildcss
 
 - **Generated artifact policy**: `Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css` is a generated artifact. It may be committed for convenience in local development, but CI and release pipelines MUST regenerate it from `input.css` before packaging/deploying.
 
+**UI Change Verification Protocol (MANDATORY)**:
+
+Before viewing any UI changes in the browser:
+
+1. **ALWAYS run Tailwind CLI first** to regenerate `output.css`:
+
+   ```pwsh
+   pnpx tailwindcss@4 -i Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css -o Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css --minify
+   ```
+
+2. **Then** build and run Aspire:
+
+   ```pwsh
+   dotnet build
+   dotnet run --project Visage.AppHost
+   ```
+
+**Common Mistake**: Viewing UI without regenerating CSS results in stale styles—DaisyUI changes won't appear even though Blazor code changed.
 
 - **InteractiveAuto**: Pages requiring initial fast load with subsequent rich interactivity (event listings with filtering, registration forms with client validation)
 
@@ -194,6 +243,67 @@ maintaining security for sensitive operations.
 @@- Use InteractiveAuto sparingly and only when justified (e.g., initial fast load with subsequent rich interactivity)
 @@- Avoid per-page render mode overrides; centralize render mode strategy for predictable navigation behavior
 
+### IX-B. Blazor Prerendering State Management
+
+Components with InteractiveServer or InteractiveAuto render modes undergo **two-phase lifecycle**:
+
+#### Phase 1: Server Prerendering (Static HTML)
+
+- Component renders once on server during initial page load
+- State initialization happens, but no SignalR connection exists
+- No user interaction is possible
+- HTTP context available via `HttpContext`
+
+#### Phase 2: Interactive Rendering (SignalR Connected)
+
+- Component re-initializes after SignalR connects
+- State initialization happens AGAIN
+- User interactions now work
+- HTTP context NOT available
+
+**Critical Rules:**
+
+1. **Always check `if (HttpContext is not null)`** before accessing request-specific data during prerendering
+2. **Initialize state in `OnInitializedAsync`** - it runs in BOTH phases
+3. **Dispose resources in `Dispose`** - prevent memory leaks from double initialization
+4. **Avoid HttpContext in interactive phase** - use cascading parameters or service state instead
+5. **Use `[SupplyParameterFromQuery]` carefully** - only available during prerendering, null during interactive
+
+**Anti-Patterns:**
+
+```csharp
+// ❌ BAD: Assumes HttpContext always available
+public string UserId => HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+// ✅ GOOD: Checks for prerendering phase
+public string UserId => HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? _cachedUserId;
+```
+
+**State Persistence Pattern:**
+
+```csharp
+private string? _userId;
+
+protected override async Task OnInitializedAsync()
+{
+    // Runs twice: prerender + interactive
+    if (HttpContext is not null)
+    {
+        // First render (prerender): Get from HTTP context
+        _userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+    else if (_userId is null)
+    {
+        // Second render (interactive): Load from service/state
+        _userId = await AuthService.GetCurrentUserIdAsync();
+    }
+}
+```
+
+**Rationale**: Prerendering provides fast initial page loads (good for SEO and perceived performance),
+but the double lifecycle often causes confusion with state management. Understanding this pattern
+prevents NullReferenceExceptions and duplicate data loads.
+
 ### X. Identity Provider Abstraction
 
 Authentication MUST be implemented through an abstraction layer to enable IdP replacement:
@@ -211,6 +321,41 @@ configuration changes and single implementation class updates—no business logi
 By abstracting authentication, we enable deployment flexibility while maintaining the same
 codebase. This also future-proofs against vendor lock-in and demonstrates enterprise-grade
 architectural patterns.
+
+### XI. Test-Driven Workflow Discipline
+
+All testing activities MUST follow this disciplined workflow:
+
+**Before Writing Tests:**
+
+1. Read and understand existing test patterns (e.g., `SqlServerIntegrationTests.cs`)
+2. Verify dependencies are correctly configured (e.g., health endpoints anonymous in `Extensions.cs`)
+3. Document baseline test status BEFORE adding new tests
+4. Identify exact test scope and acceptance criteria
+
+**During Test Execution:**
+
+1. Run minimal test subset first using filters (prefer isolation)
+2. If filter fails to isolate, build project to verify compilation BEFORE full test run
+3. Stop after 2 consecutive test failures—report issue, don't debug silently
+4. Compare results against baseline to distinguish new vs. pre-existing failures
+
+**After Test Implementation:**
+
+1. Document ONLY what user explicitly requests (no unsolicited milestone docs)
+2. Update constitution/instructions ONLY when creating new patterns/requirements
+3. Verify test can be isolated and re-run independently
+
+**Efficiency Protocols:**
+
+- **Token Budget Awareness**: Avoid repetitive full test suite runs; use build verification first
+- **Context-First**: Read configuration files BEFORE creating dependent tests
+- **Minimal Documentation**: Only create docs when establishing new patterns, not for routine tasks
+- **Baseline Tracking**: Always document pre-existing test failures in a `TEST-BASELINE.md` file
+
+**Rationale**: Test-driven workflows require discipline to avoid wasted cycles. By establishing
+baselines, verifying configuration, and using targeted execution, we minimize debugging time
+and token consumption while maintaining confidence in test results.
 
 ## Technology Stack Requirements
 
@@ -263,20 +408,25 @@ architectural patterns.
 
 Before merging any PR:
 
+0. **Baseline Verification**: Document current test status in `tests/TEST-BASELINE.md` if not present
+   - List all pre-existing test failures with root causes
+   - Distinguish new failures from technical debt
+   - Update baseline when resolving pre-existing issues
 1. All integration tests MUST pass (`dotnet test tests/Visage.Tests.Integration/`)
-2. All E2E tests MUST pass for modified user journeys
-3. Scalar OpenAPI documentation MUST be up-to-date for API changes
-4. `.http` files MUST include examples for new endpoints
-5. Service registration in AppHost MUST be correct with proper `.WaitFor()` dependencies
-6. Observability: New endpoints MUST emit appropriate traces and metrics
-7. Security: Authentication scopes MUST be correctly applied to protected endpoints (no provider-specific code in business logic)
-8. Blazor components: Render mode MUST be appropriate for security/performance requirements
+2. **All health endpoint tests MUST pass** (`tests/Visage.Test.Aspire/HealthEndpointTests.cs`) - Every Aspire service MUST have `/health` and `/alive` endpoints returning 200 OK
+3. All E2E tests MUST pass for modified user journeys
+4. Scalar OpenAPI documentation MUST be up-to-date for API changes
+5. `.http` files MUST include examples for new endpoints
+6. Service registration in AppHost MUST be correct with proper `.WaitFor()` dependencies
+7. Observability: New endpoints MUST emit appropriate traces and metrics
+8. Security: Authentication scopes MUST be correctly applied to protected endpoints (no provider-specific code in business logic)
+9. Blazor components: Render mode MUST be appropriate for security/performance requirements
 @@   - App-wide render mode MUST be documented in App.razor
 @@   - Per-page overrides MUST be justified in PR description
 @@   - Navigation between pages with different render modes MUST be tested
-9. UI components: MUST use DaisyUI classes for styling consistency and accessibility
-@@10. Form validation: MUST include both ValidationSummary and inline ValidationMessage components
-@@11. DateTime logic: MUST use full DateTime (not DateOnly) for time-sensitive business logic like event status classification
+10. UI components: MUST use DaisyUI classes for styling consistency and accessibility
+@@11. Form validation: MUST include both ValidationSummary and inline ValidationMessage components
+@@12. DateTime logic: MUST use full DateTime (not DateOnly) for time-sensitive business logic like event status classification
 
 ### Commit Conventions
 
@@ -292,7 +442,8 @@ Before merging any PR:
 
 ### Performance Expectations
 
-@@**Version**: 1.2.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-23
+@@**Version**: 1.3.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-24
+
 - Blazor UI: Initial load < 2 seconds, interactions < 100ms perceived latency
 - Database queries: Use indexes, avoid N+1 queries
 - Load testing: MUST handle 1000 concurrent users for registration surges
@@ -329,4 +480,4 @@ Before merging any PR:
   in `.github/prompts/`
 - Complexity must be justified: if constitution rules are violated, document in plan.md
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-19
+**Version**: 1.3.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-24

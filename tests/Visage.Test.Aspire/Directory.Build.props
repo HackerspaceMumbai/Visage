@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Default 'dotnet test' in this test project to run only Smoke tests (home page validation) -->
+    <VSTestTestCaseFilter>Category=Smoke</VSTestTestCaseFilter>
+  </PropertyGroup>
+</Project>

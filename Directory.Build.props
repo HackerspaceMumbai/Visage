@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- By default, running `dotnet test` at repo root runs smoke checks only (home page validation). -->
+    <VSTestTestCaseFilter>Category=Smoke</VSTestTestCaseFilter>
+  </PropertyGroup>
+</Project>

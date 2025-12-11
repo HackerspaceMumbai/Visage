@@ -1,4 +1,5 @@
 @page "/user-registration"
+@using Visage.Shared.Models
 @inject IRegistrationService RegistrationService
 @inject NavigationManager NavigationManager
 
@@ -541,11 +542,11 @@
     private ValidationMessageStore? messageStore;
 
     [SupplyParameterFromForm(FormName = "ScheduleNewRegistration")]
-    private Registrant? registrant { get; set; }
+    private Visage.Shared.Models.Registrant? registrant { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        registrant = new Registrant();
+        registrant = new Visage.Shared.Models.Registrant();
         editContext = new EditContext(registrant);
         editContext.SetFieldCssClassProvider(new DaisyUIInputError());
         editContext.OnValidationRequested += HandleValidationRequested;
@@ -566,17 +567,21 @@
 
     private async Task HandleValidSubmit()
     {
-        var createdRegistrant = await RegistrationService.RegisterAsync(registrant!);
-        if (createdRegistrant != null)
+        var registrationResult = await RegistrationService.RegisterAsync(registrant!);
+
+        if (registrationResult.IsSuccess && registrationResult.Registrant is { } createdRegistrant)
         {
-            // Navigate immediately after success
             NavigationManager.NavigateTo($"/profile/{createdRegistrant.Id}");
-            // Optionally, you can show a toast or notification before navigating, but do not delay navigation
+            return;
         }
-        else
-        {
-            failureMessage = "Registration failed. Please try again.";
-        }
+
+        var statusSegment = registrationResult.StatusCode == default
+            ? string.Empty
+            : $" (Status {(int)registrationResult.StatusCode} {registrationResult.StatusCode})";
+
+        failureMessage = string.IsNullOrWhiteSpace(registrationResult.ErrorMessage)
+            ? $"Registration failed{statusSegment}. Please try again."
+            : $"Registration failed{statusSegment}: {registrationResult.ErrorMessage}";
     }
 
     private void ClearForm()

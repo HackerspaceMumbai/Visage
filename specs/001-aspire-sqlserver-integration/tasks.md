@@ -65,11 +65,11 @@
 - [x] T014 [US1] Add eventingdb database to SQL Server resource in Visage.AppHost/AppHost.cs using AddDatabase("eventingdb") ✅
 - [x] T015 [US1] Run Visage.AppHost and verify SQL Server appears in Aspire dashboard with "Healthy" status ✅
 - [x] T016 [US1] Verify both databases (registrationdb, eventingdb) appear as child resources in Aspire dashboard ✅
-- [ ] T017 [US1] Run integration tests in SqlServerIntegrationTests.cs and verify all tests pass
+- [x] T017 [US1] Run integration tests in SqlServerIntegrationTests.cs and verify all tests pass ✅
 
-**Note**: T015-T016 verified - AppHost starts successfully, Aspire dashboard accessible at https://localhost:17044. SQL Server resource is registered and attempting to create container. Integration tests (T017) require SQL Server container to be fully running.
+**Note**: T015-T017 verified - All 3 SqlServerIntegrationTests passing. SQL Server resource operational, databases available, health checks working.
 
-**Checkpoint**: At this point, SQL Server resource is fully configured in Aspire, health checks work, and integration tests pass. Services are NOT yet connected (US2/US3).
+**Checkpoint**: User Story 1 COMPLETE ✅ - SQL Server resource is fully configured in Aspire, health checks work, and integration tests pass. Services are NOT yet connected (US2/US3).
 
 ---
 
@@ -83,25 +83,27 @@
 
 **NOTE: Write integration tests FIRST using TUnit and Fluent Assertions, ensure they FAIL before implementation**
 
-- [ ] T018 [P] [US2] Create RegistrationDbTests.cs in tests/Visage.Tests.Integration/ with test for Registration service connecting to Aspire-managed database
-- [ ] T019 [P] [US2] Add integration test in RegistrationDbTests.cs for creating a new registrant record via Registration service
-- [ ] T020 [P] [US2] Add integration test in RegistrationDbTests.cs for querying existing registrants from Aspire-managed database
-- [ ] T021 [P] [US2] Add integration test in RegistrationDbTests.cs for EF Core migrations running automatically on service startup
+- [x] T018 [P] [US2] Create RegistrationDbTests.cs in tests/Visage.Test.Aspire/ with test for Registration service connecting to Aspire-managed database ✅
+- [x] T019 [P] [US2] Add integration test in RegistrationDbTests.cs for creating a new registrant record via Registration service ✅
+- [x] T020 [P] [US2] Add integration test in RegistrationDbTests.cs for querying existing registrants from Aspire-managed database ✅
+- [x] T021 [P] [US2] Add integration test in RegistrationDbTests.cs for EF Core migrations running automatically on service startup ✅
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Update Visage.AppHost/Program.cs to reference registrationdb for Registration service using WithReference(registrationDb)
-- [ ] T023 [US2] Add WaitFor(registrationDb) to Registration service registration in Visage.AppHost/Program.cs to ensure database is ready before service starts
-- [ ] T024 [US2] Update services/Visage.Services.Registrations/Program.cs to replace manual DbContext configuration with builder.AddSqlServerDbContext<RegistrantDB>("registrationdb")
-- [ ] T025 [US2] Remove connection string from services/Visage.Services.Registrations/appsettings.json (Aspire manages it now)
-- [ ] T026 [US2] Add automatic EF Core migration execution on startup in services/Visage.Services.Registrations/Program.cs using dbContext.Database.MigrateAsync()
-- [ ] T027 [US2] Remove any hardcoded connection strings from services/Visage.Services.Registrations/RegistrantDB.cs
-- [ ] T028 [US2] Run Visage.AppHost and verify Registration service starts after registrationdb is healthy
-- [ ] T029 [US2] Verify Registration service health check passes in Aspire dashboard
-- [ ] T030 [US2] Run integration tests in RegistrationDbTests.cs and verify all tests pass
-- [ ] T031 [US2] Test creating a new registration via API and confirm data persists in SQL Server
+- [x] T022 [US2] Update Visage.AppHost/AppHost.cs to reference registrationdb for Registration service using WithReference(registrationDb) ✅
+- [x] T023 [US2] Add WaitFor(registrationDb) to Registration service registration in Visage.AppHost/AppHost.cs to ensure database is ready before service starts ✅
+- [x] T024 [US2] Update services/Visage.Services.Registrations/Program.cs to replace manual DbContext configuration with builder.AddSqlServerDbContext<RegistrantDB>("registrationdb") ✅
+- [x] T025 [US2] Remove connection string from services/Visage.Services.Registrations/appsettings.json (Aspire manages it now) ✅
+- [x] T026 [US2] Add automatic EF Core migration execution on startup in services/Visage.Services.Registrations/Program.cs using dbContext.Database.MigrateAsync() ✅
+- [x] T027 [US2] Remove any hardcoded connection strings from Visage.Services.Registrations/RegistrantDB.cs ✅
+- [x] T028 [US2] Run Visage.AppHost and verify Registration service starts after registrationdb is healthy ✅
+- [x] T029 [US2] Verify Registration service health check passes in Aspire dashboard ✅
+- [x] T030 [US2] Run integration tests in RegistrationDbTests.cs and verify all tests pass ✅
+- [x] T031 [US2] Test creating a new registration via API and confirm data persists in SQL Server ✅
 
-**Checkpoint**: At this point, Registration service is fully migrated to Aspire-managed SQL Server. User Story 1 AND 2 should both work independently.
+**Note**: All T018-T031 verified - RegistrationDbTests passing (4/4 tests + bonus T037 upsert test). AppHost running with Aspire dashboard at https://localhost:17044. Registration service connected to Aspire-managed registrationdb, health checks passing, CRUD operations working, migrations automatic.
+
+**Checkpoint**: User Story 2 COMPLETE ✅ - Registration service is fully migrated to Aspire-managed SQL Server. User Story 1 AND 2 both work independently.
 
 ---
 
@@ -115,25 +117,27 @@
 
 **NOTE: Write integration tests FIRST using TUnit and Fluent Assertions, ensure they FAIL before implementation**
 
-- [ ] T032 [P] [US3] Create EventingDbTests.cs in tests/Visage.Tests.Integration/ with test for Eventing service connecting to Aspire-managed database
-- [ ] T033 [P] [US3] Add integration test in EventingDbTests.cs for creating a new event record via Eventing service
-- [ ] T034 [P] [US3] Add integration test in EventingDbTests.cs for querying existing events from Aspire-managed database
-- [ ] T035 [P] [US3] Add integration test in EventingDbTests.cs for EF Core migrations running automatically on service startup
+- [x] T032 [P] [US3] Create EventingDbTests.cs in tests/Visage.Test.Aspire/ with test for Eventing service connecting to Aspire-managed database ✅
+- [x] T033 [P] [US3] Add integration test in EventingDbTests.cs for creating a new event record via Eventing service ✅
+- [x] T034 [P] [US3] Add integration test in EventingDbTests.cs for querying existing events from Aspire-managed database ✅
+- [x] T035 [P] [US3] Add integration test in EventingDbTests.cs for EF Core migrations running automatically on service startup ✅
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Update Visage.AppHost/Program.cs to reference eventingdb for Eventing service using WithReference(eventingDb)
-- [ ] T037 [US3] Add WaitFor(eventingDb) to Eventing service registration in Visage.AppHost/Program.cs to ensure database is ready before service starts
-- [ ] T038 [US3] Update services/Visage.Services.Eventing/Program.cs to replace manual DbContext configuration with builder.AddSqlServerDbContext<EventDB>("eventingdb")
-- [ ] T039 [US3] Remove connection string from services/Visage.Services.Eventing/appsettings.json (Aspire manages it now)
-- [ ] T040 [US3] Add automatic EF Core migration execution on startup in services/Visage.Services.Eventing/Program.cs using dbContext.Database.MigrateAsync()
-- [ ] T041 [US3] Remove any hardcoded connection strings from services/Visage.Services.Eventing/EventDB.cs
-- [ ] T042 [US3] Run Visage.AppHost and verify Eventing service starts after eventingdb is healthy
-- [ ] T043 [US3] Verify Eventing service health check passes in Aspire dashboard
-- [ ] T044 [US3] Run integration tests in EventingDbTests.cs and verify all tests pass
-- [ ] T045 [US3] Test creating a new event via API and confirm data persists in SQL Server
+- [x] T036 [US3] Update Visage.AppHost/AppHost.cs to reference eventingdb for Eventing service using WithReference(eventingDb) ✅
+- [x] T037 [US3] Add WaitFor(eventingDb) to Eventing service registration in Visage.AppHost/AppHost.cs to ensure database is ready before service starts ✅
+- [x] T038 [US3] Update services/Visage.Services.Eventing/Program.cs to replace manual DbContext configuration with builder.AddSqlServerDbContext<EventDB>("eventingdb") ✅
+- [x] T039 [US3] Remove connection string from services/Visage.Services.Eventing/appsettings.json (Aspire manages it now) ✅
+- [x] T040 [US3] Add automatic EF Core migration execution on startup in services/Visage.Services.Eventing/Program.cs using dbContext.Database.MigrateAsync() ✅
+- [x] T041 [US3] Remove any hardcoded connection strings from services/Visage.Services.Eventing/EventDB.cs ✅
+- [x] T042 [US3] Run Visage.AppHost and verify Eventing service starts after eventingdb is healthy ✅
+- [x] T043 [US3] Verify Eventing service health check passes in Aspire dashboard ✅
+- [x] T044 [US3] Run integration tests in EventingDbTests.cs and verify all tests pass ✅
+- [x] T045 [US3] Test creating a new event via API and confirm data persists in SQL Server ✅
 
-**Checkpoint**: All user stories are now complete. SQL Server resource is fully integrated, Registration and Eventing services both use Aspire-managed connections.
+**Note**: T032-T045 verified - EventingDbTests passing (6/6 tests: health check, migrations, create event, query events, upcoming events, past events). Implementation was already complete; only needed tests + health endpoint bug fix (MapDefaultEndpoints() was called AFTER app.Run(), moved to correct position BEFORE app.Run()). Eventing service connected to Aspire-managed eventingdb, health checks passing, CRUD operations working, migrations automatic.
+
+**Checkpoint**: User Story 3 COMPLETE ✅ - All user stories are now complete. SQL Server resource is fully integrated, Registration and Eventing services both use Aspire-managed connections.
 
 ---
 

@@ -1,0 +1,421 @@
+openapi: 3.1.0
+info:
+  title: Profile Completion API
+  description: API endpoints for checking user profile completion status, managing draft registrations, and user preferences
+  version: 1.0.0
+  contact:
+    name: Visage Team
+    url: https://hackmum.in
+
+servers:
+  - url: https://registrations-api
+    description: Aspire service discovery endpoint (development)
+  - url: https://api.visage.app/registrations
+    description: Production API endpoint
+
+security:
+  - Auth0Bearer: [profile:read-write]
+
+paths:
+  /api/profile/completion-status:
+    get:
+      summary: Get profile completion status
+      description: Checks if the authenticated user has completed mandatory and optional (AIDE) profile fields
+      operationId: getProfileCompletionStatus
+      tags:
+        - Profile
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: User ID (defaults to authenticated user from JWT sub claim if not provided)
+          schema:
+            type: string
+            example: "auth0|123456789"
+      responses:
+        '200':
+          description: Profile completion status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileCompletionStatusDto'
+              examples:
+                completeProfile:
+                  summary: User with complete mandatory profile
+                  value:
+                    userId: "auth0|123456789"
+                    isProfileComplete: true
+                    isAideProfileComplete: false
+                    profileCompletedAt: "2025-10-15T10:30:00Z"
+                    aideProfileCompletedAt: null
+                    incompleteMandatoryFields: []
+                    checkedAt: "2025-10-28T14:22:00Z"
+                incompleteProfile:
+                  summary: New user with incomplete profile
+                  value:
+                    userId: "auth0|987654321"
+                    isProfileComplete: false
+                    isAideProfileComplete: false
+                    profileCompletedAt: null
+                    aideProfileCompletedAt: null
+                    incompleteMandatoryFields: ["FirstName", "LastName", "MobileNumber", "GovtId", "AddressLine1", "City", "State", "PostalCode"]
+                    checkedAt: "2025-10-28T14:22:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/profile/draft:
+    post:
+      summary: Save draft registration
+      description: Saves partial registration progress for recovery within 24 hours
+      operationId: saveDraftRegistration
+      tags:
+        - Profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftRegistrationDto'
+            examples:
+              studentDraft:
+                summary: Partial student registration
+                value:
+                  userId: "auth0|123456789"
+                  draftData:
+                    firstName: "Jane"
+                    lastName: "Doe"
+                    email: "jane.doe@example.com"
+                    mobileNumber: "+91-9876543210"
+                    occupationStatus: "Student"
+                    lastUpdatedField: "occupationStatus"
+                    completionPercentage: 45
+      responses:
+        '201':
+          description: Draft saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  draftId:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    example: "2025-10-29T14:22:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get latest draft registration
+      description: Retrieves the latest draft registration for the authenticated user (if any)
+      operationId: getDraftRegistration
+      tags:
+        - Profile
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: User ID (defaults to authenticated user from JWT sub claim if not provided)
+          schema:
+            type: string
+            example: "auth0|123456789"
+      responses:
+        '200':
+          description: Draft retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftRegistrationDto'
+        '404':
+          description: No draft found for user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "No draft registration found for user"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete draft registration
+      description: Deletes the draft registration for the authenticated user (e.g., after successful profile completion)
+      operationId: deleteDraftRegistration
+      tags:
+        - Profile
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: User ID (defaults to authenticated user from JWT sub claim if not provided)
+          schema:
+            type: string
+            example: "auth0|123456789"
+      responses:
+        '204':
+          description: Draft deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/profile/preferences/aide-banner:
+    post:
+      summary: Dismiss AIDE completion banner
+      description: Records that the user has dismissed the AIDE completion banner on the home page
+      operationId: dismissAideBanner
+      tags:
+        - Profile
+        - Preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: User ID (defaults to authenticated user if not provided)
+                  example: "auth0|123456789"
+      responses:
+        '200':
+          description: Banner dismissal recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  suppressUntil:
+                    type: string
+                    format: date-time
+                    example: "2025-11-27T14:22:00Z"
+                    description: Banner will be suppressed until this date (30 days from now)
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get AIDE banner dismissal status
+      description: Checks if the AIDE banner should be shown to the user
+      operationId: getAideBannerStatus
+      tags:
+        - Profile
+        - Preferences
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: User ID (defaults to authenticated user from JWT sub claim if not provided)
+          schema:
+            type: string
+            example: "auth0|123456789"
+      responses:
+        '200':
+          description: Banner status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shouldShowBanner:
+                    type: boolean
+                    example: false
+                    description: True if banner should be shown, false if dismissed or suppressed
+                  dismissedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    example: "2025-10-28T14:22:00Z"
+                  suppressUntil:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    example: "2025-11-27T14:22:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    Auth0Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Auth0 JWT access token with profile:read-write scope
+
+  schemas:
+    ProfileCompletionStatusDto:
+      type: object
+      required:
+        - userId
+        - isProfileComplete
+        - isAideProfileComplete
+        - checkedAt
+      properties:
+        userId:
+          type: string
+          description: Auth0 user ID (sub claim)
+          example: "auth0|123456789"
+        isProfileComplete:
+          type: boolean
+          description: True if all mandatory fields are completed
+          example: true
+        isAideProfileComplete:
+          type: boolean
+          description: True if all optional AIDE fields are completed
+          example: false
+        profileCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when profile was first completed
+          example: "2025-10-15T10:30:00Z"
+        aideProfileCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when AIDE profile was first completed
+          example: null
+        incompleteMandatoryFields:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: List of incomplete mandatory field names (only populated if isProfileComplete is false)
+          example: ["MobileNumber", "GovtId", "AddressLine1"]
+        checkedAt:
+          type: string
+          format: date-time
+          description: Timestamp when this check was performed
+          example: "2025-10-28T14:22:00Z"
+
+    DraftRegistrationDto:
+      type: object
+      required:
+        - userId
+        - draftData
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Draft ID (generated by server)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        userId:
+          type: string
+          description: Auth0 user ID (sub claim)
+          example: "auth0|123456789"
+        draftData:
+          type: object
+          description: JSON-serialized form state (flexible schema)
+          additionalProperties: true
+          example:
+            firstName: "John"
+            lastName: "Doe"
+            email: "john.doe@example.com"
+            mobileNumber: "+91-9876543210"
+            occupationStatus: "Student"
+            lastUpdatedField: "occupationStatus"
+            completionPercentage: 45
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when draft was created
+          example: "2025-10-28T14:22:00Z"
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp when draft will auto-delete (24 hours after creation)
+          example: "2025-10-29T14:22:00Z"
+
+    Error:
+      type: object
+      required:
+        - message
+        - statusCode
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Unauthorized: Invalid or missing JWT token"
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 401
+        details:
+          type: object
+          nullable: true
+          description: Additional error details (optional)
+          additionalProperties: true
+
+  responses:
+    BadRequestError:
+      description: Invalid request (e.g., missing required fields, invalid data)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Invalid request: draftData is required"
+            statusCode: 400
+
+    UnauthorizedError:
+      description: Unauthorized - Invalid or missing JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Unauthorized: Invalid or missing JWT token"
+            statusCode: 401
+
+    ForbiddenError:
+      description: Forbidden - Insufficient permissions (missing profile:read-write scope)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Forbidden: Missing required scope profile:read-write"
+            statusCode: 403
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Internal server error: Database connection failed"
+            statusCode: 500
+
+tags:
+  - name: Profile
+    description: User profile completion and registration management
+  - name: Preferences
+    description: User preferences and settings
