@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Visage.Services.Eventing/Visage.Services.Eventing.csproj" />
+  <Project Path="Visage.Services.Registrations/Visage.Services.Registrations.csproj" />
+</Solution>
