@@ -1,0 +1,226 @@
+@page "/registration/mandatory/oauth-callback"
+@attribute [Authorize]
+@using Visage.Shared.Models
+@using Visage.FrontEnd.Shared.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@inject ISocialAuthService SocialAuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<OAuthCallback> Logger
+
+<PageTitle>Linking Social Profile...</PageTitle>
+
+<div class="container mx-auto px-4 py-8 max-w-2xl text-center">
+    @if (isProcessing)
+    {
+        <div class="flex flex-col items-center justify-center gap-4">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <h2 class="text-2xl font-bold">Linking your @providerName profile...</h2>
+            <p class="text-base-content/70">Please wait while we verify your account.</p>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="alert alert-error shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <h3 class="font-bold">Failed to link @providerName account</h3>
+                <p class="text-sm">@errorMessage</p>
+            </div>
+        </div>
+        <button class="btn btn-primary mt-4" @onclick="ReturnToRegistration">
+            Return to Registration
+        </button>
+        <details class="mt-4">
+            <summary class="text-sm text-base-content/60">Debug: show raw claims</summary>
+            <pre class="text-xs whitespace-pre-wrap">@rawClaimsJson</pre>
+        </details>
+    }
+    else if (isSuccess)
+    {
+        <div class="alert alert-success shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+                <h3 class="font-bold">Successfully linked @providerName!</h3>
+                <p class="text-sm">Redirecting you back to registration...</p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isProcessing = true;
+    private bool hasError = false;
+    private bool isSuccess = false;
+    private string errorMessage = string.Empty;
+    private string providerName = string.Empty;
+    private string rawClaimsJson = string.Empty;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationStateTask is null)
+        {
+            hasError = true;
+            errorMessage = "Authentication state not available";
+            isProcessing = false;
+            return;
+        }
+
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        // Log all claims for debugging
+        try
+        {
+            var claimsList = user.Claims.Select(c => new { c.Type, c.Value }).ToArray();
+            rawClaimsJson = JsonSerializer.Serialize(claimsList, new JsonSerializerOptions { WriteIndented = true });
+            Logger.LogInformation("OAuth callback claims: {Claims}", rawClaimsJson);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to serialize authentication claims");
+        }
+
+
+        if (!user.Identity?.IsAuthenticated == true)
+        {
+            hasError = true;
+            errorMessage = "User not authenticated";
+            isProcessing = false;
+            return;
+        }
+
+        try
+        {
+            // T087: Extract social profile information from Auth0 claims
+            // Auth0 includes identity provider claims in the format:
+            // - https://visage.hackmum.in/connection (JSON with provider info)
+            // - https://visage.hackmum.in/linkedin_url / github_url (direct URLs)
+            
+            const string ns = "https://visage.hackmum.in";
+            
+            // First priority: direct profile URLs from Auth0 Action
+            string? profileUrl = user.FindFirst(c => c.Type == $"{ns}/linkedin_url")?.Value
+                                ?? user.FindFirst(c => c.Type == $"{ns}/github_url")?.Value;
+            
+            string? provider = null;
+            
+            Logger.LogInformation("Looking for connection claim with namespace: {Namespace}", ns);
+            
+            // Extract provider from namespaced connection claim (JSON)
+            var connectionClaimJson = user.FindFirst(c => c.Type == $"{ns}/connection")?.Value;
+            Logger.LogInformation("Connection claim found: {HasClaim}, Value: {Value}", 
+                connectionClaimJson != null, connectionClaimJson ?? "null");
+                
+            if (!string.IsNullOrWhiteSpace(connectionClaimJson))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(connectionClaimJson);
+                    if (doc.RootElement.TryGetProperty("name", out var nameElement))
+                    {
+                        provider = nameElement.GetString()?.ToLowerInvariant();
+                        Logger.LogInformation("Extracted provider from connection JSON: {Provider}", provider);
+                    }
+                }
+                catch (JsonException jex)
+                {
+                    Logger.LogWarning(jex, "Failed to parse connection claim JSON: {Json}", connectionClaimJson);
+                }
+            }
+            
+            // Fallback: extract provider from NameIdentifier if it has the format "provider|id"
+            if (string.IsNullOrWhiteSpace(provider))
+            {
+                var rawNameId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? user.FindFirst(c => c.Type.EndsWith("nameidentifier"))?.Value;
+                Logger.LogInformation("Trying NameIdentifier fallback: {NameId}", rawNameId ?? "null");
+                
+                if (!string.IsNullOrWhiteSpace(rawNameId) && rawNameId.Contains("|"))
+                {
+                    var parts = rawNameId.Split('|', 2);
+                    if (parts.Length == 2)
+                    {
+                        provider = parts[0].ToLowerInvariant();
+                        var idPart = parts[1];
+                        
+                        // If no direct profile URL from Action, construct from ID
+                        if (string.IsNullOrWhiteSpace(profileUrl))
+                        {
+                            if (provider == "linkedin")
+                            {
+                                profileUrl = $"https://www.linkedin.com/in/{idPart}";
+                            }
+                            else if (provider == "github")
+                            {
+                                profileUrl = $"https://github.com/{idPart}";
+                            }
+                        }
+                        Logger.LogInformation("Parsed provider from NameIdentifier: {Provider}, id={Id}, profileUrl={ProfileUrl}", 
+                            provider, idPart, profileUrl);
+                    }
+                }
+            }
+            
+            // Set display name
+            providerName = !string.IsNullOrWhiteSpace(provider) 
+                ? char.ToUpperInvariant(provider[0]) + provider.Substring(1) 
+                : string.Empty;
+                
+            Logger.LogInformation("Final extraction results - Provider: {Provider}, ProfileUrl: {ProfileUrl}, ProviderName: {ProviderName}", 
+                provider ?? "null", profileUrl ?? "null", providerName);
+
+            if (string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(profileUrl))
+            {
+                hasError = true;
+                errorMessage = "Could not determine social provider or profile URL from authentication claims.";
+                isProcessing = false;
+                return;
+            }
+
+            // T087: Send OAuth callback to backend API
+            var linkDto = new SocialProfileLinkDto
+            {
+                Provider = provider,
+                ProfileUrl = profileUrl
+            };
+
+            var success = await SocialAuthService.LinkSocialProfileAsync(linkDto);
+
+            if (success)
+            {
+                isSuccess = true;
+                isProcessing = false;
+
+                // Redirect back to registration page after 2 seconds
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/registration/mandatory", forceLoad: true);
+            }
+            else
+            {
+                hasError = true;
+                errorMessage = "Failed to save social profile link. Please try again.";
+                isProcessing = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            errorMessage = $"An error occurred: {ex.Message}";
+            isProcessing = false;
+        }
+    }
+
+    private void ReturnToRegistration()
+    {
+        Navigation.NavigateTo("/registration/mandatory");
+    }
+}

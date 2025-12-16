@@ -27,6 +27,16 @@ public class RegistrantDB: DbContext
                                         .ValueGeneratedOnAdd()
                                         .HasStrictIdValueGenerator();
 
+        modelBuilder.Entity<Registrant>()
+            .HasIndex(r => r.LinkedInProfile)
+            .IsUnique()
+            .HasFilter("[IsLinkedInVerified] = 1 AND [LinkedInProfile] IS NOT NULL");
+
+        modelBuilder.Entity<Registrant>()
+            .HasIndex(r => r.GitHubProfile)
+            .IsUnique()
+            .HasFilter("[IsGitHubVerified] = 1 AND [GitHubProfile] IS NOT NULL");
+
         // T003: Configure DraftRegistration entity
         modelBuilder.Entity<DraftRegistration>().Property(e => e.Id)
                                         .ValueGeneratedOnAdd()
@@ -65,11 +75,28 @@ public class RegistrantDB: DbContext
             .WithMany()
             .HasForeignKey(u => u.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SocialVerificationEvent>().Property(e => e.Id)
+            .ValueGeneratedOnAdd()
+            .HasStrictIdValueGenerator();
+
+        modelBuilder.Entity<SocialVerificationEvent>()
+            .HasOne<Registrant>()
+            .WithMany()
+            .HasForeignKey(e => e.RegistrantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SocialVerificationEvent>()
+            .HasIndex(e => new { e.RegistrantId, e.OccurredAtUtc });
+
+        modelBuilder.Entity<SocialVerificationEvent>()
+            .HasIndex(e => new { e.Provider, e.ProfileUrl });
     }
 
 
     public DbSet<Registrant> Registrants => Set<Registrant>();
     public DbSet<DraftRegistration> DraftRegistrations => Set<DraftRegistration>();
     public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
+    public DbSet<SocialVerificationEvent> SocialVerificationEvents => Set<SocialVerificationEvent>();
 
 }

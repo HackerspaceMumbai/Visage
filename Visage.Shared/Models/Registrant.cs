@@ -63,6 +63,12 @@
         [Url]
         public string? GitHubProfile { get; set; } = null;
 
+        // OAuth verification tracking (T087)
+        public bool IsLinkedInVerified { get; set; } = false;
+        public bool IsGitHubVerified { get; set; } = false;
+        public DateTime? LinkedInVerifiedAt { get; set; }
+        public DateTime? GitHubVerifiedAt { get; set; }
+
         public string EducationalInstituteName { get; set; } = string.Empty;
 
         public string GenderIdentity { get; set; } = string.Empty;

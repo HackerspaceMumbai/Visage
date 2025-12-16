@@ -75,6 +75,7 @@ Every service MUST be orchestrated through .NET Aspire. All services MUST:
 - Expose health endpoints at `/health` and `/alive` in development environments
 - **Have automated health endpoint tests** in `tests/Visage.Test.Aspire/HealthEndpointTests.cs` verifying both `/health` and `/alive` return 200 OK
 - Be containerizable for local development and cloud deployment
+- **Run EF Core migrations using Aspire**: All schema changes MUST be applied via `aspire exec --resource <name> -- dotnet ef ...` so connection strings and service discovery values come from the Aspire app model.
 
 **Rationale**: Aspire orchestration ensures consistent service discovery, observability, and
 deployment patterns across the entire solution, showcasing .NET 10's modern distributed

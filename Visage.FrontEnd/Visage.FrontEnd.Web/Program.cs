@@ -1,11 +1,15 @@
 using Auth0.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using Visage.FrontEnd.Shared.Services;
 using Visage.FrontEnd.Web.Components;
+using Visage.FrontEnd.Web.Configuration;
 using Visage.FrontEnd.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +38,24 @@ builder.Services
 // Add authorization services 
 builder.Services.AddAuthorization();
 
-//Add 
+// Direct OAuth (LinkedIn/GitHub) configuration + services (US1)
+builder.Services.AddOptions<OAuthOptions>()
+    .Bind(builder.Configuration.GetSection(OAuthOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddScoped<DirectOAuthService>();
+
+// Session storage for OAuth state (CSRF protection) + returnUrl
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(15);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 
 
@@ -96,8 +117,21 @@ builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
 })
 .AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
+// T087: Register SocialAuthService for OAuth-based social profile linking
+builder.Services.AddHttpClient<ISocialAuthService, SocialAuthService>(client =>
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+})
+.AddHttpMessageHandler<AuthenticationDelegatingHandler>();
+
 // BFF endpoint for profile completion status
 builder.Services.AddHttpClient("registrations-api-bff", client =>
+{
+    client.BaseAddress = new Uri("https+http://registrations-api");
+});
+
+// Named client for persisting direct OAuth results to Registrations API.
+builder.Services.AddHttpClient("registrations-api-direct", client =>
 {
     client.BaseAddress = new Uri("https+http://registrations-api");
 });
@@ -137,6 +171,8 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 app.MapStaticAssets();
 
+app.UseSession();
+
 
 app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = "/") =>
 {
@@ -146,6 +182,279 @@ app.MapGet("/Account/Login", async (HttpContext httpContext, string returnUrl = 
 
     await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
 });
+
+// T087: Endpoint to link social account (LinkedIn/GitHub) via Auth0
+app.MapGet("/Account/LinkSocial", async (HttpContext httpContext, string connection, string returnUrl = "/") =>
+{
+    var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
+            .WithRedirectUri(returnUrl)
+            .WithParameter("connection", connection) // Force Auth0 to use specific social provider
+            .Build();
+
+    await httpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
+});
+
+// US1: Direct OAuth start endpoints (bypass Auth0 social connections)
+app.MapGet("/oauth/linkedin/start", (HttpContext httpContext, DirectOAuthService oAuth, string? returnUrl) =>
+{
+    var safeReturnUrl = GetSafeReturnUrl(returnUrl) ?? "/registration/mandatory";
+    var state = CreateOpaqueState();
+
+    httpContext.Session.SetString("oauth:linkedin:state", state);
+    httpContext.Session.SetString("oauth:linkedin:returnUrl", safeReturnUrl);
+    httpContext.Session.SetString("oauth:linkedin:createdAtUtc", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    var authUrl = oAuth.GetLinkedInAuthUrl(baseUrl, state);
+    return Results.Redirect(authUrl);
+}).RequireAuthorization();
+
+app.MapGet("/oauth/github/start", (HttpContext httpContext, DirectOAuthService oAuth, string? returnUrl) =>
+{
+    var safeReturnUrl = GetSafeReturnUrl(returnUrl) ?? "/registration/mandatory";
+    var state = CreateOpaqueState();
+
+    httpContext.Session.SetString("oauth:github:state", state);
+    httpContext.Session.SetString("oauth:github:returnUrl", safeReturnUrl);
+    httpContext.Session.SetString("oauth:github:createdAtUtc", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    var authUrl = oAuth.GetGitHubAuthUrl(baseUrl, state);
+    return Results.Redirect(authUrl);
+}).RequireAuthorization();
+
+// US1: Direct OAuth callback endpoints
+app.MapGet("/oauth/linkedin/callback", async (
+    HttpContext httpContext,
+    DirectOAuthService oAuth,
+    IHttpClientFactory httpClientFactory,
+    ILogger<Program> logger,
+    string? code,
+    string? state,
+    string? error,
+    string? error_description) =>
+{
+    var returnUrl = httpContext.Session.GetString("oauth:linkedin:returnUrl") ?? "/registration/mandatory";
+    returnUrl = GetSafeReturnUrl(returnUrl) ?? "/registration/mandatory";
+
+    var expectedState = httpContext.Session.GetString("oauth:linkedin:state");
+    var createdAtRaw = httpContext.Session.GetString("oauth:linkedin:createdAtUtc");
+
+    // Single-use state: clear immediately
+    httpContext.Session.Remove("oauth:linkedin:state");
+    httpContext.Session.Remove("oauth:linkedin:createdAtUtc");
+    httpContext.Session.Remove("oauth:linkedin:returnUrl");
+
+    if (!string.IsNullOrWhiteSpace(error))
+    {
+        logger.LogInformation("LinkedIn OAuth returned error: {Error}", error);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "error"
+        }));
+    }
+
+    if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state) || string.IsNullOrWhiteSpace(expectedState))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "state_invalid"
+        }));
+    }
+
+    if (!CryptographicOperations.FixedTimeEquals(System.Text.Encoding.UTF8.GetBytes(state), System.Text.Encoding.UTF8.GetBytes(expectedState)))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "state_invalid"
+        }));
+    }
+
+    if (!long.TryParse(createdAtRaw, out var createdAtSeconds) || DateTimeOffset.UtcNow.ToUnixTimeSeconds() - createdAtSeconds > 600)
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "state_expired"
+        }));
+    }
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    var (success, profileUrl, errorMessage) = await oAuth.HandleLinkedInCallbackAsync(code, baseUrl);
+    if (!success || string.IsNullOrWhiteSpace(profileUrl))
+    {
+        logger.LogWarning("LinkedIn OAuth verification failed: {Message}", errorMessage);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "error"
+        }));
+    }
+
+    var accessToken = await httpContext.GetTokenAsync("access_token");
+    if (string.IsNullOrWhiteSpace(accessToken))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "auth_missing"
+        }));
+    }
+
+    var client = httpClientFactory.CreateClient("registrations-api-direct");
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+    var linkDto = new Visage.Shared.Models.SocialProfileLinkDto
+    {
+        Provider = "linkedin",
+        ProfileUrl = profileUrl
+    };
+
+    var response = await client.PostAsJsonAsync("/api/profile/social/link-callback", linkDto);
+    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "conflict"
+        }));
+    }
+
+    if (!response.IsSuccessStatusCode)
+    {
+        logger.LogWarning("Registrations API link-callback failed for LinkedIn: {Status}", response.StatusCode);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "linkedin",
+            ["result"] = "error"
+        }));
+    }
+
+    return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+    {
+        ["social"] = "linkedin",
+        ["result"] = "success"
+    }));
+}).RequireAuthorization();
+
+app.MapGet("/oauth/github/callback", async (
+    HttpContext httpContext,
+    DirectOAuthService oAuth,
+    IHttpClientFactory httpClientFactory,
+    ILogger<Program> logger,
+    string? code,
+    string? state,
+    string? error,
+    string? error_description) =>
+{
+    var returnUrl = httpContext.Session.GetString("oauth:github:returnUrl") ?? "/registration/mandatory";
+    returnUrl = GetSafeReturnUrl(returnUrl) ?? "/registration/mandatory";
+
+    var expectedState = httpContext.Session.GetString("oauth:github:state");
+    var createdAtRaw = httpContext.Session.GetString("oauth:github:createdAtUtc");
+
+    // Single-use state: clear immediately
+    httpContext.Session.Remove("oauth:github:state");
+    httpContext.Session.Remove("oauth:github:createdAtUtc");
+    httpContext.Session.Remove("oauth:github:returnUrl");
+
+    if (!string.IsNullOrWhiteSpace(error))
+    {
+        logger.LogInformation("GitHub OAuth returned error: {Error}", error);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "error"
+        }));
+    }
+
+    if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state) || string.IsNullOrWhiteSpace(expectedState))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "state_invalid"
+        }));
+    }
+
+    if (!CryptographicOperations.FixedTimeEquals(System.Text.Encoding.UTF8.GetBytes(state), System.Text.Encoding.UTF8.GetBytes(expectedState)))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "state_invalid"
+        }));
+    }
+
+    if (!long.TryParse(createdAtRaw, out var createdAtSeconds) || DateTimeOffset.UtcNow.ToUnixTimeSeconds() - createdAtSeconds > 600)
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "state_expired"
+        }));
+    }
+
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    var (success, profileUrl, errorMessage) = await oAuth.HandleGitHubCallbackAsync(code, baseUrl);
+    if (!success || string.IsNullOrWhiteSpace(profileUrl))
+    {
+        logger.LogWarning("GitHub OAuth verification failed: {Message}", errorMessage);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "error"
+        }));
+    }
+
+    var accessToken = await httpContext.GetTokenAsync("access_token");
+    if (string.IsNullOrWhiteSpace(accessToken))
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "auth_missing"
+        }));
+    }
+
+    var client = httpClientFactory.CreateClient("registrations-api-direct");
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+    var linkDto = new Visage.Shared.Models.SocialProfileLinkDto
+    {
+        Provider = "github",
+        ProfileUrl = profileUrl
+    };
+
+    var response = await client.PostAsJsonAsync("/api/profile/social/link-callback", linkDto);
+    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+    {
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "conflict"
+        }));
+    }
+
+    if (!response.IsSuccessStatusCode)
+    {
+        logger.LogWarning("Registrations API link-callback failed for GitHub: {Status}", response.StatusCode);
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            ["social"] = "github",
+            ["result"] = "error"
+        }));
+    }
+
+    return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+    {
+        ["social"] = "github",
+        ["result"] = "success"
+    }));
+}).RequireAuthorization();
 
 app.MapGet("/Account/Logout", async (HttpContext httpContext) =>
 {
@@ -210,3 +519,25 @@ app.MapRazorComponents<App>()
         typeof(Visage.FrontEnd.Web.Client._Imports).Assembly);
 
 app.Run();
+
+static string CreateOpaqueState()
+{
+    Span<byte> bytes = stackalloc byte[32];
+    RandomNumberGenerator.Fill(bytes);
+    return WebEncoders.Base64UrlEncode(bytes);
+}
+
+static string? GetSafeReturnUrl(string? returnUrl)
+{
+    if (string.IsNullOrWhiteSpace(returnUrl))
+        return null;
+
+    // Allow only local relative paths to avoid open redirects.
+    if (!returnUrl.StartsWith("/", StringComparison.Ordinal))
+        return null;
+
+    if (returnUrl.StartsWith("//", StringComparison.Ordinal))
+        return null;
+
+    return returnUrl;
+}

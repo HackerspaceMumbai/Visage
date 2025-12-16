@@ -870,6 +870,344 @@ public static class ProfileApi
                 "Called when user completes registration or explicitly clears draft.";
             return operation;
         });
+
+        // T087: POST /api/profile/social/link-callback - Handle OAuth callback for social connections
+        group.MapPost("/social/link-callback", async (
+            HttpContext http,
+            RegistrantDB db,
+            SocialProfileLinkDto linkDto,
+            ILogger<RegistrantDB> logger) =>
+        {
+            if (string.IsNullOrWhiteSpace(linkDto.Provider) || string.IsNullOrWhiteSpace(linkDto.ProfileUrl))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid request",
+                    detail: "Provider and profileUrl are required.");
+            }
+
+            var normalizedProvider = linkDto.Provider.Trim().ToLowerInvariant();
+            var normalizedProfileUrl = linkDto.ProfileUrl.Trim();
+            var now = DateTime.UtcNow;
+
+            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: true);
+            if (registrant is null)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    title: "Registrant profile not found");
+            }
+
+            // Defensive: record attempt (succeeds or fails)
+            db.SocialVerificationEvents.Add(new SocialVerificationEvent
+            {
+                RegistrantId = registrant.Id,
+                Provider = normalizedProvider,
+                Action = "link_attempt",
+                ProfileUrl = normalizedProfileUrl,
+                OccurredAtUtc = now,
+                Outcome = "attempted"
+            });
+
+            // Validate provider and enforce uniqueness (409) before attempting to update.
+            if (normalizedProvider is not ("linkedin" or "github"))
+            {
+                db.SocialVerificationEvents.Add(new SocialVerificationEvent
+                {
+                    RegistrantId = registrant.Id,
+                    Provider = normalizedProvider,
+                    Action = "link_failed",
+                    ProfileUrl = normalizedProfileUrl,
+                    OccurredAtUtc = now,
+                    Outcome = "failed",
+                    FailureReason = "invalid_provider"
+                });
+
+                await db.SaveChangesAsync();
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid provider",
+                    detail: $"Invalid provider: {linkDto.Provider}");
+            }
+
+            if (normalizedProvider == "linkedin")
+            {
+                var isConflict = await db.Registrants
+                    .AsNoTracking()
+                    .AnyAsync(r => r.IsLinkedInVerified
+                                   && r.LinkedInProfile == normalizedProfileUrl
+                                   && r.Id != registrant.Id);
+                if (isConflict)
+                {
+                    db.SocialVerificationEvents.Add(new SocialVerificationEvent
+                    {
+                        RegistrantId = registrant.Id,
+                        Provider = normalizedProvider,
+                        Action = "link_failed",
+                        ProfileUrl = normalizedProfileUrl,
+                        OccurredAtUtc = now,
+                        Outcome = "failed",
+                        FailureReason = "conflict"
+                    });
+
+                    await db.SaveChangesAsync();
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        type: "https://visage.app/problems/social-profile-conflict",
+                        title: "Social profile already linked",
+                        detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+                }
+
+                registrant.LinkedInProfile = normalizedProfileUrl;
+                registrant.IsLinkedInVerified = true;
+                registrant.LinkedInVerifiedAt = now;
+            }
+            else
+            {
+                var isConflict = await db.Registrants
+                    .AsNoTracking()
+                    .AnyAsync(r => r.IsGitHubVerified
+                                   && r.GitHubProfile == normalizedProfileUrl
+                                   && r.Id != registrant.Id);
+                if (isConflict)
+                {
+                    db.SocialVerificationEvents.Add(new SocialVerificationEvent
+                    {
+                        RegistrantId = registrant.Id,
+                        Provider = normalizedProvider,
+                        Action = "link_failed",
+                        ProfileUrl = normalizedProfileUrl,
+                        OccurredAtUtc = now,
+                        Outcome = "failed",
+                        FailureReason = "conflict"
+                    });
+
+                    await db.SaveChangesAsync();
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        type: "https://visage.app/problems/social-profile-conflict",
+                        title: "Social profile already linked",
+                        detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+                }
+
+                registrant.GitHubProfile = normalizedProfileUrl;
+                registrant.IsGitHubVerified = true;
+                registrant.GitHubVerifiedAt = now;
+            }
+
+            db.SocialVerificationEvents.Add(new SocialVerificationEvent
+            {
+                RegistrantId = registrant.Id,
+                Provider = normalizedProvider,
+                Action = "link_succeeded",
+                ProfileUrl = normalizedProfileUrl,
+                OccurredAtUtc = now,
+                Outcome = "succeeded"
+            });
+
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // Fallback for race conditions: translate DB uniqueness violations to 409 ProblemDetails.
+                logger.LogWarning(ex, "Social link callback failed due to database constraint");
+
+                db.ChangeTracker.Clear();
+                db.SocialVerificationEvents.Add(new SocialVerificationEvent
+                {
+                    RegistrantId = registrant.Id,
+                    Provider = normalizedProvider,
+                    Action = "link_failed",
+                    ProfileUrl = normalizedProfileUrl,
+                    OccurredAtUtc = DateTime.UtcNow,
+                    Outcome = "failed",
+                    FailureReason = "conflict"
+                });
+                await db.SaveChangesAsync();
+
+                return Results.Problem(
+                    statusCode: StatusCodes.Status409Conflict,
+                    type: "https://visage.app/problems/social-profile-conflict",
+                    title: "Social profile already linked",
+                    detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+            }
+
+            logger.LogInformation("Verified {Provider} profile for user {UserId}: {ProfileUrl}", normalizedProvider, registrant.Id, normalizedProfileUrl);
+
+            return Results.Ok(new
+            {
+                message = $"{normalizedProvider} profile linked successfully",
+                profileUrl = normalizedProfileUrl,
+                verifiedAt = now
+            });
+        })
+        .WithName("LinkSocialProfile")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Link OAuth-verified social profile";
+            operation.Description = "Stores OAuth-verified LinkedIn or GitHub profile URL after successful authentication. " +
+                "This endpoint is called by the frontend after successful Auth0 social connection. " +
+                "Only accepts 'linkedin' or 'github' as provider values.";
+            return operation;
+        });
+
+        // T088: GET /api/profile/social/status - Get social connection status
+        group.MapGet("/social/status", async (
+            HttpContext http,
+            RegistrantDB db,
+            ILogger<RegistrantDB> logger) =>
+        {
+            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: false);
+            if (registrant is null)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    title: "Registrant profile not found");
+            }
+
+            var status = new SocialConnectionStatusDto
+            {
+                LinkedIn = new SocialProviderStatusDto
+                {
+                    IsConnected = registrant.IsLinkedInVerified,
+                    ProfileUrl = registrant.LinkedInProfile,
+                    VerifiedAt = registrant.LinkedInVerifiedAt
+                },
+                GitHub = new SocialProviderStatusDto
+                {
+                    IsConnected = registrant.IsGitHubVerified,
+                    ProfileUrl = registrant.GitHubProfile,
+                    VerifiedAt = registrant.GitHubVerifiedAt
+                }
+            };
+
+            logger.LogInformation("Retrieved social status for user {UserId}", registrant.Id);
+            return Results.Ok(status);
+        })
+        .WithName("GetSocialConnectionStatus")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Get social connection status";
+            operation.Description = "Retrieves the verification status and profile URLs for LinkedIn and GitHub connections.";
+            return operation;
+        });
+
+        // T090: POST /api/profile/social/disconnect - Disconnect a verified social profile
+        group.MapPost("/social/disconnect", async (
+            HttpContext http,
+            RegistrantDB db,
+            SocialDisconnectDto dto,
+            ILogger<RegistrantDB> logger) =>
+        {
+            if (string.IsNullOrWhiteSpace(dto.Provider))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid request",
+                    detail: "Provider is required.");
+            }
+
+            var provider = dto.Provider.Trim().ToLowerInvariant();
+            var now = DateTime.UtcNow;
+
+            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: true);
+            if (registrant is null)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    title: "Registrant profile not found");
+            }
+
+            switch (provider)
+            {
+                case "linkedin":
+                    registrant.LinkedInProfile = null;
+                    registrant.IsLinkedInVerified = false;
+                    registrant.LinkedInVerifiedAt = null;
+                    break;
+                case "github":
+                    registrant.GitHubProfile = null;
+                    registrant.IsGitHubVerified = false;
+                    registrant.GitHubVerifiedAt = null;
+                    break;
+                default:
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid provider",
+                        detail: $"Invalid provider: {dto.Provider}");
+            }
+
+            db.SocialVerificationEvents.Add(new SocialVerificationEvent
+            {
+                RegistrantId = registrant.Id,
+                Provider = provider,
+                Action = "disconnect",
+                OccurredAtUtc = now,
+                Outcome = "succeeded"
+            });
+
+            await db.SaveChangesAsync();
+
+            var status = new SocialConnectionStatusDto
+            {
+                LinkedIn = new SocialProviderStatusDto
+                {
+                    IsConnected = registrant.IsLinkedInVerified,
+                    ProfileUrl = registrant.LinkedInProfile,
+                    VerifiedAt = registrant.LinkedInVerifiedAt
+                },
+                GitHub = new SocialProviderStatusDto
+                {
+                    IsConnected = registrant.IsGitHubVerified,
+                    ProfileUrl = registrant.GitHubProfile,
+                    VerifiedAt = registrant.GitHubVerifiedAt
+                }
+            };
+
+            return Results.Ok(status);
+        })
+        .WithName("DisconnectSocialProfile")
+        .WithOpenApi(operation =>
+        {
+            operation.Summary = "Disconnect verified social profile";
+            operation.Description = "Clears stored profile URL and verification flags for the specified provider.";
+            return operation;
+        });
+    }
+
+    private static async Task<Registrant?> ResolveRegistrantForCurrentUserAsync(
+        HttpContext http,
+        RegistrantDB db,
+        ILogger logger,
+        bool asTracking)
+    {
+        var userId = http.User.FindFirst("sub")?.Value;
+
+        // Prefer internal StrictId when present.
+        if (!string.IsNullOrWhiteSpace(userId) && Id<Registrant>.TryParse(userId, out var strictId))
+        {
+            var byIdQuery = asTracking ? db.Registrants : db.Registrants.AsNoTracking();
+            return await byIdQuery.FirstOrDefaultAsync(r => r.Id == strictId);
+        }
+
+        var email = ResolveEmail(http.User);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            logger.LogWarning("Registrant resolution failed: no StrictId in sub and no email claim.");
+            return null;
+        }
+
+        var query = asTracking ? db.Registrants : db.Registrants.AsNoTracking();
+
+        // Prefer the most recently completed profile when duplicates exist.
+        return await query
+            .Where(r => r.Email == email)
+            .OrderByDescending(r => r.IsProfileComplete)
+            .ThenByDescending(r => r.ProfileCompletedAt.HasValue)
+            .ThenByDescending(r => r.ProfileCompletedAt)
+            .FirstOrDefaultAsync();
     }
 
     private static string? ResolveEmail(ClaimsPrincipal user)

@@ -3,7 +3,7 @@
 # Copilot Instructions for Visage
 
 ## Project Overview
-Visage is a modular, Aspire-orchestrated .NET 9 solution for managing large-scale OSS community events, with a focus on inclusiveness, privacy, and reliability. The architecture is designed for scalability, maintainability, and rapid developer onboarding.
+Visage is a modular, Aspire-orchestrated .NET 10 solution for managing large-scale OSS community events, with a focus on inclusiveness, privacy, and reliability. The architecture is designed for scalability, maintainability, and rapid developer onboarding.
 
 ## Architecture & Key Components
 - **Frontend:** Hybrid Blazor (Web, MAUI, and Shared UI) for a single codebase across web and mobile. See `Visage.FrontEnd/`.
@@ -60,20 +60,21 @@ Add this to your CI pipeline so `output.css` is regenerated during CI builds.
   # Enable aspire exec feature (one-time setup)
   aspire config set features.execCommandEnabled true
   
-  # Drop database
-  aspire exec --resource eventing -- dotnet ef database drop --force
-  
-  # Add migration
-  aspire exec --resource eventing -- dotnet ef migrations add MigrationName
-  
-  # Update database
-  aspire exec --resource eventing -- dotnet ef database update
+  # Drop database (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database drop --force
+
+  # Add migration (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef migrations add MigrationName
+
+  # Update database (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database update
   
   # Use --workdir flag for commands in specific directories (Aspire 9.5+)
-  aspire exec --resource eventing --workdir /app/migrations -- dotnet ef migrations script
+  # NOTE: When executing locally, prefer repo-absolute paths so `dotnet ef` runs in the right project folder.
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef migrations script
   
   # Wait for resource to start before executing (Aspire 9.5+)
-  aspire exec --start-resource eventing -- dotnet ef database update
+  aspire exec --start-resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database update
   ```
   This ensures connection strings and other environment variables are correctly injected from the Aspire app model.
 

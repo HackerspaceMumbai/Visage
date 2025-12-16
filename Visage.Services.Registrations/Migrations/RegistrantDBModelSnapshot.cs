@@ -17,7 +17,7 @@ namespace Visage.Services.Registrations.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -166,7 +166,10 @@ namespace Visage.Services.Registrations.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("GitHubProfile")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("GitHubVerifiedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("GovtId")
                         .IsRequired()
@@ -188,6 +191,12 @@ namespace Visage.Services.Registrations.Migrations
                     b.Property<bool>("IsAideProfileComplete")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsGitHubVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLinkedInVerified")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsProfileComplete")
                         .HasColumnType("bit");
 
@@ -204,7 +213,10 @@ namespace Visage.Services.Registrations.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LinkedInProfile")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LinkedInVerifiedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("MiddleName")
                         .IsRequired()
@@ -287,7 +299,59 @@ namespace Visage.Services.Registrations.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GitHubProfile")
+                        .IsUnique()
+                        .HasFilter("[IsGitHubVerified] = 1 AND [GitHubProfile] IS NOT NULL");
+
+                    b.HasIndex("LinkedInProfile")
+                        .IsUnique()
+                        .HasFilter("[IsLinkedInVerified] = 1 AND [LinkedInProfile] IS NOT NULL");
+
                     b.ToTable("Registrants");
+                });
+
+            modelBuilder.Entity("Visage.Shared.Models.SocialVerificationEvent", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(26)
+                        .HasColumnType("nchar(26)")
+                        .IsFixedLength();
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileUrl")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RegistrantId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("nchar(26)")
+                        .IsFixedLength();
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "ProfileUrl");
+
+                    b.HasIndex("RegistrantId", "OccurredAtUtc");
+
+                    b.ToTable("SocialVerificationEvents");
                 });
 
             modelBuilder.Entity("Visage.Shared.Models.UserPreferences", b =>
@@ -316,6 +380,15 @@ namespace Visage.Services.Registrations.Migrations
                     b.HasOne("Visage.Shared.Models.Registrant", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Visage.Shared.Models.SocialVerificationEvent", b =>
+                {
+                    b.HasOne("Visage.Shared.Models.Registrant", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

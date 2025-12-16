@@ -1,9 +1,14 @@
 .dockerignore
 .env
+.env*
 .git
 .gitignore
 .vs
 .vscode
-*/bin
-*/obj
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/build
+**/coverage
 **/.toolstarget

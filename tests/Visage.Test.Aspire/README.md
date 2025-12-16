@@ -1,4 +1,112 @@
-# Visage E2E Tests
+# Visage.Test.Aspire - Integration & E2E Tests
+
+## Quick Start
+
+### Running Tests Without Auth (Basic Tests)
+
+```powershell
+# Run all tests that don't require authentication
+dotnet test --filter "Category!=RequiresAuth&Category!=E2E"
+```
+
+### Prerequisites
+
+1. **Docker or Podman** - Required for Aspire to spin up SQL Server and other dependencies
+   - Verify: `docker info`
+
+2. **Playwright Browsers** (E2E tests only) - Install after building:
+   ```powershell
+   dotnet build tests\Visage.Test.Aspire
+   pwsh tests\Visage.Test.Aspire\bin\Debug\net10.0\playwright.ps1 install
+   ```
+
+## Environment Variables
+
+### Required for Auth-Dependent Tests (`Category=RequiresAuth`)
+
+```powershell
+# Auth0 Configuration
+$env:AUTH0_DOMAIN = "your-tenant.auth0.com"
+$env:AUTH0_CLIENT_ID = "your-client-id"
+$env:AUTH0_CLIENT_SECRET = "your-client-secret"
+$env:AUTH0_AUDIENCE = "https://your-api-audience"
+
+# Test User Credentials
+$env:TEST_USER_EMAIL = "test.playwright@hackmum.in"
+$env:TEST_USER_PASSWORD = "your-test-password"
+```
+
+### Required for E2E Tests (`Category=E2E`)
+
+```powershell
+# Frontend base URL
+$env:TEST_BASE_URL = "https://localhost:5001"
+```
+
+### Optional: External Services Mode
+
+```powershell
+# Point tests at externally running Aspire app
+$env:TEST_USE_EXTERNAL_SERVICES = "true"
+$env:TEST_SERVICE_FRONTENDWEB_URL = "https://localhost:7261"
+$env:TEST_SERVICE_REGISTRATIONS_API_URL = "https://localhost:7159"
+$env:TEST_SERVICE_EVENTING_URL = "https://localhost:7185"
+```
+
+## Test Categories
+
+| Category | Description | Requires Auth | Requires Playwright |
+|----------|-------------|---------------|---------------------|
+| `RequiresAuth` | Tests that need Auth0 | ✅ | ❌ |
+| `E2E` | Browser automation tests | ✅ | ✅ |
+| `DraftPersistence` | Draft save/restore | ✅ | Varies |
+| `Smoke` | Quick sanity checks | Varies | Varies |
+
+### Running Specific Test Categories
+
+```powershell
+# Run only smoke tests
+dotnet test --filter "Category=Smoke"
+
+# Run tests WITHOUT auth
+dotnet test --filter "Category!=RequiresAuth"
+
+# Run draft tests
+dotnet test --filter "Category=DraftPersistence"
+
+# Run E2E tests (requires Playwright + Auth0)
+dotnet test --filter "Category=E2E"
+```
+
+## Troubleshooting
+
+### Tests Timeout Waiting for Resources
+
+**Symptom**: `TimeoutException: The operation has timed out` for `frontendweb`, `eventing`, etc.
+
+**Solution**: Ensure Docker/Podman is running: `docker info`
+
+### Playwright Tests Fail with "Executable doesn't exist"
+
+**Symptom**: `PlaywrightException: Executable doesn't exist at C:\Users\...\chrome-headless-shell.exe`
+
+**Solution**: Install Playwright browsers:
+```powershell
+pwsh tests\Visage.Test.Aspire\bin\Debug\net10.0\playwright.ps1 install
+```
+
+### Auth Tests Fail with "AUTH0_DOMAIN not set"
+
+**Symptom**: `InvalidOperationException: AUTH0_DOMAIN not set`
+
+**Solution**: Either set Auth0 environment variables OR skip auth tests:
+```powershell
+dotnet test --filter "Category!=RequiresAuth"
+```
+
+---
+
+# Visage E2E Tests - Security
 
 ## Security: Password Grant Restrictions
 
