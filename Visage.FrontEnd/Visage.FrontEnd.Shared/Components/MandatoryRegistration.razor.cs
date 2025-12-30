@@ -583,7 +583,7 @@ public partial class MandatoryRegistration : ComponentBase
             var authUrl = await SocialAuthService.GetGitHubAuthUrlAsync();
             Navigation.NavigateTo(authUrl, forceLoad: true);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             customErrors.Add("Failed to initiate GitHub connection. Please try again.");
             editContext?.NotifyValidationStateChanged();
