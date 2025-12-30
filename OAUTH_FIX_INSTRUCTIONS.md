@@ -60,12 +60,20 @@ app.MapGet("/oauth/linkedin/authorize", async (HttpContext httpContext, DirectOA
     {
         var state = Guid.NewGuid().ToString("N");
         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        
+        // Validate returnUrl: must be relative and match whitelist
+        string ValidateReturnUrl(string? url)
+        {
+            var allowedPrefixes = new[] { "/registration/mandatory", "/account/profile" };
+            if (string.IsNullOrEmpty(url) || !url.StartsWith("/")) return "/registration/mandatory";
+            foreach (var prefix in allowedPrefixes)
+                if (url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return url;
+            return "/registration/mandatory";
+        }
+        var safeReturnUrl = ValidateReturnUrl(returnUrl);
         // Store state and return URL in session
-        httpContext.Session.SetString($"oauth_state_{state}", returnUrl ?? "/registration/mandatory");
+        httpContext.Session.SetString($"oauth_state_{state}", safeReturnUrl);
         httpContext.Session.SetString($"oauth_provider_{state}", "linkedin");
-        
-        var authUrl = oauthService.GetLinkedInAuthUrl(baseUrl, state, returnUrl ?? "/registration/mandatory");
+        var authUrl = oauthService.GetLinkedInAuthUrl(baseUrl, state);
         return Results.Redirect(authUrl);
     }
     catch (Exception ex)
@@ -81,12 +89,20 @@ app.MapGet("/oauth/github/authorize", async (HttpContext httpContext, DirectOAut
     {
         var state = Guid.NewGuid().ToString("N");
         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        
+        // Validate returnUrl: must be relative and match whitelist
+        string ValidateReturnUrl(string? url)
+        {
+            var allowedPrefixes = new[] { "/registration/mandatory", "/account/profile" };
+            if (string.IsNullOrEmpty(url) || !url.StartsWith("/")) return "/registration/mandatory";
+            foreach (var prefix in allowedPrefixes)
+                if (url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return url;
+            return "/registration/mandatory";
+        }
+        var safeReturnUrl = ValidateReturnUrl(returnUrl);
         // Store state and return URL in session
-        httpContext.Session.SetString($"oauth_state_{state}", returnUrl ?? "/registration/mandatory");
+        httpContext.Session.SetString($"oauth_state_{state}", safeReturnUrl);
         httpContext.Session.SetString($"oauth_provider_{state}", "github");
-        
-        var authUrl = oauthService.GetGitHubAuthUrl(baseUrl, state, returnUrl ?? "/registration/mandatory");
+        var authUrl = oauthService.GetGitHubAuthUrl(baseUrl, state);
         return Results.Redirect(authUrl);
     }
     catch (Exception ex)
@@ -103,29 +119,39 @@ app.MapGet("/oauth/linkedin/callback", async (HttpContext httpContext, DirectOAu
         // Validate state
         var returnUrl = httpContext.Session.GetString($"oauth_state_{state}");
         var provider = httpContext.Session.GetString($"oauth_provider_{state}");
-        
-        if (string.IsNullOrEmpty(returnUrl) || provider != "linkedin")
+        // Re-validate returnUrl in callback for defense-in-depth
+        string ValidateReturnUrl(string? url)
+        {
+            var allowedPrefixes = new[] { "/registration/mandatory", "/account/profile" };
+            if (string.IsNullOrEmpty(url) || !url.StartsWith("/")) return "/registration/mandatory";
+            foreach (var prefix in allowedPrefixes)
+                if (url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return url;
+            return "/registration/mandatory";
+        }
+        var safeReturnUrl = ValidateReturnUrl(returnUrl);
+        if (string.IsNullOrEmpty(safeReturnUrl) || provider != "linkedin")
         {
             logger.LogWarning("Invalid OAuth state for LinkedIn callback");
             return Results.BadRequest("Invalid OAuth state");
         }
 
         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        var (success, profileUrl, errorMessage) = await oauthService.HandleLinkedInCallback(code, baseUrl);
-        
+        var (success, linkedInSubject, rawProfileJson, rawEmailJson, email, errorMessage) = await oauthService.HandleLinkedInCallback(code, baseUrl);
+
         // Clean up session
         httpContext.Session.Remove($"oauth_state_{state}");
         httpContext.Session.Remove($"oauth_provider_{state}");
-        
-        if (success && !string.IsNullOrEmpty(profileUrl))
+
+        if (success && !string.IsNullOrEmpty(linkedInSubject))
         {
-            var callbackUrl = $"{returnUrl}?provider=linkedin&profileUrl={Uri.EscapeDataString(profileUrl)}&verified=true";
+            var profileUrl = $"https://www.linkedin.com/in/{linkedInSubject}";
+            var callbackUrl = $"{safeReturnUrl}?provider=linkedin&profileUrl={Uri.EscapeDataString(profileUrl)}&verified=true";
             return Results.Redirect(callbackUrl);
         }
         else
         {
             logger.LogError("LinkedIn OAuth callback failed: {Error}", errorMessage);
-            var errorUrl = $"{returnUrl}?provider=linkedin&verified=false&error={Uri.EscapeDataString(errorMessage ?? "Unknown error")}";
+            var errorUrl = $"{safeReturnUrl}?provider=linkedin&verified=false&error={Uri.EscapeDataString(errorMessage ?? "Unknown error")}";
             return Results.Redirect(errorUrl);
         }
     }
@@ -144,29 +170,38 @@ app.MapGet("/oauth/github/callback", async (HttpContext httpContext, DirectOAuth
         // Validate state
         var returnUrl = httpContext.Session.GetString($"oauth_state_{state}");
         var provider = httpContext.Session.GetString($"oauth_provider_{state}");
-        
-        if (string.IsNullOrEmpty(returnUrl) || provider != "github")
+        // Re-validate returnUrl in callback for defense-in-depth
+        string ValidateReturnUrl(string? url)
+        {
+            var allowedPrefixes = new[] { "/registration/mandatory", "/account/profile" };
+            if (string.IsNullOrEmpty(url) || !url.StartsWith("/")) return "/registration/mandatory";
+            foreach (var prefix in allowedPrefixes)
+                if (url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return url;
+            return "/registration/mandatory";
+        }
+        var safeReturnUrl = ValidateReturnUrl(returnUrl);
+        if (string.IsNullOrEmpty(safeReturnUrl) || provider != "github")
         {
             logger.LogWarning("Invalid OAuth state for GitHub callback");
             return Results.BadRequest("Invalid OAuth state");
         }
 
         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        var (success, profileUrl, errorMessage) = await oauthService.HandleGitHubCallback(code, baseUrl);
-        
+        var (success, profileUrl, email, errorMessage) = await oauthService.HandleGitHubCallback(code, baseUrl);
+
         // Clean up session
         httpContext.Session.Remove($"oauth_state_{state}");
         httpContext.Session.Remove($"oauth_provider_{state}");
-        
+
         if (success && !string.IsNullOrEmpty(profileUrl))
         {
-            var callbackUrl = $"{returnUrl}?provider=github&profileUrl={Uri.EscapeDataString(profileUrl)}&verified=true";
+            var callbackUrl = $"{safeReturnUrl}?provider=github&profileUrl={Uri.EscapeDataString(profileUrl)}&verified=true";
             return Results.Redirect(callbackUrl);
         }
         else
         {
             logger.LogError("GitHub OAuth callback failed: {Error}", errorMessage);
-            var errorUrl = $"{returnUrl}?provider=github&verified=false&error={Uri.EscapeDataString(errorMessage ?? "Unknown error")}";
+            var errorUrl = $"{safeReturnUrl}?provider=github&verified=false&error={Uri.EscapeDataString(errorMessage ?? "Unknown error")}";
             return Results.Redirect(errorUrl);
         }
     }

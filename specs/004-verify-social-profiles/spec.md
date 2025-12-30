@@ -1,4 +1,4 @@
-# Feature Specification: Verified social profile linking
+  # Feature Specification: Verified social profile linking
 
 **Feature Branch**: `004-verify-social-profiles`  
 **Created**: 2025-12-13  
@@ -77,11 +77,6 @@ As an event organizer/curator, I can view the registrant’s verified LinkedIn a
 - Registrant has no LinkedIn/GitHub account (required-case handling should clearly explain next steps).
 
 ## Requirements *(mandatory)*
-
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
 
 ### Functional Requirements
 

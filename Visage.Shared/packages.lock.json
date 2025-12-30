@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "StrictId": {
+        "type": "Direct",
+        "requested": "[1.2.0, )",
+        "resolved": "1.2.0",
+        "contentHash": "SW57RVkPTLUdREMOOTsd2evcwSfNnJqKgNNvkqEjIalO4eM3eUtg5Cgc2UVTrIHR8iwSpkN32hHlSFH5OK4DxA==",
+        "dependencies": {
+          "Ulid": "1.3.4"
+        }
+      },
+      "Ulid": {
+        "type": "Transitive",
+        "resolved": "1.3.4",
+        "contentHash": "6IaGquwjjfW+BoHSV844y12Uy2kxbboYNmsibxr2lotcSPAA3LKy1CKcAQ8JOdAdL4xMoDNXA1oxG41w7fbr6Q=="
+      }
+    }
+  }
+}

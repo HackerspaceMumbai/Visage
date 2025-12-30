@@ -56,10 +56,10 @@ dotnet user-secrets list
 
 ### For Azure Container Apps (via Aspire):
 Aspire automatically maps parameters to environment variables:
-- `oauth-linkedin-clientid` ? `OAuth__LinkedIn__ClientId`
-- `oauth-linkedin-clientsecret` ? `OAuth__LinkedIn__ClientSecret`
-- `oauth-github-clientid` ? `OAuth__GitHub__ClientId`
-- `oauth-github-clientsecret` ? `OAuth__GitHub__ClientSecret`
+- `oauth-linkedin-clientid` → `OAuth__LinkedIn__ClientId`
+- `oauth-linkedin-clientsecret` → `OAuth__LinkedIn__ClientSecret`
+- `oauth-github-clientid` → `OAuth__GitHub__ClientId`
+- `oauth-github-clientsecret` → `OAuth__GitHub__ClientSecret`
 
 ### For Azure Key Vault (Recommended for Production):
 ```csharp
@@ -90,11 +90,11 @@ The OAuth configuration expects this structure:
 ```
 
 ## Aspire Best Practices
-- ? Use `builder.AddParameter()` with `secret: true` for sensitive data
-- ? Store secrets in user secrets for development
-- ? Use environment variables in production
-- ? Aspire automatically injects parameters as environment variables
-- ? Never commit secrets to source control
+- Use `builder.AddParameter()` with `secret: true` for sensitive data
+- Store secrets in user secrets for development
+- Use environment variables in production
+- Aspire automatically injects parameters as environment variables
+- Never commit secrets to source control
 
 ## Security Notes
 - **Never commit OAuth secrets to source control**

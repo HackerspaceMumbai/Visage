@@ -185,7 +185,7 @@ public class DirectOAuthService
 
             // Get user profile
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", accessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Visage", "1.0"));
 
             var profileResponse = await httpClient.GetAsync(github.UserInfoEndpoint);

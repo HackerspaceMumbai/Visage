@@ -7,6 +7,7 @@ using StrictId;
 using Visage.FrontEnd.Shared;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace Visage.FrontEnd.Shared.Components;
 
@@ -65,6 +66,9 @@ public partial class MandatoryRegistration : ComponentBase
 
     [Inject]
     private IRegistrationDraftService RegistrationDraftService { get; set; } = default!;
+
+    [Inject]
+    private ILogger<MandatoryRegistration> Logger { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -375,9 +379,10 @@ public partial class MandatoryRegistration : ComponentBase
             customErrors.Add("Request timeout. Please try again.");
             editContext?.NotifyValidationStateChanged();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             customErrors.Add("An unexpected error occurred. Please try again.");
+            Logger.LogError(ex, "Error in HandleValidSubmit");
             editContext?.NotifyValidationStateChanged();
         }
         finally
@@ -566,8 +571,9 @@ public partial class MandatoryRegistration : ComponentBase
             var authUrl = await SocialAuthService.GetLinkedInAuthUrlAsync();
             Navigation.NavigateTo(authUrl, forceLoad: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to initiate LinkedIn connection");
             customErrors.Add("Failed to initiate LinkedIn connection. Please try again.");
             editContext?.NotifyValidationStateChanged();
         }
@@ -585,6 +591,7 @@ public partial class MandatoryRegistration : ComponentBase
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to initiate GitHub connection");
             customErrors.Add("Failed to initiate GitHub connection. Please try again.");
             editContext?.NotifyValidationStateChanged();
         }

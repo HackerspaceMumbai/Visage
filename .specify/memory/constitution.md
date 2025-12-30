@@ -1,6 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.5.0 → 1.5.0 (fix)
+Modified principles: 
+  - Renumbered principles X-XII to maintain sequential I-XII order
+Removed sections:
+  - Duplicate entries for Principle XI and XII in previous SYNC IMPACT REPORT (kept the ones with "(NEW)")
+Follow-up TODOs:
+  - None
+-->
+<!--
+SYNC IMPACT REPORT
+==================
 Version change: 1.4.0 → 1.5.0
 Modified principles: 
   - Added Principle XII: External Redirect State Persistence (NEW)
@@ -16,9 +27,8 @@ Version change: 1.0.0 → 1.1.0
 @@Version change: 1.1.0 → 1.2.0
 @@Version change: 1.2.0 → 1.3.0
 @@Version change: 1.3.0 → 1.4.0
-Modified principles: 
-  - Principle IV: Blazor Hybrid UI Consistency → Expanded with render mode strategy
-  - Principle VI: Security & Privacy by Design → Expanded with IdP abstraction
+  - Added Principle XI: Test-Driven Workflow Discipline (NEW)
+  - Principle XII: External Redirect State Persistence (NEW)
 @@  - Principle VIII: Blazor Render Mode Strategy → Expanded with navigation best practices and architectural guidance
 @@  - Principle I: Aspire-First Architecture → Added mandatory health endpoint testing requirement
 @@  - Principle III: Integration Testing → Promoted health endpoint testing to mandatory priority #2
@@ -188,73 +198,6 @@ Blazor components MUST use the appropriate render mode based on their security a
 - **Static SSR (default)**: Public pages without user interaction (marketing, docs, landing pages)
 - **InteractiveServer**: Authenticated pages requiring real-time updates, secure data access, or server-side validation (user profiles, admin dashboards, check-in flows)
 - **InteractiveWebAssembly**: Client-side interactive features that don't require server data or authentication (theme toggles, UI animations, offline-capable features)
-
-### IX. DaisyUI Build (INPUT → OUTPUT)
-
-- **Input file**: The DaisyUI / Tailwind source used by the frontend is `Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css` (this is the LLM-friendly, human-editable source that imports Tailwind and the DaisyUI plugins). Do not create an alternate input file; this is the single source of truth for DaisyUI theme configuration.
-- **Generated output**: The compiled stylesheet consumed by the web project is `Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css`.
-- **How to regenerate**: Run the Tailwind CLI via pnpx from the repository root to compile `input.css` into `output.css`. Example command (uses Tailwind v4 as required by DaisyUI 5):
-
-```pwsh
-pnpx tailwindcss@4 -i Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css -o Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css --minify
-```
-
-- **CI / developer note**: Add this command to your local dev workflow or CI pipeline so `output.css` is regenerated whenever `input.css` (or the theme config in `input.css`) changes. The repository currently includes a committed `output.css` for convenience — treat it as a generated artifact and regenerate when making style/theme edits.
-- **Reference**: For DaisyUI usage rules, conventions, and plugin configuration, see the LLM-friendly guide at `.vscode/daisyui.md` in the repo. Follow that guidance when editing `input.css` (theme blocks, plugins, and allowed patterns).
-
-#### Migration & Component Styling Guidance (added 2025-10-21)
-
-- **Single source of truth**: Do not duplicate theme variables in multiple files. Migrate any existing theme files (for example `wwwroot/css/daisy-theme.css`) into the canonical `input.css` so the compiled `output.css` contains the authoritative styling.
-- **Component-scoped styles**: Prefer component-scoped CSS files for Blazor components (`Component.razor.css`) placed next to the component. Use these files for component-specific visual rules (focus rings, layout tweaks, minor overrides) rather than sprinkling bespoke styles into global stylesheets.
-- **Remove redundant links**: Do not include duplicate theme stylesheet links in `App.razor` or other host pages if their variables are already compiled into `_content/Visage.FrontEnd.Shared/output.css`.
-- **CI / pipeline**: Add a pipeline step that runs the Tailwind build before the .NET build. Example (PowerShell / Azure Pipelines) to run from repository root:
-
-```pwsh
-pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared install
-pnpm --prefix Visage.FrontEnd/Visage.FrontEnd.Shared run buildcss
-```
-
-- **Generated artifact policy**: `Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css` is a generated artifact. It may be committed for convenience in local development, but CI and release pipelines MUST regenerate it from `input.css` before packaging/deploying.
-
-**UI Change Verification Protocol (MANDATORY)**:
-
-Before viewing any UI changes in the browser:
-
-1. **ALWAYS run Tailwind CLI first** to regenerate `output.css`:
-
-   ```pwsh
-   pnpx tailwindcss@4 -i Visage.FrontEnd/Visage.FrontEnd.Shared/Styles/input.css -o Visage.FrontEnd/Visage.FrontEnd.Shared/wwwroot/output.css --minify
-   ```
-
-2. **Then** build and run Aspire:
-
-   ```pwsh
-   dotnet build
-   dotnet run --project Visage.AppHost
-   ```
-
-**Common Mistake**: Viewing UI without regenerating CSS results in stale styles—DaisyUI changes won't appear even though Blazor code changed.
-
-### XI. Test-Driven Workflow Discipline (NEW)
-
-Follow disciplined test workflow to avoid wasted execution cycles:
-
-1. **Baseline Verification**: Check `tests/TEST-BASELINE.md` before running tests to distinguish new failures from technical debt.
-2. **Isolate Tests**: Use `--filter` to run only relevant tests.
-3. **Fail Fast**: Stop after 2 consecutive failures.
-4. **Build First**: Use `dotnet build` to verify compilation before expensive test runs.
-
-### XII. External Redirect State Persistence
-
-When a user is redirected away from the application (e.g., for OAuth 2.0 flows like LinkedIn or GitHub), the Blazor Server circuit is destroyed. To prevent data loss:
-
-- **DO NOT** rely on in-memory component state for data that must survive a redirect.
-- **DO** use a server-side persistence mechanism (e.g., `IMemoryCache` or a database-backed draft service).
-- **Keying**: Use a stable, unique identifier for the key (e.g., the user's Auth0 `sub` claim).
-- **Lifecycle**: Save the state immediately before the `NavigationManager.NavigateTo(..., forceLoad: true)` call and restore it in the `OnInitializedAsync` method of the returning page.
-
-**Rationale**: Unlike background `HttpClient` calls (like image uploads), external redirects are "destructive" to the Blazor circuit. Persistence ensures a seamless user experience across the OAuth handshake.
-
 - **InteractiveAuto**: Pages requiring initial fast load with subsequent rich interactivity (event listings with filtering, registration forms with client validation)
 
 Components MUST NOT:
@@ -262,8 +205,8 @@ Components MUST NOT:
 - Use InteractiveWebAssembly for pages accessing secure APIs or user data
 - Use InteractiveServer for purely cosmetic interactions (increases server load unnecessarily)
 - Mix render modes within a single component without justification
-@@- Mix render modes across navigation boundaries (e.g., InteractiveAuto → InteractiveServer) as this breaks Blazor's SPA routing
-@@- Override app-wide render mode settings on individual pages unless explicitly justified and documented
+- Mix render modes across navigation boundaries (e.g., InteractiveAuto → InteractiveServer) as this breaks Blazor's SPA routing
+- Override app-wide render mode settings on individual pages unless explicitly justified and documented
 
 **Rationale**: Correct render mode selection ensures optimal security (server-side for auth),
 performance (client-side for UI), and resource efficiency. As a high-traffic event platform,
@@ -319,17 +262,17 @@ private string? _userId;
 
 protected override async Task OnInitializedAsync()
 {
-    // Runs twice: prerender + interactive
-    if (HttpContext is not null)
-    {
-        // First render (prerender): Get from HTTP context
-        _userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    }
-    else if (_userId is null)
-    {
-        // Second render (interactive): Load from service/state
-        _userId = await AuthService.GetCurrentUserIdAsync();
-    }
+  // Runs twice: prerender + interactive
+  if (HttpContext is not null)
+  {
+    // First render (prerender): Get from HTTP context
+    _userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+  }
+  else if (_userId is null)
+  {
+    // Second render (interactive): Load from service/state
+    _userId = await AuthService.GetCurrentUserIdAsync();
+  }
 }
 ```
 
@@ -337,7 +280,7 @@ protected override async Task OnInitializedAsync()
 but the double lifecycle often causes confusion with state management. Understanding this pattern
 prevents NullReferenceExceptions and duplicate data loads.
 
-### X. Identity Provider Abstraction
+### XI. Identity Provider Abstraction
 
 Authentication MUST be implemented through an abstraction layer to enable IdP replacement:
 
@@ -355,7 +298,7 @@ By abstracting authentication, we enable deployment flexibility while maintainin
 codebase. This also future-proofs against vendor lock-in and demonstrates enterprise-grade
 architectural patterns.
 
-### XI. Test-Driven Workflow Discipline
+### XII. Test-Driven Workflow Discipline
 
 All testing activities MUST follow this disciplined workflow:
 
@@ -475,7 +418,7 @@ Before merging any PR:
 
 ### Performance Expectations
 
-@@**Version**: 1.3.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-24
+@@**Version**: 1.5.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-12-29
 
 - Blazor UI: Initial load < 2 seconds, interactions < 100ms perceived latency
 - Database queries: Use indexes, avoid N+1 queries
@@ -513,4 +456,4 @@ Before merging any PR:
   in `.github/prompts/`
 - Complexity must be justified: if constitution rules are violated, document in plan.md
 
-**Version**: 1.3.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-10-24
+**Version**: 1.5.0 | **Ratified**: 2025-10-17 | **Last Amended**: 2025-12-29

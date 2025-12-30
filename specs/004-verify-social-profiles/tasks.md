@@ -52,9 +52,8 @@ description: "Task list for Verified social profile linking feature implementati
   - new `SocialVerificationEvents` table
   - filtered unique indexes on `Registrants.LinkedInProfile` and `Registrants.GitHubProfile` (only when verified)
   - files under `Visage.Services.Registrations/Migrations/`
-  - Use Aspire: `aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef migrations add AddSocialVerificationAuditAndUniqueIndexes`
-  - (then) `aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database update`
-- [x] T014 [P] Add a minimal `.http` section stub for new/updated endpoints in `Visage.Services.Registrations/app.http` (link-callback, status, disconnect)
+  - Use Aspire: `aspire exec --resource registrations-api --workdir ./Visage.Services.Registrations -- dotnet ef migrations add AddSocialVerificationAuditAndUniqueIndexes`
+  - (then) `aspire exec --resource registrations-api --workdir ./Visage.Services.Registrations -- dotnet ef database update`- [x] T014 [P] Add a minimal `.http` section stub for new/updated endpoints in `Visage.Services.Registrations/app.http` (link-callback, status, disconnect)
 
 **Checkpoint**: Schema + shared types exist; API work can proceed.
 

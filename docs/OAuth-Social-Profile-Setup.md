@@ -52,10 +52,7 @@ User redirects back to registration form with verified badge
 6. Add redirect URLs:
    - Development: `https://YOUR_AUTH0_DOMAIN/login/callback`
    - Production: `https://YOUR_AUTH0_DOMAIN/login/callback`
-
-7. Ensure **Sign in with LinkedIn** is enabled for your app and that it supports the requested scopes. For local dev we default to `openid email profile` but if you use LinkedIn-specific scopes, ensure the app has `r_liteprofile` and `r_emailaddress` enabled in the LinkedIn developer console.
-
-8. Copy **Client ID** and **Client Secret**
+7. Copy **Client ID** and **Client Secret**
 
 ### 1.2 Enable LinkedIn Connection in Auth0
 
@@ -69,7 +66,7 @@ User redirects back to registration form with verified badge
    - **Attributes**:
      - ? Basic Profile
      - ? Email Address
-   - **Permissions**: `openid`, `email`, `profile` (Visage defaults to `openid email profile` for development; LinkedIn-specific scopes like `r_emailaddress` and `r_liteprofile` can be used if your app requires them)
+   - **Permissions**: `r_emailaddress`, `r_liteprofile`
 6. Click **Create**
 7. Go to **Applications** tab
 8. Enable the connection for your Visage application
@@ -200,7 +197,7 @@ Users will need to reconnect via OAuth to verify their profiles.
 1. **No Manual Input**: Users cannot manually enter LinkedIn/GitHub URLs - they must authenticate via OAuth
 2. **Verification Timestamp**: `LinkedInVerifiedAt` and `GitHubVerifiedAt` track when verification occurred
 3. **Re-verification**: Users can disconnect and reconnect to update their profile URLs
-4. **Scope Limitation**: Only request minimal scopes (Visage defaults to `openid email profile` for LinkedIn; `read:user`, `user:email` for GitHub). If using LinkedIn-specific scopes instead, ensure `r_liteprofile` and `r_emailaddress` are enabled for your app.
+4. **Scope Limitation**: Only request minimal scopes (`r_liteprofile`, `r_emailaddress` for LinkedIn; `read:user`, `user:email` for GitHub)
 
 ## Troubleshooting
 

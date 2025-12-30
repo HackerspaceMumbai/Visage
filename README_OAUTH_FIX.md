@@ -1,5 +1,4 @@
-# ?? OAuth Fix Summary
-
+# OAuth Fix Summary
 ## The Problem
 When you click "Connect LinkedIn", it still goes to Auth0 instead of your LinkedIn OAuth app.
 
@@ -17,11 +16,10 @@ Follow the instructions in **`QUICK_FIX_OAUTH.md`** to:
 - `Visage.FrontEnd.Web/Program.cs` (only file that needs changes)
 
 ## After the Fix
-? LinkedIn button ? YOUR LinkedIn app
-? GitHub button ? YOUR GitHub app  
-? Profile verification works correctly
-? No more Auth0 social connections
-
+✓ LinkedIn button → YOUR LinkedIn app
+✓ GitHub button → YOUR GitHub app  
+✓ Profile verification works correctly
+✓ No more Auth0 social connections
 ## Setup OAuth Apps
 Before testing, make sure you've:
 1. Created LinkedIn OAuth app with callback: `https://localhost:7400/oauth/linkedin/callback`
