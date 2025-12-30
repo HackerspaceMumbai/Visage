@@ -82,7 +82,7 @@ public class DirectOAuthService
             _logger.LogInformation("Handling LinkedIn callback; using redirect_uri={RedirectUri}", redirectUri);
 
             // Exchange code for access token
-            var tokenRequest = new FormUrlEncodedContent(new[]
+            using var tokenRequest = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("grant_type", "authorization_code"),
                 new KeyValuePair<string, string>("code", code),
@@ -161,7 +161,7 @@ public class DirectOAuthService
             _logger.LogInformation("Handling GitHub callback; using redirect_uri={RedirectUri}", redirectUri);
 
             // Exchange code for access token
-            var tokenRequest = new FormUrlEncodedContent(new[]
+            using var tokenRequest = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("grant_type", "authorization_code"),
                 new KeyValuePair<string, string>("code", code),
