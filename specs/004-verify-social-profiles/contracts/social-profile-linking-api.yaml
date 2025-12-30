@@ -1,0 +1,243 @@
+openapi: 3.1.0
+info:
+  title: Social Profile Linking API
+  description: API endpoints for storing and retrieving OAuth-verified LinkedIn/GitHub profile links.
+  version: 1.0.0
+  contact:
+    name: Visage Team
+    url: https://hackmum.in
+
+servers:
+  - url: https://registrations-api
+    description: Aspire service discovery endpoint (development)
+
+security:
+  - Auth0Bearer: [profile:read-write]
+
+paths:
+  /api/profile/social/link-callback:
+    post:
+      summary: Link OAuth-verified social profile
+      description: Stores a provider-verified profile URL for the authenticated registrant and marks it as verified.
+      operationId: linkSocialProfile
+      tags:
+        - Social
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialProfileLinkDto'
+            examples:
+              linkedin:
+                value:
+                  provider: linkedin
+                  profileUrl: https://www.linkedin.com/in/someone
+              github:
+                value:
+                  provider: github
+                  profileUrl: https://github.com/someone
+      responses:
+        '200':
+          description: Profile linked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialLinkResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: Profile already linked to another registrant
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              examples:
+                conflict:
+                  value:
+                    type: https://visage.app/problems/social-profile-conflict
+                    title: Social profile already linked
+                    status: 409
+                    detail: This LinkedIn/GitHub account is already verified for another registrant.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/profile/social/status:
+    get:
+      summary: Get social connection status
+      description: Retrieves verification status and profile URLs for LinkedIn and GitHub.
+      operationId: getSocialConnectionStatus
+      tags:
+        - Social
+      responses:
+        '200':
+          description: Social status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialConnectionStatusDto'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Registrant profile not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/profile/social/disconnect:
+    post:
+      summary: Disconnect a verified social profile
+      description: Clears stored profile URL and verification flags for the specified provider.
+      operationId: disconnectSocialProfile
+      tags:
+        - Social
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialDisconnectDto'
+            examples:
+              linkedin:
+                value:
+                  provider: linkedin
+      responses:
+        '200':
+          description: Disconnected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialConnectionStatusDto'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Registrant profile not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    Auth0Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Auth0 access token with the `profile:read-write` scope.
+
+  responses:
+    BadRequestError:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    UnauthorizedError:
+      description: Missing or invalid authentication
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ForbiddenError:
+      description: Authenticated but not authorized (missing scope)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InternalServerError:
+      description: Server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    SocialProfileLinkDto:
+      type: object
+      additionalProperties: false
+      required: [provider, profileUrl]
+      properties:
+        provider:
+          type: string
+          enum: [linkedin, github]
+        profileUrl:
+          type: string
+          format: uri
+
+    SocialDisconnectDto:
+      type: object
+      additionalProperties: false
+      required: [provider]
+      properties:
+        provider:
+          type: string
+          enum: [linkedin, github]
+
+    SocialProviderStatusDto:
+      type: object
+      additionalProperties: false
+      properties:
+        isConnected:
+          type: boolean
+        profileUrl:
+          type: string
+          format: uri
+          nullable: true
+        verifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SocialConnectionStatusDto:
+      type: object
+      additionalProperties: false
+      required: [linkedIn, gitHub]
+      properties:
+        linkedIn:
+          $ref: '#/components/schemas/SocialProviderStatusDto'
+        gitHub:
+          $ref: '#/components/schemas/SocialProviderStatusDto'
+
+    SocialLinkResult:
+      type: object
+      additionalProperties: false
+      required: [message, profileUrl, verifiedAt]
+      properties:
+        message:
+          type: string
+        profileUrl:
+          type: string
+          format: uri
+        verifiedAt:
+          type: string
+          format: date-time
+
+    ProblemDetails:
+      type: object
+      additionalProperties: true
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string

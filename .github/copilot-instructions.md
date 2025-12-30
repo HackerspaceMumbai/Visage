@@ -3,7 +3,7 @@
 # Copilot Instructions for Visage
 
 ## Project Overview
-Visage is a modular, Aspire-orchestrated .NET 9 solution for managing large-scale OSS community events, with a focus on inclusiveness, privacy, and reliability. The architecture is designed for scalability, maintainability, and rapid developer onboarding.
+Visage is a modular, Aspire-orchestrated .NET 10 solution for managing large-scale OSS community events, with a focus on inclusiveness, privacy, and reliability. The architecture is designed for scalability, maintainability, and rapid developer onboarding.
 
 ## Architecture & Key Components
 - **Frontend:** Hybrid Blazor (Web, MAUI, and Shared UI) for a single codebase across web and mobile. See `Visage.FrontEnd/`.
@@ -60,20 +60,21 @@ Add this to your CI pipeline so `output.css` is regenerated during CI builds.
   # Enable aspire exec feature (one-time setup)
   aspire config set features.execCommandEnabled true
   
-  # Drop database
-  aspire exec --resource eventing -- dotnet ef database drop --force
-  
-  # Add migration
-  aspire exec --resource eventing -- dotnet ef migrations add MigrationName
-  
-  # Update database
-  aspire exec --resource eventing -- dotnet ef database update
+  # Drop database (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database drop --force
+
+  # Add migration (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef migrations add MigrationName
+
+  # Update database (example: registrations-api)
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database update
   
   # Use --workdir flag for commands in specific directories (Aspire 9.5+)
-  aspire exec --resource eventing --workdir /app/migrations -- dotnet ef migrations script
+  # NOTE: When executing locally, prefer repo-absolute paths so `dotnet ef` runs in the right project folder.
+  aspire exec --resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef migrations script
   
   # Wait for resource to start before executing (Aspire 9.5+)
-  aspire exec --start-resource eventing -- dotnet ef database update
+  aspire exec --start-resource registrations-api --workdir D:\Projects\Visage\Visage.Services.Registrations -- dotnet ef database update
   ```
   This ensures connection strings and other environment variables are correctly injected from the Aspire app model.
 
@@ -159,6 +160,13 @@ For complete Aspire 9.5 features, see [What's new in Aspire 9.5](https://learn.m
     ```
   - Dispose resources properly to prevent memory leaks from double initialization
   - Query parameters from `[SupplyParameterFromQuery]` only available during prerender
+- **External Redirect Persistence Pattern**:
+  - **The Problem**: Unlike background operations (e.g., image uploads in `ScheduleEvent.razor`), external OAuth redirects (LinkedIn/GitHub) cause the browser to leave the site, which **destroys the Blazor Circuit** and wipes all in-memory state.
+  - **The Solution**: Use a server-side persistence layer (e.g., `IRegistrationDraftService` using `IMemoryCache` keyed by the user's Auth0 'sub' claim) to save form data before redirecting.
+  - **Implementation**:
+    1. Save draft: `await DraftService.SaveDraftAsync(model);`
+    2. Redirect to provider.
+    3. On return, restore in `OnInitializedAsync`: `model = await DraftService.GetDraftAsync() ?? new();`
 - **EF Core:** Use Repository and Unit of Work patterns. Configure StrictId in `OnModelCreating`.
 - **Service Defaults:** All services must call `AddServiceDefaults()` for health checks, OpenTelemetry, and service discovery.
 - **Commit Messages:** Imperative, sentence case, no trailing dot. All commits must be signed off.
@@ -227,6 +235,8 @@ For complete Aspire 9.5 features, see [What's new in Aspire 9.5](https://learn.m
     3. Add the new service to the `All_Http_Resources_Should_Have_Health_Endpoints` test in the `resourceNames` array
     4. Verify tests pass before merging: `dotnet test tests/Visage.Test.Aspire/HealthEndpointTests.cs`
 - **Configuration:** Use environment variables for secrets and service URLs. See `appsettings.json` and Aspire parameters.
+
+  - For direct provider OAuth (LinkedIn/GitHub) we support an optional `OAuth:BaseUrl` configuration. Set `OAuth__BaseUrl` to force the `redirect_uri` used in provider flows when behind proxies or when providers require a fixed callback URL. The `DirectOAuthService` logs the `redirect_uri` it generates (INFO level) with fields `redirect_uri` and `usingConfiguredBase` to aid debugging.
 
 ## Integration Points
 - **Cloudinary:** Secure image upload via `CloudinaryImageSigning` Node service. Use `/sign-upload` endpoint for signatures.

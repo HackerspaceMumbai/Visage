@@ -14,6 +14,20 @@ var iamAudience = builder.AddParameter("auth0-audience"); //For API access
 
 #endregion
 
+#region OAuthConfiguration
+
+// T087: OAuth parameters for direct social profile verification
+// These are stored in user secrets for development and environment variables for production
+var oauthLinkedInClientId = builder.AddParameter("oauth-linkedin-clientid", secret: true);
+var oauthLinkedInClientSecret = builder.AddParameter("oauth-linkedin-clientsecret", secret: true);
+var oauthGitHubClientId = builder.AddParameter("oauth-github-clientid", secret: true);
+var oauthGitHubClientSecret = builder.AddParameter("oauth-github-clientsecret", secret: true);
+// Optional: explicitly set OAuth base URL used to build the provider redirect_uri
+// Example for local dev: OAuth__BaseUrl = "https://localhost:7400"
+var oauthBaseUrl = builder.AddParameter("oauth-baseurl");
+
+#endregion
+
 #region database
 
 // T012: Register SQL Server as a first-class Aspire resource and pin image tag to avoid 2025-latest pulls
@@ -117,20 +131,26 @@ if (builder.Environment.IsDevelopment() && launchProfile == "https")
 #region web
 
 var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
-    .WithEnvironment("Auth0__Domain", iamDomain)
-    .WithEnvironment("Auth0__ClientId", iamClientId)
-    .WithEnvironment("Auth0__ClientSecret", iamClientSecret)
-    .WithEnvironment("Auth0__Audience", iamAudience)
-    .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
-    .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
-    .WithEnvironment("Clarity__ProjectId", clarityProjectId)
-    .WithReference(eventAPI)
-    .WaitFor(eventAPI)
-    .WithReference(registrationAPI)
-    .WaitFor(registrationAPI)
-    .WithReference(cloudinaryImageSigning)
-    .WaitFor(cloudinaryImageSigning)
-    .WithExternalHttpEndpoints();
+.WithEnvironment("Auth0__Domain", iamDomain)
+.WithEnvironment("Auth0__ClientId", iamClientId)
+.WithEnvironment("Auth0__ClientSecret", iamClientSecret)
+.WithEnvironment("Auth0__Audience", iamAudience)
+.WithEnvironment("OAuth__LinkedIn__ClientId", oauthLinkedInClientId)
+.WithEnvironment("OAuth__LinkedIn__ClientSecret", oauthLinkedInClientSecret)
+.WithEnvironment("OAuth__GitHub__ClientId", oauthGitHubClientId)
+.WithEnvironment("OAuth__GitHub__ClientSecret", oauthGitHubClientSecret)
+// Optional override for the OAuth redirect host/port used to build redirect_uri
+.WithEnvironment("OAuth__BaseUrl", oauthBaseUrl)
+.WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
+.WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
+.WithEnvironment("Clarity__ProjectId", clarityProjectId)
+.WithReference(eventAPI)
+.WaitFor(eventAPI)
+.WithReference(registrationAPI)
+.WaitFor(registrationAPI)
+.WithReference(cloudinaryImageSigning)
+.WaitFor(cloudinaryImageSigning)
+.WithExternalHttpEndpoints();
 
 #endregion
 

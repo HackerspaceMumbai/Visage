@@ -2,8 +2,8 @@
 
 ## General Guidelines
 
-- Use the latest .NET 9 features and libraries
-- Follow official .NET 9 coding guidelines as provided by Microsoft
+- Use the latest .NET 10 features and libraries
+- Follow official .NET 10 coding guidelines as provided by Microsoft
 - Ensure code is clean, readable, and maintainable
 - Follow the DRY (Don't Repeat Yourself) principle
 - Follow the KISS (Keep It Simple, Stupid) principle

@@ -70,6 +70,12 @@ public static class TestAssemblyHooks
             .WaitAsync(TimeSpan.FromSeconds(60));
         await rns.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(90));
+        await rns.WaitForResourceAsync("eventing", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(90));
+        await rns.WaitForResourceAsync("cloudinary-image-signing", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(90));
+        await rns.WaitForResourceAsync("frontendweb", KnownResourceStates.Running)
+            .WaitAsync(TimeSpan.FromSeconds(120));
 
         TestAppContext.App = app;
         TestAppContext.ResourceNotificationService = rns;

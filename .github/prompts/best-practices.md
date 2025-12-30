@@ -4,12 +4,12 @@
 
 Ensure all code adheres to these quality standards:
 
-- Well-documented and follows the .NET 9 coding standards
+- Well-documented and follows the .NET 10 coding standards
 - Well-tested with appropriate unit and integration tests
-- Well-structured according to .NET 9 project organization principles
-- Optimized for performance and follows .NET 9 performance guidelines
-- Secured according to .NET 9 security best practices
-- Designed for scale following .NET 9 scalability patterns
+- Well-structured according to .NET 10 project organization principles
+- Optimized for performance and follows .NET 10 performance guidelines
+- Secured according to .NET 10 security best practices
+- Designed for scale following .NET 10 scalability patterns
 - Maintainable and follows clean code principles
 - Deployable with proper configuration and environment handling
 - Observable with appropriate logging and monitoring

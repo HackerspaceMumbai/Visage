@@ -175,6 +175,21 @@ app.MapPost("/register", async Task<Results<Created<Registrant>, Ok<Registrant>,
         existing.OccupationStatus = inputRegistrant.OccupationStatus;
         existing.CompanyName = inputRegistrant.CompanyName;
         existing.EducationalInstituteName = inputRegistrant.EducationalInstituteName;
+
+        // Social profiles (optional depending on occupation)
+        existing.LinkedInProfile = inputRegistrant.LinkedInProfile;
+        existing.LinkedInVanityName = inputRegistrant.LinkedInVanityName;
+        existing.LinkedInSubject = inputRegistrant.LinkedInSubject;
+        existing.LinkedInRawProfileJson = inputRegistrant.LinkedInRawProfileJson;
+        existing.LinkedInRawEmailJson = inputRegistrant.LinkedInRawEmailJson;
+        existing.LinkedInPayloadFetchedAt = inputRegistrant.LinkedInPayloadFetchedAt;
+
+        existing.GitHubProfile = inputRegistrant.GitHubProfile;
+        existing.IsLinkedInVerified = inputRegistrant.IsLinkedInVerified;
+        existing.IsGitHubVerified = inputRegistrant.IsGitHubVerified;
+        existing.LinkedInVerifiedAt = inputRegistrant.IsLinkedInVerified ? (inputRegistrant.LinkedInVerifiedAt ?? existing.LinkedInVerifiedAt ?? DateTime.UtcNow) : null;
+        existing.GitHubVerifiedAt = inputRegistrant.IsGitHubVerified ? (inputRegistrant.GitHubVerifiedAt ?? existing.GitHubVerifiedAt ?? DateTime.UtcNow) : null;
+
         existing.IsProfileComplete = true;
         existing.ProfileCompletedAt = DateTime.UtcNow;
 

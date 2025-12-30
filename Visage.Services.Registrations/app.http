@@ -49,4 +49,46 @@ POST {{Visage.Services.Registrations_HostAddress}}/api/profile/preferences/aide-
 
 GET {{Visage.Services.Registrations_HostAddress}}/register
 
+###
+
+### Social: Get current social verification status (requires valid JWT)
+GET {{Visage.Services.Registrations_HostAddress}}/api/profile/social/status
+Authorization: Bearer {{auth0Token}}
+
+###
+
+### Social: Persist verified LinkedIn profile URL (requires valid JWT)
+POST {{Visage.Services.Registrations_HostAddress}}/api/profile/social/link-callback
+Authorization: Bearer {{auth0Token}}
+Content-Type: application/json
+
+{
+	"provider": "linkedin",
+	"profileUrl": "https://www.linkedin.com/in/someone"
+}
+
+###
+
+### Social: Persist verified GitHub profile URL (requires valid JWT)
+POST {{Visage.Services.Registrations_HostAddress}}/api/profile/social/link-callback
+Authorization: Bearer {{auth0Token}}
+Content-Type: application/json
+
+{
+	"provider": "github",
+	"profileUrl": "https://github.com/someone"
+}
+
+###
+
+### Social: Disconnect a verified social profile (requires valid JWT)
+# NOTE: Endpoint planned/implemented under /api/profile/social/disconnect
+POST {{Visage.Services.Registrations_HostAddress}}/api/profile/social/disconnect
+Authorization: Bearer {{auth0Token}}
+Content-Type: application/json
+
+{
+	"provider": "linkedin"
+}
+
 

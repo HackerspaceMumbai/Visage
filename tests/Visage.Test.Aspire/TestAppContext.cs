@@ -50,8 +50,26 @@ public static class TestAppContext
     private static DateTime _cachedAuthTokenExpiry = DateTime.MinValue;
     private static readonly SemaphoreSlim _tokenLock = new(1, 1);
 
+    /// <summary>
+    /// Checks if Auth0 test authentication is configured.
+    /// </summary>
+    public static bool IsAuthConfigured() => Auth0TestHelper.IsConfigured();
+
     public static async Task<string> GetAuthTokenAsync()
     {
+        if (!Auth0TestHelper.IsConfigured())
+        {
+            throw new InvalidOperationException(
+                "Auth0 test configuration not found. Tests requiring authentication need the following environment variables:\n" +
+                "- AUTH0_DOMAIN\n" +
+                "- AUTH0_CLIENT_ID\n" +
+                "- AUTH0_CLIENT_SECRET\n" +
+                "- AUTH0_AUDIENCE\n" +
+                "- TEST_USER_EMAIL\n" +
+                "- TEST_USER_PASSWORD\n" +
+                "\nSee tests/Visage.Test.Aspire/README.md for setup instructions.");
+        }
+
         if (!string.IsNullOrEmpty(_cachedAuthToken) && DateTime.UtcNow < _cachedAuthTokenExpiry)
         {
             return _cachedAuthToken;
@@ -88,21 +106,16 @@ public static class TestAppContext
     /// ResourceNotificationService from the distributed app; when running in external
     /// mode this will poll the external service health endpoint.
     /// </summary>
-    public static async Task WaitForResourceAsync(string resourceName, object desiredState, TimeSpan timeout)
+    public static async Task WaitForResourceAsync(string resourceName, string desiredState, TimeSpan timeout)
     {
         if (!UseExternalServices)
         {
             if (ResourceNotificationService == null)
                 throw new InvalidOperationException("ResourceNotificationService is not initialized. Ensure TestAssemblyHooks started the distributed app or enabled external mode.");
 
-            // Most callers pass a KnownResourceStates enum; try to cast and call the proper overload
-            if (desiredState is Aspire.Hosting.KnownResourceStates knownState)
-            {
-                await ResourceNotificationService.WaitForResourceAsync(resourceName, knownState).WaitAsync(timeout);
-                return;
-            }
-
-            throw new ArgumentException("desiredState must be of type Aspire.Hosting.KnownResourceStates", nameof(desiredState));
+            // desiredState should be a constant from KnownResourceStates (e.g. "Running", "Healthy")
+            await ResourceNotificationService.WaitForResourceAsync(resourceName, desiredState).WaitAsync(timeout);
+            return;
         }
 
         // External mode: simply poll the service health endpoint at /health until it returns success

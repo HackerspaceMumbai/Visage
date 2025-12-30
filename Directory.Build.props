@@ -1,5 +1,9 @@
 <Project>
   <PropertyGroup>
+    <!-- Enable Microsoft.Testing.Platform-based test projects (e.g., TUnit) to run via the VSTest-mode `dotnet test` driver.
+         This preserves the existing VSTestTestCaseFilter behavior under .NET 10. -->
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+
     <!-- By default, running `dotnet test` at repo root runs smoke checks only (home page validation). -->
     <VSTestTestCaseFilter>Category=Smoke</VSTestTestCaseFilter>
   </PropertyGroup>

@@ -7,6 +7,7 @@ using StrictId;
 using Visage.FrontEnd.Shared;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace Visage.FrontEnd.Shared.Components;
 
@@ -21,11 +22,34 @@ public partial class MandatoryRegistration : ComponentBase
     private Registrant registrant = new();
     private bool isSubmitting = false;
     private readonly List<string> customErrors = new();
+    private readonly List<string> successMessages = new();
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
     private bool registrationSuccessful;
-    // Local UI fields for government ID type (we only capture type + last4)
-    private string govtIdType = string.Empty;
+
+    // T087: Social connection status tracking
+    private SocialConnectionStatusDto? socialStatus;
+
+    private bool _shouldCleanOAuthQueryParams;
+
+    private bool IsLinkedInConnected =>
+        socialStatus?.LinkedIn.IsConnected == true
+        || registrant.IsLinkedInVerified
+        || !string.IsNullOrWhiteSpace(registrant.LinkedInProfile);
+
+    private string? LinkedInProfileUrl =>
+        socialStatus?.LinkedIn.ProfileUrl
+        ?? registrant.LinkedInProfile;
+
+    private bool IsGitHubConnected =>
+        socialStatus?.GitHub.IsConnected == true
+        || registrant.IsGitHubVerified
+        || !string.IsNullOrWhiteSpace(registrant.GitHubProfile);
+
+    private string? GitHubProfileUrl =>
+        socialStatus?.GitHub.ProfileUrl
+        ?? registrant.GitHubProfile;
+    
     private static readonly string[] userIdClaimTypes =
     [
         "sub",
@@ -37,8 +61,19 @@ public partial class MandatoryRegistration : ComponentBase
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
+    [Inject]
+    private ISocialAuthService SocialAuthService { get; set; } = default!;
+
+    [Inject]
+    private IRegistrationDraftService RegistrationDraftService { get; set; } = default!;
+
+    [Inject]
+    private ILogger<MandatoryRegistration> Logger { get; set; } = default!;
+
     protected override async Task OnInitializedAsync()
     {
+        _shouldCleanOAuthQueryParams = false;
+
         // T016: Initialize EditContext and ValidationMessageStore
         editContext = new EditContext(registrant);
         editContext.SetFieldCssClassProvider(new DaisyUIInputError());
@@ -50,6 +85,138 @@ public partial class MandatoryRegistration : ComponentBase
             messageStore?.Clear(args.FieldIdentifier);
             customErrors.Clear();
         };
+
+        // T087: Handle OAuth redirect query params from direct provider flow FIRST (before loading draft)
+        // This ensures we capture the successful OAuth connection before draft restoration
+        bool hasOAuthRedirect = false;
+        string? oauthProvider = null;
+        try
+        {
+            var uri = new Uri(Navigation.Uri);
+            var q = uri.Query.TrimStart('?');
+            var query = q.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(p => p.Split(new[] { '=' }, 2))
+                         .Where(kv => kv.Length >= 1)
+                         .ToDictionary(kv => Uri.UnescapeDataString(kv[0]), kv => kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty, StringComparer.OrdinalIgnoreCase);
+
+            if (query.TryGetValue("social", out var socialProvider) && query.TryGetValue("result", out var result))
+            {
+                hasOAuthRedirect = true;
+                oauthProvider = socialProvider;
+                var res = result;
+
+                if (res == "success")
+                {
+                    successMessages.Add($"{oauthProvider.ToUpperInvariant()} connected successfully.");
+                }
+                else if (res == "conflict")
+                {
+                    customErrors.Add($"This {oauthProvider} account is already verified for another registrant.");
+                }
+                else
+                {
+                    if (query.TryGetValue("reason", out var reason) && !string.IsNullOrWhiteSpace(reason))
+                    {
+                        var display = reason.Length > 200 ? reason.Substring(0, 200) + "..." : reason;
+                        customErrors.Add($"Failed to verify social profile. Reason: {display}");
+                    }
+                    else
+                    {
+                        customErrors.Add("Failed to verify social profile. Please try again.");
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // ignore query parsing errors
+        }
+
+        // T087: Load social connection status (best-effort; may be 404 until registrant exists)
+        socialStatus = await SocialAuthService.GetSocialStatusAsync();
+
+        // T087: Restore registration draft if it exists (saved before navigating to OAuth)
+        var draft = await RegistrationDraftService.GetDraftAsync();
+        if (draft is not null)
+        {
+            registrant = draft;
+            // Re-initialize EditContext with the restored registrant
+            editContext = new EditContext(registrant);
+            editContext.SetFieldCssClassProvider(new DaisyUIInputError());
+            messageStore = new ValidationMessageStore(editContext);
+            // Re-attach field changed handler
+            editContext.OnFieldChanged += (sender, args) =>
+            {
+                messageStore?.Clear(args.FieldIdentifier);
+                customErrors.Clear();
+            };
+        }
+
+        // T087: Update registrant with OAuth-verified URLs from social status (takes precedence over draft)
+        if (socialStatus?.LinkedIn.IsConnected == true && !string.IsNullOrWhiteSpace(socialStatus.LinkedIn.ProfileUrl))
+        {
+            registrant.LinkedInProfile = socialStatus.LinkedIn.ProfileUrl;
+            registrant.IsLinkedInVerified = true;
+        }
+        if (socialStatus?.GitHub.IsConnected == true && !string.IsNullOrWhiteSpace(socialStatus.GitHub.ProfileUrl))
+        {
+            registrant.GitHubProfile = socialStatus.GitHub.ProfileUrl;
+            registrant.IsGitHubVerified = true;
+        }
+
+        // T087: (Optional) Check for pending social profiles in session (captured during OAuth callback).
+        // Note: In Blazor Server, server-to-server calls don't automatically include browser cookies,
+        // so this may not be reliable. Draft persistence is the primary mechanism.
+        var pendingProfiles = await SocialAuthService.GetPendingProfilesAsync();
+        if (pendingProfiles is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(pendingProfiles.LinkedInProfile) || !string.IsNullOrWhiteSpace(pendingProfiles.LinkedInSubject) || !string.IsNullOrWhiteSpace(pendingProfiles.LinkedInRawProfileJson))
+            {
+                if (!string.IsNullOrWhiteSpace(pendingProfiles.LinkedInProfile))
+                {
+                    registrant.LinkedInProfile = pendingProfiles.LinkedInProfile;
+                }
+
+                registrant.LinkedInSubject = pendingProfiles.LinkedInSubject;
+                registrant.LinkedInRawProfileJson = pendingProfiles.LinkedInRawProfileJson;
+                registrant.LinkedInRawEmailJson = pendingProfiles.LinkedInRawEmailJson;
+                registrant.LinkedInPayloadFetchedAt ??= DateTime.UtcNow;
+
+                registrant.IsLinkedInVerified = true;
+
+                // Also reflect in the UI status model when Registrations API status isn't available yet.
+                socialStatus ??= new SocialConnectionStatusDto();
+                socialStatus.LinkedIn.IsConnected = true;
+                socialStatus.LinkedIn.ProfileUrl ??= pendingProfiles.LinkedInProfile;
+
+                // Pre-fill email if not already set
+                if (string.IsNullOrWhiteSpace(registrant.Email) && !string.IsNullOrWhiteSpace(pendingProfiles.LinkedInEmail))
+                {
+                    registrant.Email = pendingProfiles.LinkedInEmail;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(pendingProfiles.GitHubProfile))
+            {
+                registrant.GitHubProfile = pendingProfiles.GitHubProfile;
+                registrant.IsGitHubVerified = true;
+
+                socialStatus ??= new SocialConnectionStatusDto();
+                socialStatus.GitHub.IsConnected = true;
+                socialStatus.GitHub.ProfileUrl ??= pendingProfiles.GitHubProfile;
+
+                // Pre-fill email if not already set
+                if (string.IsNullOrWhiteSpace(registrant.Email) && !string.IsNullOrWhiteSpace(pendingProfiles.GitHubEmail))
+                {
+                    registrant.Email = pendingProfiles.GitHubEmail;
+                }
+            }
+        }
+
+        // Remove OAuth query params by navigating to clean URL (must be AFTER all data loading)
+        if (hasOAuthRedirect)
+        {
+            _shouldCleanOAuthQueryParams = true;
+        }
 
         // T016: Pre-populate from Auth0 claims if available
         if (AuthenticationStateTask is not null)
@@ -79,6 +246,28 @@ public partial class MandatoryRegistration : ComponentBase
         }
     }
 
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !_shouldCleanOAuthQueryParams)
+        {
+            return Task.CompletedTask;
+        }
+
+        var currentUri = new Uri(Navigation.Uri);
+        if (string.IsNullOrEmpty(currentUri.Query))
+        {
+            return Task.CompletedTask;
+        }
+
+        var cleanUri = currentUri.GetLeftPart(UriPartial.Path);
+        if (!string.Equals(Navigation.Uri, cleanUri, StringComparison.Ordinal))
+        {
+            Navigation.NavigateTo(cleanUri, replace: true);
+        }
+
+        return Task.CompletedTask;
+    }
+
     /// <summary>
     /// T016: Handle valid form submission.
     /// Posts registrant data to API and marks profile as complete.
@@ -90,8 +279,10 @@ public partial class MandatoryRegistration : ComponentBase
             isSubmitting = true;
             customErrors.Clear();
             messageStore?.Clear();
-            govtIdType = Normalize(govtIdType);
+            registrant.GovtIdType = Normalize(registrant.GovtIdType);
             TrimUserInput();
+
+            BuildLinkedInProfileFromVanityIfPresent();
 
             // T016: Validate context-dependent mandatory fields (FR-001)
             var contextErrors = ValidateContextDependentFields();
@@ -102,7 +293,7 @@ public partial class MandatoryRegistration : ComponentBase
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(govtIdType))
+            if (string.IsNullOrWhiteSpace(registrant.GovtIdType))
             {
                 customErrors.Add("Please select a government ID type.");
                 editContext?.NotifyValidationStateChanged();
@@ -131,10 +322,6 @@ public partial class MandatoryRegistration : ComponentBase
             }
 
             // Only capture type + last-4; do not store full GovtId to avoid PII leakage
-            if (!string.IsNullOrWhiteSpace(govtIdType))
-            {
-                registrant.GovtIdType = govtIdType;
-            }
             registrant.GovtId = string.Empty;
 
             var registrantToSubmit = BuildRegistrantPayload(parsedUserId);
@@ -174,6 +361,9 @@ public partial class MandatoryRegistration : ComponentBase
             registrant = savedRegistrant;
             registrationSuccessful = true;
 
+            // T087: Clear the registration draft after successful submission
+            await RegistrationDraftService.ClearDraftAsync();
+
             // T036: Invalidate cached completion status so home page reflects the latest state
             await ProfileService.InvalidateCacheAsync();
             _ = await ProfileService.GetCompletionStatusAsync();
@@ -189,9 +379,10 @@ public partial class MandatoryRegistration : ComponentBase
             customErrors.Add("Request timeout. Please try again.");
             editContext?.NotifyValidationStateChanged();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             customErrors.Add("An unexpected error occurred. Please try again.");
+            Logger.LogError(ex, "Error in HandleValidSubmit");
             editContext?.NotifyValidationStateChanged();
         }
         finally
@@ -224,6 +415,16 @@ public partial class MandatoryRegistration : ComponentBase
         payload.OccupationStatus = registrant.OccupationStatus;
         payload.CompanyName = registrant.CompanyName;
         payload.EducationalInstituteName = registrant.EducationalInstituteName;
+        payload.LinkedInProfile = registrant.LinkedInProfile;
+        payload.LinkedInVanityName = registrant.LinkedInVanityName;
+        payload.LinkedInSubject = registrant.LinkedInSubject;
+        payload.LinkedInRawProfileJson = registrant.LinkedInRawProfileJson;
+        payload.LinkedInRawEmailJson = registrant.LinkedInRawEmailJson;
+        payload.LinkedInPayloadFetchedAt = registrant.LinkedInPayloadFetchedAt;
+
+        payload.GitHubProfile = registrant.GitHubProfile;
+        payload.IsLinkedInVerified = registrant.IsLinkedInVerified;
+        payload.IsGitHubVerified = registrant.IsGitHubVerified;
         payload.IsProfileComplete = true;
         payload.ProfileCompletedAt = DateTime.UtcNow;
         payload.IsAideProfileComplete = registrant.IsAideProfileComplete;
@@ -274,6 +475,7 @@ public partial class MandatoryRegistration : ComponentBase
     /// <summary>
     /// T016: Validate context-dependent mandatory fields per FR-001.
     /// CompanyName required if Employed/Self-Employed, EducationalInstituteName required if Student.
+    /// T087: LinkedIn required for Employed/Self-Employed, GitHub required for Student.
     /// </summary>
     private List<string> ValidateContextDependentFields()
     {
@@ -293,6 +495,17 @@ public partial class MandatoryRegistration : ComponentBase
                             "Company Name is required for your occupation status");
                     }
                 }
+                // T087: LinkedIn mandatory for professionals
+                if (string.IsNullOrWhiteSpace(registrant.LinkedInProfile))
+                {
+                    errors.Add("LinkedIn Profile is required for working professionals");
+                    if (messageStore is not null && editContext is not null)
+                    {
+                        messageStore.Add(
+                            editContext.Field(nameof(registrant.LinkedInProfile)),
+                            "LinkedIn Profile is required for employed/self-employed individuals");
+                    }
+                }
                 break;
             case "Student":
                 if (string.IsNullOrWhiteSpace(registrant.EducationalInstituteName))
@@ -303,6 +516,17 @@ public partial class MandatoryRegistration : ComponentBase
                         messageStore.Add(
                             editContext.Field(nameof(registrant.EducationalInstituteName)),
                             "Educational Institution is required for students");
+                    }
+                }
+                // T087: GitHub mandatory for students
+                if (string.IsNullOrWhiteSpace(registrant.GitHubProfile))
+                {
+                    errors.Add("GitHub Profile is required for students");
+                    if (messageStore is not null && editContext is not null)
+                    {
+                        messageStore.Add(
+                            editContext.Field(nameof(registrant.GitHubProfile)),
+                            "GitHub Profile is required for students");
                     }
                 }
                 break;
@@ -326,5 +550,183 @@ public partial class MandatoryRegistration : ComponentBase
     private void NavigateToHome() => Navigation.NavigateTo("/");
 
     private void NavigateToProfileEdit() => Navigation.NavigateTo("/profile/edit");
+
+    // T087: OAuth social connection handlers
+    private async Task ConnectLinkedIn()
+    {
+        try
+        {
+            BuildLinkedInProfileFromVanityIfPresent();
+
+            if (string.IsNullOrWhiteSpace(registrant.LinkedInVanityName))
+            {
+                customErrors.Add("Please enter your LinkedIn vanity name before connecting.");
+                editContext?.NotifyValidationStateChanged();
+                return;
+            }
+
+            // Save current form state as draft before navigating away
+            await RegistrationDraftService.SaveDraftAsync(registrant);
+
+            var authUrl = await SocialAuthService.GetLinkedInAuthUrlAsync();
+            Navigation.NavigateTo(authUrl, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initiate LinkedIn connection");
+            customErrors.Add("Failed to initiate LinkedIn connection. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+    }
+
+    private async Task ConnectGitHub()
+    {
+        try
+        {
+            // Save current form state as draft before navigating away
+            await RegistrationDraftService.SaveDraftAsync(registrant);
+
+            var authUrl = await SocialAuthService.GetGitHubAuthUrlAsync();
+            Navigation.NavigateTo(authUrl, forceLoad: true);
+        }
+        catch (Exception)
+        {
+            Logger.LogError(ex, "Failed to initiate GitHub connection");
+            customErrors.Add("Failed to initiate GitHub connection. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+    }
+
+    private async Task DisconnectLinkedIn()
+    {
+        // T080/T087: If registrant row doesn't exist yet, disconnect should clear pending/draft values.
+        try
+        {
+            var shouldUsePendingClear = socialStatus?.LinkedIn.IsConnected != true;
+
+            var ok = shouldUsePendingClear
+                ? await SocialAuthService.ClearPendingAsync("linkedin")
+                : await SocialAuthService.DisconnectAsync("linkedin");
+
+            if (!ok)
+            {
+                customErrors.Add("Failed to disconnect LinkedIn. Please try again.");
+                editContext?.NotifyValidationStateChanged();
+                return;
+            }
+
+            socialStatus = await SocialAuthService.GetSocialStatusAsync();
+
+            if (socialStatus is null)
+            {
+                registrant.LinkedInProfile = null;
+                registrant.IsLinkedInVerified = false;
+            }
+            else
+            {
+                registrant.LinkedInProfile = socialStatus.LinkedIn.ProfileUrl;
+                registrant.IsLinkedInVerified = socialStatus.LinkedIn.IsConnected;
+            }
+
+            if (shouldUsePendingClear)
+            {
+                registrant.LinkedInProfile = null;
+                registrant.LinkedInVanityName = null;
+                registrant.LinkedInSubject = null;
+                registrant.LinkedInRawProfileJson = null;
+                registrant.LinkedInRawEmailJson = null;
+                registrant.LinkedInPayloadFetchedAt = null;
+                registrant.IsLinkedInVerified = false;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            customErrors.Add("Failed to disconnect LinkedIn. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+    }
+
+    private async Task DisconnectGitHub()
+    {
+        // T080/T087: If registrant row doesn't exist yet, disconnect should clear pending/draft values.
+        try
+        {
+            var shouldUsePendingClear = !(socialStatus?.GitHub.IsConnected == true);
+
+            var ok = shouldUsePendingClear
+                ? await SocialAuthService.ClearPendingAsync("github")
+                : await SocialAuthService.DisconnectAsync("github");
+
+            if (!ok)
+            {
+                customErrors.Add("Failed to disconnect GitHub. Please try again.");
+                editContext?.NotifyValidationStateChanged();
+                return;
+            }
+
+            socialStatus = await SocialAuthService.GetSocialStatusAsync();
+
+            if (socialStatus is null)
+            {
+                registrant.GitHubProfile = null;
+                registrant.IsGitHubVerified = false;
+            }
+            else
+            {
+                registrant.GitHubProfile = socialStatus.GitHub.ProfileUrl;
+                registrant.IsGitHubVerified = socialStatus.GitHub.IsConnected;
+            }
+
+            if (shouldUsePendingClear)
+            {
+                registrant.GitHubProfile = null;
+                registrant.IsGitHubVerified = false;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            customErrors.Add("Failed to disconnect GitHub. Please try again.");
+            editContext?.NotifyValidationStateChanged();
+        }
+    }
+
+    private async Task DisconnectSocial(string provider)
+    {
+        // T087: Generic disconnect method (kept for backwards compatibility)
+        if (provider.Equals("linkedin", StringComparison.OrdinalIgnoreCase))
+        {
+            await DisconnectLinkedIn();
+        }
+        else if (provider.Equals("github", StringComparison.OrdinalIgnoreCase))
+        {
+            await DisconnectGitHub();
+        }
+    }
+
+    private const string LinkedInProfilePrefix = "https://www.linkedin.com/in/";
+
+    private void BuildLinkedInProfileFromVanityIfPresent()
+    {
+        var vanity = Normalize(registrant.LinkedInVanityName);
+        registrant.LinkedInVanityName = vanity;
+
+        if (string.IsNullOrWhiteSpace(vanity))
+        {
+            return;
+        }
+
+        vanity = vanity.Trim().Trim('/');
+        if (vanity.StartsWith(LinkedInProfilePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            vanity = vanity.Substring(LinkedInProfilePrefix.Length);
+        }
+
+        registrant.LinkedInVanityName = vanity;
+        registrant.LinkedInProfile = $"{LinkedInProfilePrefix}{vanity}";
+    }
 }
 

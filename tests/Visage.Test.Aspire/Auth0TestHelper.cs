@@ -36,6 +36,19 @@ public static class Auth0TestHelper
     };
 
     /// <summary>
+    /// Checks if Auth0 test configuration is available.
+    /// </summary>
+    public static bool IsConfigured()
+    {
+        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_DOMAIN")) &&
+               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID")) &&
+               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_CLIENT_SECRET")) &&
+               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AUTH0_AUDIENCE")) &&
+               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TEST_USER_EMAIL")) &&
+               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TEST_USER_PASSWORD"));
+    }
+
+    /// <summary>
     /// Obtains an Auth0 access token for testing using Resource Owner Password Grant.
     /// Requires Auth0 tenant to have this grant enabled for the test application.
     /// SECURITY: Only whitelisted test emails are allowed to prevent production user credential abuse.

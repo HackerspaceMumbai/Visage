@@ -1,127 +1,143 @@
-    using StrictId;
-    using System.ComponentModel.DataAnnotations;
+using StrictId;
+using System.ComponentModel.DataAnnotations;
 
-    namespace Visage.Shared.Models;
+namespace Visage.Shared.Models;
 
-    public class Registrant
-    {
+public class Registrant
+{
 
-        [Required]
-        //[StringLength(50, ErrorMessage = "Event ID must be less than 50 characters.")]
-        public Id<Registrant> Id { get; init; }
+    [Required]
+    //[StringLength(50, ErrorMessage = "Event ID must be less than 50 characters.")]
+    public Id<Registrant> Id { get; init; }
 
-        [Required]
-        public string FirstName { get; set; } = string.Empty;
+    [Required]
+    public string FirstName { get; set; } = string.Empty;
 
-        public string MiddleName { get; set; } = string.Empty;
+    public string MiddleName { get; set; } = string.Empty;
 
-        [Required]
-        public string LastName { get; set; } = string.Empty;
+    [Required]
+    public string LastName { get; set; } = string.Empty;
 
 
-        public string Address { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
 
-        [Required]
-        public string AddressLine1 { get; set; } = string.Empty;
+    [Required]
+    public string AddressLine1 { get; set; } = string.Empty;
 
-        public string AddressLine2 { get; set; } = string.Empty;
+    public string AddressLine2 { get; set; } = string.Empty;
 
-        [Required]
-        public string City { get; set; } = string.Empty;
+    [Required]
+    public string City { get; set; } = string.Empty;
 
-        [Required]
-        public string State { get; set; } = string.Empty;
+    [Required]
+    public string State { get; set; } = string.Empty;
 
-        [Required]
-        public string PostalCode { get; set; } = string.Empty;
+    [Required]
+    public string PostalCode { get; set; } = string.Empty;
 
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
 
-        [Required]
-        [Phone]
-        public string MobileNumber { get; set; } = string.Empty;
+    [Required]
+    [Phone]
+    public string MobileNumber { get; set; } = string.Empty;
 
-        public string GovtId { get; set; } = string.Empty;
+    public string GovtId { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(4, MinimumLength = 4, ErrorMessage = "Must be 4 digits only.")]
-        public string GovtIdLast4Digits { get; set; } = string.Empty;
+    [Required]
+    [StringLength(4, MinimumLength = 4, ErrorMessage = "Must be 4 digits only.")]
+    public string GovtIdLast4Digits { get; set; } = string.Empty;
 
-        // Type of government ID (Aadhaar, PAN, Passport, VoterID) - store type, not full PII
-        public string GovtIdType { get; set; } = string.Empty;
+    // Type of government ID (Aadhaar, PAN, Passport, VoterID) - store type, not full PII
+    public string GovtIdType { get; set; } = string.Empty;
 
-        [Required]
-        public string OccupationStatus { get; set; } = string.Empty;
+    [Required]
+    public string OccupationStatus { get; set; } = string.Empty;
 
-        public string CompanyName { get; set; } = string.Empty;
+    public string CompanyName { get; set; } = string.Empty;
 
-        [Url]
-        public string? LinkedInProfile { get; set; } = null;
+    [Url]
+    public string? LinkedInProfile { get; set; } = null;
 
-        [Url]
-        public string? GitHubProfile { get; set; } = null;
+    public string? LinkedInVanityName { get; set; } = null;
 
-        public string EducationalInstituteName { get; set; } = string.Empty;
+    // T087: Persist a stable LinkedIn identifier (sub/id) for triage when public profile URL isn't available.
+    public string? LinkedInSubject { get; set; } = null;
 
-        public string GenderIdentity { get; set; } = string.Empty;
+    // T0xx: Persist raw LinkedIn payload for later registrant curation.
+    public string? LinkedInRawProfileJson { get; set; } = null;
+    public string? LinkedInRawEmailJson { get; set; } = null;
+    public DateTime? LinkedInPayloadFetchedAt { get; set; }
 
-        public string SelfDescribeGender { get; set; } = string.Empty;
+    [Url]
+    public string? GitHubProfile { get; set; } = null;
 
-        public string AgeRange { get; set; } = string.Empty;
+    // OAuth verification tracking (T087)
+    public bool IsLinkedInVerified { get; set; } = false;
+    public bool IsGitHubVerified { get; set; } = false;
+    public DateTime? LinkedInVerifiedAt { get; set; }
+    public DateTime? GitHubVerifiedAt { get; set; }
 
-        public string Ethnicity { get; set; } = string.Empty;
+    public string EducationalInstituteName { get; set; } = string.Empty;
 
-        public string SelfDescribeEthnicity { get; set; } = string.Empty;
+    public string GenderIdentity { get; set; } = string.Empty;
 
-        public string LanguageProficiency { get; set; } = string.Empty;
+    public string SelfDescribeGender { get; set; } = string.Empty;
 
-        public string SelfDescribeLanguage { get; set; } = string.Empty;
+    public string AgeRange { get; set; } = string.Empty;
 
-        public string EducationalBackground { get; set; } = string.Empty;
+    public string Ethnicity { get; set; } = string.Empty;
 
-        public string SelfDescribeEducation { get; set; } = string.Empty;
+    public string SelfDescribeEthnicity { get; set; } = string.Empty;
 
-        public string Disability { get; set; } = string.Empty;
+    public string LanguageProficiency { get; set; } = string.Empty;
 
-        public string DisabilityDetails { get; set; } = string.Empty;
+    public string SelfDescribeLanguage { get; set; } = string.Empty;
 
-        public string DietaryRequirements { get; set; } = string.Empty;
+    public string EducationalBackground { get; set; } = string.Empty;
 
-        public string SelfDescribeDietary { get; set; } = string.Empty;
+    public string SelfDescribeEducation { get; set; } = string.Empty;
 
-        public string LgbtqIdentity { get; set; } = string.Empty;
+    public string Disability { get; set; } = string.Empty;
 
-        public string ParentalStatus { get; set; } = string.Empty;
+    public string DisabilityDetails { get; set; } = string.Empty;
 
-        public string FirstTimeAttendee { get; set; } = string.Empty;
+    public string DietaryRequirements { get; set; } = string.Empty;
 
-        public string HowDidYouHear { get; set; } = string.Empty;
+    public string SelfDescribeDietary { get; set; } = string.Empty;
 
-        public string SelfDescribeHowDidYouHear { get; set; } = string.Empty;
+    public string LgbtqIdentity { get; set; } = string.Empty;
 
-        public string AreasOfInterest { get; set; } = string.Empty;
+    public string ParentalStatus { get; set; } = string.Empty;
 
-        public string SelfDescribeAreasOfInterest { get; set; } = string.Empty;
+    public string FirstTimeAttendee { get; set; } = string.Empty;
 
-        public string VolunteerOpportunities { get; set; } = string.Empty;
+    public string HowDidYouHear { get; set; } = string.Empty;
 
-        public string AdditionalSupport { get; set; } = string.Empty;
+    public string SelfDescribeHowDidYouHear { get; set; } = string.Empty;
 
-        public string Religion { get; set; } = string.Empty;
-        public string Caste { get; set; } = string.Empty;
-        public string Neighborhood { get; set; } = string.Empty;
-        public string ModeOfTransportation { get; set; } = string.Empty;
+    public string AreasOfInterest { get; set; } = string.Empty;
 
-        // Additional AIDE fields for inclusiveness
-        public string SocioeconomicBackground { get; set; } = string.Empty;
-        public string Neurodiversity { get; set; } = string.Empty;
-        public string CaregivingResponsibilities { get; set; } = string.Empty;
+    public string SelfDescribeAreasOfInterest { get; set; } = string.Empty;
 
-        // Profile completion tracking (T002)
-        public bool IsProfileComplete { get; set; } = false;
-        public DateTime? ProfileCompletedAt { get; set; }
-        public bool IsAideProfileComplete { get; set; } = false;
-        public DateTime? AideProfileCompletedAt { get; set; }
-    }
+    public string VolunteerOpportunities { get; set; } = string.Empty;
+
+    public string AdditionalSupport { get; set; } = string.Empty;
+
+    public string Religion { get; set; } = string.Empty;
+    public string Caste { get; set; } = string.Empty;
+    public string Neighborhood { get; set; } = string.Empty;
+    public string ModeOfTransportation { get; set; } = string.Empty;
+
+    // Additional AIDE fields for inclusiveness
+    public string SocioeconomicBackground { get; set; } = string.Empty;
+    public string Neurodiversity { get; set; } = string.Empty;
+    public string CaregivingResponsibilities { get; set; } = string.Empty;
+
+    // Profile completion tracking (T002)
+    public bool IsProfileComplete { get; set; } = false;
+    public DateTime? ProfileCompletedAt { get; set; }
+    public bool IsAideProfileComplete { get; set; } = false;
+    public DateTime? AideProfileCompletedAt { get; set; }
+}
