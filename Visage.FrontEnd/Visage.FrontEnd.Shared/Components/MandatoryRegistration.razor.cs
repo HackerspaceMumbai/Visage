@@ -589,7 +589,7 @@ public partial class MandatoryRegistration : ComponentBase
             var authUrl = await SocialAuthService.GetGitHubAuthUrlAsync();
             Navigation.NavigateTo(authUrl, forceLoad: true);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Logger.LogError(ex, "Failed to initiate GitHub connection");
             customErrors.Add("Failed to initiate GitHub connection. Please try again.");
@@ -602,7 +602,7 @@ public partial class MandatoryRegistration : ComponentBase
         // T080/T087: If registrant row doesn't exist yet, disconnect should clear pending/draft values.
         try
         {
-            var shouldUsePendingClear = !(socialStatus?.LinkedIn.IsConnected == true);
+            var shouldUsePendingClear = socialStatus?.LinkedIn.IsConnected != true;
 
             var ok = shouldUsePendingClear
                 ? await SocialAuthService.ClearPendingAsync("linkedin")
