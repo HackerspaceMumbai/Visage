@@ -33,6 +33,11 @@ public class RegistrantDB: DbContext
             .HasFilter("[IsLinkedInVerified] = 1 AND [LinkedInProfile] IS NOT NULL");
 
         modelBuilder.Entity<Registrant>()
+            .HasIndex(r => r.LinkedInSubject)
+            .IsUnique()
+            .HasFilter("[IsLinkedInVerified] = 1 AND [LinkedInSubject] IS NOT NULL");
+
+        modelBuilder.Entity<Registrant>()
             .HasIndex(r => r.GitHubProfile)
             .IsUnique()
             .HasFilter("[IsGitHubVerified] = 1 AND [GitHubProfile] IS NOT NULL");

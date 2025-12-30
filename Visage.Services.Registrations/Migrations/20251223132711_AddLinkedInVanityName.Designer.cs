@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Visage.Services.Registration;
 
@@ -11,9 +12,11 @@ using Visage.Services.Registration;
 namespace Visage.Services.Registrations.Migrations
 {
     [DbContext(typeof(RegistrantDB))]
-    partial class RegistrantDBModelSnapshot : ModelSnapshot
+    [Migration("20251223132711_AddLinkedInVanityName")]
+    partial class AddLinkedInVanityName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

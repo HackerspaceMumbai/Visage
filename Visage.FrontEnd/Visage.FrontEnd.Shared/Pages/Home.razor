@@ -104,6 +104,7 @@
     private string? Username;
     private ProfileCompletionStatusDto? profileCompletionStatus;
     private bool hasCheckedProfileCompletion;
+    private bool shouldRedirectToMandatoryRegistration;
 
     // T021: Inject EventService and load upcoming events
     // T036: Check profile completion DURING PRERENDER when HttpContext is available
@@ -131,10 +132,10 @@
                     }
                     else if (!profileCompletionStatus.IsProfileComplete)
                     {
-                        Logger.LogInformation("Home: User {Username} has incomplete profile, redirecting IMMEDIATELY", Username);
-                        // Redirect immediately during prerender - don't wait for OnAfterRenderAsync
-                        NavigationManager.NavigateTo("/registration/mandatory", forceLoad: true);
-                        return; // Stop processing
+                        Logger.LogInformation("Home: User {Username} has incomplete profile, scheduling redirect", Username);
+                        shouldRedirectToMandatoryRegistration = true;
+                        hasCheckedProfileCompletion = true;
+                        return;
                     }
                     else
                     {
@@ -150,8 +151,27 @@
             }
         }
 
-        // Load events only if we didn't redirect
-        await LoadEventsAsync();
+        // Load events only if we didn't schedule a redirect
+        if (!shouldRedirectToMandatoryRegistration)
+        {
+            await LoadEventsAsync();
+        }
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (shouldRedirectToMandatoryRegistration)
+        {
+            Logger.LogInformation("Home: Redirecting to mandatory registration");
+            NavigationManager.NavigateTo("/registration/mandatory", forceLoad: true);
+        }
+
+        return Task.CompletedTask;
     }
 
     // Extract event-loading logic to avoid manually calling lifecycle methods
@@ -161,11 +181,11 @@
         {
             // Clear any previous error state
             errorMessage = null;
-            
+
             // T021: Load events with error handling (T022)
             var upcomingEvents = await EventService.GetUpcomingEvents();
             var pastEvents = await EventService.GetPastEvents();
-            
+
             // T025: Map Event to EventViewModel with computed properties
             upcomingEventViewModels = MapToViewModels(upcomingEvents);
             pastEventViewModels = MapToViewModels(pastEvents);

@@ -10,6 +10,12 @@ public sealed class OAuthOptions
 {
     public const string SectionName = "OAuth";
 
+    /// <summary>
+    /// Optional base URL used for deterministic redirect_uri generation. When set, this value
+    /// overrides the request-derived base URL. Example: https://localhost:7400
+    /// </summary>
+    public string? BaseUrl { get; set; }
+
     [Required]
     public LinkedInOAuthOptions LinkedIn { get; set; } = new();
 
@@ -28,10 +34,11 @@ public sealed class LinkedInOAuthOptions
     public string AuthorizationEndpoint { get; set; } = "https://www.linkedin.com/oauth/v2/authorization";
     public string TokenEndpoint { get; set; } = "https://www.linkedin.com/oauth/v2/accessToken";
 
-    // NOTE: LinkedIn APIs and scopes can be restricted. This endpoint returns minimal profile info.
-    public string UserInfoEndpoint { get; set; } = "https://api.linkedin.com/v2/people/~:(id,firstName,lastName)";
+    // Use the OpenID Connect userinfo endpoint for LinkedIn when possible
+    public string UserInfoEndpoint { get; set; } = "https://api.linkedin.com/v2/userinfo";
 
-    public string Scope { get; set; } = "r_liteprofile r_emailaddress";
+    // Recommended scopes for LinkedIn profile/email access
+    public string Scope { get; set; } = "openid email profile";
     public string CallbackPath { get; set; } = "/oauth/linkedin/callback";
 }
 

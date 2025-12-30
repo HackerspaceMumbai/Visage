@@ -22,6 +22,9 @@ var oauthLinkedInClientId = builder.AddParameter("oauth-linkedin-clientid", secr
 var oauthLinkedInClientSecret = builder.AddParameter("oauth-linkedin-clientsecret", secret: true);
 var oauthGitHubClientId = builder.AddParameter("oauth-github-clientid", secret: true);
 var oauthGitHubClientSecret = builder.AddParameter("oauth-github-clientsecret", secret: true);
+// Optional: explicitly set OAuth base URL used to build the provider redirect_uri
+// Example for local dev: OAuth__BaseUrl = "https://localhost:7400"
+var oauthBaseUrl = builder.AddParameter("oauth-baseurl");
 
 #endregion
 
@@ -136,6 +139,8 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
 .WithEnvironment("OAuth__LinkedIn__ClientSecret", oauthLinkedInClientSecret)
 .WithEnvironment("OAuth__GitHub__ClientId", oauthGitHubClientId)
 .WithEnvironment("OAuth__GitHub__ClientSecret", oauthGitHubClientSecret)
+// Optional override for the OAuth redirect host/port used to build redirect_uri
+.WithEnvironment("OAuth__BaseUrl", oauthBaseUrl)
 .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
 .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
 .WithEnvironment("Clarity__ProjectId", clarityProjectId)

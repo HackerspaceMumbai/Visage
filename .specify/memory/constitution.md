@@ -1,6 +1,17 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.4.0 → 1.5.0
+Modified principles: 
+  - Added Principle XII: External Redirect State Persistence (NEW)
+Added sections:
+  - Principle XII: External Redirect State Persistence
+Follow-up TODOs:
+  - ✅ copilot-instructions.md updated with External Redirect Persistence Pattern
+-->
+<!--
+SYNC IMPACT REPORT
+==================
 Version change: 1.0.0 → 1.1.0
 @@Version change: 1.1.0 → 1.2.0
 @@Version change: 1.2.0 → 1.3.0
@@ -151,6 +162,7 @@ Given DPDP compliance requirements (India's GDPR equivalent):
 - All inputs MUST be validated using parameterized queries
 - All commits MUST be signed off
 - Regular security scanning with OWASP ZAP
+- For direct provider OAuth flows (LinkedIn/GitHub) projects MUST provide an optional `OAuth:BaseUrl` configuration to force deterministic `redirect_uri` generation when running behind proxies or fixed callback host requirements; the service MUST log the `redirect_uri` (INFO) with keys `redirect_uri` and `usingConfiguredBase` to aid troubleshooting and ensure the provider console is updated to match exactly.
 
 **Rationale**: As a community platform handling personal data for large-scale events, security
 and privacy compliance are non-negotiable for legal and ethical reasons.
@@ -222,6 +234,26 @@ Before viewing any UI changes in the browser:
    ```
 
 **Common Mistake**: Viewing UI without regenerating CSS results in stale styles—DaisyUI changes won't appear even though Blazor code changed.
+
+### XI. Test-Driven Workflow Discipline (NEW)
+
+Follow disciplined test workflow to avoid wasted execution cycles:
+
+1. **Baseline Verification**: Check `tests/TEST-BASELINE.md` before running tests to distinguish new failures from technical debt.
+2. **Isolate Tests**: Use `--filter` to run only relevant tests.
+3. **Fail Fast**: Stop after 2 consecutive failures.
+4. **Build First**: Use `dotnet build` to verify compilation before expensive test runs.
+
+### XII. External Redirect State Persistence
+
+When a user is redirected away from the application (e.g., for OAuth 2.0 flows like LinkedIn or GitHub), the Blazor Server circuit is destroyed. To prevent data loss:
+
+- **DO NOT** rely on in-memory component state for data that must survive a redirect.
+- **DO** use a server-side persistence mechanism (e.g., `IMemoryCache` or a database-backed draft service).
+- **Keying**: Use a stable, unique identifier for the key (e.g., the user's Auth0 `sub` claim).
+- **Lifecycle**: Save the state immediately before the `NavigationManager.NavigateTo(..., forceLoad: true)` call and restore it in the `OnInitializedAsync` method of the returning page.
+
+**Rationale**: Unlike background `HttpClient` calls (like image uploads), external redirects are "destructive" to the Blazor circuit. Persistence ensures a seamless user experience across the OAuth handshake.
 
 - **InteractiveAuto**: Pages requiring initial fast load with subsequent rich interactivity (event listings with filtering, registration forms with client validation)
 

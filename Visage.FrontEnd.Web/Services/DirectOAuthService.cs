@@ -33,8 +33,16 @@ public class DirectOAuthService
             throw new InvalidOperationException("LinkedIn OAuth not configured");
         }
 
-        var redirectUri = $"{baseUrl}{linkedIn.CallbackPath}";
-        return $"{linkedIn.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(linkedIn.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={state}&scope={Uri.EscapeDataString(linkedIn.Scope)}";
+        var effectiveBase = string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl) ? baseUrl : oauthOptions!.BaseUrl!;
+        var redirectUri = $"{effectiveBase}{linkedIn.CallbackPath}";
+
+        var authUrl = $"{linkedIn.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(linkedIn.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={state}&scope={Uri.EscapeDataString(linkedIn.Scope)}";
+
+        // Log the redirect_uri and scope used (safe to log URL and scope); auth URL at debug level
+        _logger.LogInformation("LinkedIn auth URL generated; redirect_uri={RedirectUri}; usingConfiguredBase={UsingConfigured}; scope={Scope}", redirectUri, !string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl), linkedIn.Scope);
+        _logger.LogDebug("LinkedIn auth URL: {AuthUrl}", authUrl);
+
+        return authUrl;
     }
 
     public string GetGitHubAuthUrl(string baseUrl, string state, string returnUrl)
@@ -47,7 +55,11 @@ public class DirectOAuthService
             throw new InvalidOperationException("GitHub OAuth not configured");
         }
 
-        var redirectUri = $"{baseUrl}{github.CallbackPath}";
+        var effectiveBase = string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl) ? baseUrl : oauthOptions!.BaseUrl!;
+        var redirectUri = $"{effectiveBase}{github.CallbackPath}";
+
+        _logger.LogInformation("GitHub auth URL generated; redirect_uri={RedirectUri}; usingConfiguredBase={UsingConfigured}", redirectUri, !string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl));
+
         return $"{github.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(github.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={state}&scope={Uri.EscapeDataString(github.Scope)}";
     }
 
@@ -64,7 +76,10 @@ public class DirectOAuthService
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var redirectUri = $"{baseUrl}{linkedIn.CallbackPath}";
+            var effectiveBase = string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl) ? baseUrl : oauthOptions!.BaseUrl!;
+            var redirectUri = $"{effectiveBase}{linkedIn.CallbackPath}";
+
+            _logger.LogInformation("Handling LinkedIn callback; using redirect_uri={RedirectUri}", redirectUri);
 
             // Exchange code for access token
             var tokenRequest = new FormUrlEncodedContent(new[]
@@ -100,7 +115,19 @@ public class DirectOAuthService
             }
 
             var profileData = JsonSerializer.Deserialize<JsonElement>(profileContent);
-            var linkedInId = profileData.GetProperty("id").GetString();
+            _logger.LogDebug("LinkedIn profile content: {ProfileContent}", profileContent);
+
+            string? linkedInId = null;
+            if (profileData.ValueKind != JsonValueKind.Undefined)
+            {
+                if (profileData.TryGetProperty("id", out var id)) linkedInId = id.GetString();
+                else if (profileData.TryGetProperty("sub", out var sub)) linkedInId = sub.GetString();
+            }
+
+            if (string.IsNullOrWhiteSpace(linkedInId))
+            {
+                return (false, null, "Unable to resolve LinkedIn profile id");
+            }
 
             // Construct LinkedIn profile URL
             var profileUrl = $"https://www.linkedin.com/in/{linkedInId}";
@@ -128,7 +155,10 @@ public class DirectOAuthService
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var redirectUri = $"{baseUrl}{github.CallbackPath}";
+            var effectiveBase = string.IsNullOrWhiteSpace(oauthOptions?.BaseUrl) ? baseUrl : oauthOptions!.BaseUrl!;
+            var redirectUri = $"{effectiveBase}{github.CallbackPath}";
+
+            _logger.LogInformation("Handling GitHub callback; using redirect_uri={RedirectUri}", redirectUri);
 
             // Exchange code for access token
             var tokenRequest = new FormUrlEncodedContent(new[]

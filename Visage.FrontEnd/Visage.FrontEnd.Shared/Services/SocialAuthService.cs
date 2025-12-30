@@ -34,6 +34,16 @@ public interface ISocialAuthService
     /// Retrieves current social connection status
     /// </summary>
     Task<SocialConnectionStatusDto?> GetSocialStatusAsync();
+
+    /// <summary>
+    /// T087: Retrieves pending social profiles from session (captured during OAuth callback)
+    /// </summary>
+    Task<PendingSocialProfilesDto?> GetPendingProfilesAsync();
+
+    /// <summary>
+    /// Clears pending social profile from the BFF session/draft (used before registrant exists)
+    /// </summary>
+    Task<bool> ClearPendingAsync(string provider);
 }
 
 public class SocialAuthService : ISocialAuthService
@@ -128,4 +138,52 @@ public class SocialAuthService : ISocialAuthService
             return null;
         }
     }
+
+    public async Task<PendingSocialProfilesDto?> GetPendingProfilesAsync()
+    {
+        try
+        {
+            var url = new Uri(new Uri(_navigation.BaseUri), "api/profile/social/pending");
+            var response = await _httpClient.GetAsync(url);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<PendingSocialProfilesDto>();
+            }
+
+            if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
+            {
+                _logger.LogWarning("Failed to retrieve pending social profiles: {StatusCode}", response.StatusCode);
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving pending social profiles");
+            return null;
+        }
+    }
+
+    public async Task<bool> ClearPendingAsync(string provider)
+    {
+        try
+        {
+            var url = new Uri(new Uri(_navigation.BaseUri), $"api/profile/social/pending/clear?provider={Uri.EscapeDataString(provider)}");
+            var response = await _httpClient.PostAsync(url, content: null);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Successfully cleared pending {Provider}", provider);
+                return true;
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Failed to clear pending {Provider}: {Error}", provider, errorContent);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing pending {Provider}", provider);
+            return false;
+        }
+    }
+
 }

@@ -76,10 +76,17 @@ Frontend stores verified profile in database
     "GitHub": {
       "ClientId": "YOUR_GITHUB_CLIENT_ID",
       "ClientSecret": "YOUR_GITHUB_CLIENT_SECRET"
-    }
+    },
+    "BaseUrl": "https://localhost:7400"   
   }
 }
 ```
+
+#### Optional: Configure `OAuth:BaseUrl`
+- Use `OAuth:BaseUrl` when your frontend is accessed behind a proxy, or when provider callback URLs must match exactly (e.g., provider consoles that don't accept arbitrary host/port combinations).
+- Example (development): `OAuth:BaseUrl = "https://localhost:7400"` → the server will build `https://localhost:7400/oauth/linkedin/callback` as the redirect_uri.
+- This value overrides the request-derived base URL for redirect_uri generation and is useful when diagnosing provider "redirect_uri does not match" errors.
+- The service logs the redirect URI at INFO level with keys `redirect_uri` and `usingConfiguredBase` to aid troubleshooting.
 
 #### For Production (Environment Variables):
 ```bash
@@ -87,6 +94,8 @@ OAuth__LinkedIn__ClientId=your_linkedin_client_id
 OAuth__LinkedIn__ClientSecret=your_linkedin_client_secret
 OAuth__GitHub__ClientId=your_github_client_id
 OAuth__GitHub__ClientSecret=your_github_client_secret
+# Optional: base url for deterministic redirect_uri generation
+OAuth__BaseUrl=https://your.domain
 ```
 
 ### 3. Database Schema Updates
@@ -166,8 +175,8 @@ GitHubProfile NVARCHAR(500) NULL
 ## API Reference
 
 ### OAuth Initiation Endpoints:
-- `GET /oauth/linkedin/authorize?returnUrl={url}` - Start LinkedIn OAuth
-- `GET /oauth/github/authorize?returnUrl={url}` - Start GitHub OAuth
+- `GET /oauth/linkedin/start?returnUrl={url}` - Start LinkedIn OAuth
+- `GET /oauth/github/start?returnUrl={url}` - Start GitHub OAuth
 
 ### OAuth Callback Endpoints:
 - `GET /oauth/linkedin/callback?code={code}&state={state}` - LinkedIn callback

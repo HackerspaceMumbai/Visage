@@ -48,6 +48,9 @@ public class Registrant
     public string GovtId { get; set; } = string.Empty;
 
     [Required]
+    public string GovtIdType { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(4, MinimumLength = 4, ErrorMessage = "Must be 4 digits only.")]
     public string GovtIdLast4Digits { get; set; } = string.Empty;
 
@@ -58,6 +61,16 @@ public class Registrant
 
     [Url]
     public string? LinkedInProfile { get; set; } = null;
+
+    public string? LinkedInVanityName { get; set; } = null;
+
+    // Persist a stable LinkedIn identifier (sub/id) for triage when public profile URL isn't available.
+    public string? LinkedInSubject { get; set; } = null;
+
+    // Persist raw LinkedIn payload for later registrant curation.
+    public string? LinkedInRawProfileJson { get; set; } = null;
+    public string? LinkedInRawEmailJson { get; set; } = null;
+    public DateTime? LinkedInPayloadFetchedAt { get; set; }
 
     [Url]
     public string? GitHubProfile { get; set; } = null;

@@ -34,9 +34,16 @@ public sealed class DirectOAuthService
             throw new InvalidOperationException("LinkedIn OAuth not configured");
         }
 
-        var redirectUri = $"{baseUrl}{linkedIn.CallbackPath}";
+        var effectiveBase = string.IsNullOrWhiteSpace(_options.BaseUrl) ? baseUrl : _options.BaseUrl;
+        var redirectUri = $"{effectiveBase}{linkedIn.CallbackPath}";
 
-        return $"{linkedIn.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(linkedIn.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={Uri.EscapeDataString(state)}&scope={Uri.EscapeDataString(linkedIn.Scope)}";
+        var authUrl = $"{linkedIn.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(linkedIn.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={Uri.EscapeDataString(state)}&scope={Uri.EscapeDataString(linkedIn.Scope)}";
+
+        // Log redirect URI and scope used; full auth URL at debug level
+        _logger.LogInformation("LinkedIn auth URL generated; redirect_uri={RedirectUri}; usingConfiguredBase={UsingConfigured}; scope={Scope}", redirectUri, !string.IsNullOrWhiteSpace(_options.BaseUrl), linkedIn.Scope);
+        _logger.LogDebug("LinkedIn auth URL: {AuthUrl}", authUrl);
+
+        return authUrl;
     }
 
     public string GetGitHubAuthUrl(string baseUrl, string state)
@@ -53,7 +60,7 @@ public sealed class DirectOAuthService
         return $"{github.AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(github.ClientId)}&redirect_uri={Uri.EscapeDataString(redirectUri)}&state={Uri.EscapeDataString(state)}&scope={Uri.EscapeDataString(github.Scope)}";
     }
 
-    public async Task<(bool Success, string? ProfileUrl, string? ErrorMessage)> HandleLinkedInCallbackAsync(string code, string baseUrl)
+    public async Task<(bool Success, string? LinkedInSubject, string? RawProfileJson, string? RawEmailJson, string? Email, string? ErrorMessage)> HandleLinkedInCallbackAsync(string code, string baseUrl)
     {
         var linkedIn = _options.LinkedIn;
 
@@ -78,7 +85,7 @@ public sealed class DirectOAuthService
             if (!tokenResponse.IsSuccessStatusCode)
             {
                 _logger.LogWarning("LinkedIn token exchange failed: {StatusCode}", tokenResponse.StatusCode);
-                return (false, null, "Token exchange failed");
+                return (false, null, null, null, null, "Token exchange failed");
             }
 
             var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenContent);
@@ -86,43 +93,97 @@ public sealed class DirectOAuthService
 
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                return (false, null, "Token exchange returned no access token");
+                return (false, null, null, null, null, "Token exchange returned no access token");
             }
 
             // Fetch minimal profile
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            // LinkedIn recommends the Restli protocol header for v2 APIs
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Restli-Protocol-Version", "2.0.0");
+
             var profileResponse = await httpClient.GetAsync(linkedIn.UserInfoEndpoint);
             var profileContent = await profileResponse.Content.ReadAsStringAsync();
 
             if (!profileResponse.IsSuccessStatusCode)
             {
-                _logger.LogWarning("LinkedIn profile fetch failed: {StatusCode}", profileResponse.StatusCode);
-                return (false, null, "Profile fetch failed");
+                // If the configured endpoint used the legacy people projection and returned a 400 syntax error,
+                // retry using the standard /v2/me endpoint which is more broadly supported.
+                var snippet = profileContent is null ? string.Empty : profileContent.Length > 400 ? profileContent.Substring(0, 400) + "..." : profileContent;
+                _logger.LogError("LinkedIn profile fetch failed: {StatusCode}; body={Body}", profileResponse.StatusCode, snippet);
+
+                if (profileResponse.StatusCode == System.Net.HttpStatusCode.BadRequest && linkedIn.UserInfoEndpoint.Contains("/people/"))
+                {
+                    var fallback = "https://api.linkedin.com/v2/me";
+                    _logger.LogInformation("Retrying LinkedIn profile fetch with fallback endpoint: {Fallback}", fallback);
+                    var fallbackResponse = await httpClient.GetAsync(fallback);
+                    var fallbackContent = await fallbackResponse.Content.ReadAsStringAsync();
+
+                    if (fallbackResponse.IsSuccessStatusCode)
+                    {
+                        profileResponse = fallbackResponse;
+                        profileContent = fallbackContent;
+                    }
+                    else
+                    {
+                        var fsnippet = fallbackContent is null ? string.Empty : fallbackContent.Length > 400 ? fallbackContent.Substring(0, 400) + "..." : fallbackContent;
+                        _logger.LogError("LinkedIn fallback profile fetch failed: {StatusCode}; body={Body}", fallbackResponse.StatusCode, fsnippet);
+                        var err = $"Profile fetch failed: {fallbackResponse.StatusCode}";
+                        try
+                        {
+                            if (!string.IsNullOrWhiteSpace(fallbackContent))
+                            {
+                                using var doc = JsonDocument.Parse(fallbackContent);
+                            }
+                        }
+                        catch { }
+                        return (false, null, null, null, null, err);
+                    }
+                }
+
+                // If we didn't return from fallback, surface original error
+                var err2 = $"Profile fetch failed: {profileResponse.StatusCode}";
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(profileContent))
+                    {
+                        using var doc = JsonDocument.Parse(profileContent);
+                        if (doc.RootElement.TryGetProperty("message", out var m)) err2 += $" - {m.GetString()}";
+                    }
+                }
+                catch { /* ignore parse errors */ }
+                return (false, null, null, null, null, err2);
             }
 
             var profileData = JsonSerializer.Deserialize<JsonElement>(profileContent);
-            var linkedInId = profileData.TryGetProperty("id", out var id) ? id.GetString() : null;
+            _logger.LogDebug("LinkedIn profile content: {ProfileContent}", profileContent);
+
+            string? linkedInId = null;
+            string? email = null;
+            if (profileData.ValueKind != JsonValueKind.Undefined)
+            {
+                if (profileData.TryGetProperty("id", out var id)) linkedInId = id.GetString();
+                else if (profileData.TryGetProperty("sub", out var sub)) linkedInId = sub.GetString();
+
+                if (profileData.TryGetProperty("email", out var emailProp)) email = emailProp.GetString();
+            }
 
             if (string.IsNullOrWhiteSpace(linkedInId))
             {
-                return (false, null, "Unable to resolve LinkedIn profile id");
+                return (false, null, profileContent, null, null, "Unable to resolve LinkedIn profile id");
             }
 
-            // Best-effort canonical profile URL.
-            // NOTE: LinkedIn public URLs may not map 1:1 from API ids in all configurations.
-            var profileUrl = $"https://www.linkedin.com/in/{linkedInId}";
-
-            _logger.LogInformation("Verified LinkedIn profile url derived");
-            return (true, profileUrl, null);
+            _logger.LogInformation("Verified LinkedIn profile id returned (not used to construct public URL)");
+            return (true, linkedInId, profileContent, null, email, null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "LinkedIn OAuth callback failed");
-            return (false, null, "LinkedIn OAuth callback failed");
+            return (false, null, null, null, null, "LinkedIn OAuth callback failed");
         }
     }
 
-    public async Task<(bool Success, string? ProfileUrl, string? ErrorMessage)> HandleGitHubCallbackAsync(string code, string baseUrl)
+    public async Task<(bool Success, string? ProfileUrl, string? Email, string? ErrorMessage)> HandleGitHubCallbackAsync(string code, string baseUrl)
     {
         var github = _options.GitHub;
 
@@ -148,7 +209,7 @@ public sealed class DirectOAuthService
             if (!tokenResponse.IsSuccessStatusCode)
             {
                 _logger.LogWarning("GitHub token exchange failed: {StatusCode}", tokenResponse.StatusCode);
-                return (false, null, "Token exchange failed");
+                return (false, null, null, "Token exchange failed");
             }
 
             var tokenData = JsonSerializer.Deserialize<JsonElement>(tokenContent);
@@ -156,7 +217,7 @@ public sealed class DirectOAuthService
 
             if (string.IsNullOrWhiteSpace(accessToken))
             {
-                return (false, null, "Token exchange returned no access token");
+                return (false, null, null, "Token exchange returned no access token");
             }
 
             httpClient.DefaultRequestHeaders.Clear();
@@ -169,24 +230,25 @@ public sealed class DirectOAuthService
             if (!profileResponse.IsSuccessStatusCode)
             {
                 _logger.LogWarning("GitHub profile fetch failed: {StatusCode}", profileResponse.StatusCode);
-                return (false, null, "Profile fetch failed");
+                return (false, null, null, "Profile fetch failed");
             }
 
             var profileData = JsonSerializer.Deserialize<JsonElement>(profileContent);
             var profileUrl = profileData.TryGetProperty("html_url", out var htmlUrl) ? htmlUrl.GetString() : null;
+            var email = profileData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
 
             if (string.IsNullOrWhiteSpace(profileUrl))
             {
-                return (false, null, "Unable to resolve GitHub profile url");
+                return (false, null, null, "Unable to resolve GitHub profile url");
             }
 
             _logger.LogInformation("Verified GitHub profile url derived");
-            return (true, profileUrl, null);
+            return (true, profileUrl, email, null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GitHub OAuth callback failed");
-            return (false, null, "GitHub OAuth callback failed");
+            return (false, null, null, "GitHub OAuth callback failed");
         }
     }
 }

@@ -11,6 +11,7 @@ using Visage.FrontEnd.Shared.Services;
 using Visage.FrontEnd.Web.Components;
 using Visage.FrontEnd.Web.Configuration;
 using Visage.FrontEnd.Web.Services;
+using Visage.Shared.Models; // Add this using directive
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,7 +55,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
 
@@ -71,6 +72,9 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 // T015: Register IMemoryCache for event caching
 builder.Services.AddMemoryCache();
+
+// T087: Register RegistrationDraftService for persisting form state across redirects
+builder.Services.AddScoped<IRegistrationDraftService, ServerRegistrationDraftService>();
 
 // Add the delegating handler
 builder.Services.AddHttpContextAccessor();
@@ -228,7 +232,9 @@ app.MapGet("/oauth/linkedin/callback", async (
     HttpContext httpContext,
     DirectOAuthService oAuth,
     IHttpClientFactory httpClientFactory,
+    IRegistrationDraftService registrationDraftService,
     ILogger<Program> logger,
+    Microsoft.AspNetCore.Hosting.IWebHostEnvironment env,
     string? code,
     string? state,
     string? error,
@@ -248,89 +254,111 @@ app.MapGet("/oauth/linkedin/callback", async (
     if (!string.IsNullOrWhiteSpace(error))
     {
         logger.LogInformation("LinkedIn OAuth returned error: {Error}", error);
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        var qs = new Dictionary<string, string?>
         {
             ["social"] = "linkedin",
             ["result"] = "error"
-        }));
+        };
+        if (env.IsDevelopment()) qs["reason"] = error;
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, qs));
     }
 
     if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state) || string.IsNullOrWhiteSpace(expectedState))
     {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        logger.LogWarning("LinkedIn callback missing parameters: code={HasCode}, state={HasState}, expectedState={HasExpectedState}", 
+            !string.IsNullOrWhiteSpace(code), !string.IsNullOrWhiteSpace(state), !string.IsNullOrWhiteSpace(expectedState));
+
+        var qs = new Dictionary<string, string?>
         {
             ["social"] = "linkedin",
             ["result"] = "state_invalid"
-        }));
+        };
+        if (env.IsDevelopment()) qs["reason"] = "missing_code_or_state";
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, qs));
     }
 
     if (!CryptographicOperations.FixedTimeEquals(System.Text.Encoding.UTF8.GetBytes(state), System.Text.Encoding.UTF8.GetBytes(expectedState)))
     {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        var qs = new Dictionary<string, string?>
         {
             ["social"] = "linkedin",
             ["result"] = "state_invalid"
-        }));
+        };
+        if (env.IsDevelopment()) qs["reason"] = "state_mismatch";
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, qs));
     }
 
     if (!long.TryParse(createdAtRaw, out var createdAtSeconds) || DateTimeOffset.UtcNow.ToUnixTimeSeconds() - createdAtSeconds > 600)
     {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        var qs = new Dictionary<string, string?>
         {
             ["social"] = "linkedin",
             ["result"] = "state_expired"
-        }));
+        };
+        if (env.IsDevelopment()) qs["reason"] = "state_expired";
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, qs));
     }
 
     var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-    var (success, profileUrl, errorMessage) = await oAuth.HandleLinkedInCallbackAsync(code, baseUrl);
-    if (!success || string.IsNullOrWhiteSpace(profileUrl))
+    logger.LogInformation("LinkedIn callback invoked; baseUrl={BaseUrl}", baseUrl);
+    var (success, linkedInSubject, rawProfileJson, rawEmailJson, email, errorMessage) = await oAuth.HandleLinkedInCallbackAsync(code, baseUrl);
+    if (!success)
     {
         logger.LogWarning("LinkedIn OAuth verification failed: {Message}", errorMessage);
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        var qs = new Dictionary<string, string?>
         {
             ["social"] = "linkedin",
             ["result"] = "error"
-        }));
+        };
+        if (env.IsDevelopment() && !string.IsNullOrWhiteSpace(errorMessage)) qs["reason"] = errorMessage;
+        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, qs));
     }
 
-    var accessToken = await httpContext.GetTokenAsync("access_token");
-    if (string.IsNullOrWhiteSpace(accessToken))
+    if (!string.IsNullOrWhiteSpace(linkedInSubject))
     {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
-        {
-            ["social"] = "linkedin",
-            ["result"] = "auth_missing"
-        }));
+        httpContext.Session.SetString("oauth:linkedin:subject", linkedInSubject);
     }
 
-    var client = httpClientFactory.CreateClient("registrations-api-direct");
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-    var linkDto = new Visage.Shared.Models.SocialProfileLinkDto
+    if (!string.IsNullOrWhiteSpace(rawProfileJson))
     {
-        Provider = "linkedin",
-        ProfileUrl = profileUrl
-    };
-
-    var response = await client.PostAsJsonAsync("/api/profile/social/link-callback", linkDto);
-    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-    {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
-        {
-            ["social"] = "linkedin",
-            ["result"] = "conflict"
-        }));
+        httpContext.Session.SetString("oauth:linkedin:rawProfileJson", rawProfileJson);
     }
 
-    if (!response.IsSuccessStatusCode)
+    if (!string.IsNullOrWhiteSpace(rawEmailJson))
     {
-        logger.LogWarning("Registrations API link-callback failed for LinkedIn: {Status}", response.StatusCode);
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        httpContext.Session.SetString("oauth:linkedin:rawEmailJson", rawEmailJson);
+    }
+
+    if (!string.IsNullOrWhiteSpace(email))
+    {
+        httpContext.Session.SetString("oauth:linkedin:pendingEmail", email);
+    }
+
+    try
+    {
+        var draft = await registrationDraftService.GetDraftAsync();
+        if (draft == null)
         {
-            ["social"] = "linkedin",
-            ["result"] = "error"
-        }));
+            draft = new Registrant();
+        }
+
+        draft.IsLinkedInVerified = true;
+        draft.LinkedInSubject = linkedInSubject;
+        draft.LinkedInRawProfileJson = rawProfileJson;
+        draft.LinkedInRawEmailJson = rawEmailJson;
+        draft.LinkedInPayloadFetchedAt = DateTime.UtcNow;
+
+        if (string.IsNullOrWhiteSpace(draft.Email) && !string.IsNullOrWhiteSpace(email))
+        {
+            draft.Email = email;
+        }
+
+        await registrationDraftService.SaveDraftAsync(draft);
+        logger.LogInformation("Persisted LinkedIn pending verification into registration draft cache");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Failed to persist LinkedIn pending verification into registration draft cache");
     }
 
     return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
@@ -340,10 +368,90 @@ app.MapGet("/oauth/linkedin/callback", async (
     }));
 }).RequireAuthorization();
 
+// US1: Endpoint to retrieve pending social profiles from session (used by MandatoryRegistration)
+app.MapGet("/api/profile/social/pending", (HttpContext httpContext) =>
+{
+    var linkedin = httpContext.Session.GetString("oauth:linkedin:pendingProfileUrl");
+    var linkedinEmail = httpContext.Session.GetString("oauth:linkedin:pendingEmail");
+    var linkedinSubject = httpContext.Session.GetString("oauth:linkedin:subject");
+    var linkedinRawProfileJson = httpContext.Session.GetString("oauth:linkedin:rawProfileJson");
+    var linkedinRawEmailJson = httpContext.Session.GetString("oauth:linkedin:rawEmailJson");
+
+    var github = httpContext.Session.GetString("oauth:github:pendingProfileUrl");
+    var githubEmail = httpContext.Session.GetString("oauth:github:pendingEmail");
+
+    if (string.IsNullOrEmpty(linkedin) && string.IsNullOrEmpty(github) && string.IsNullOrEmpty(linkedinSubject) && string.IsNullOrEmpty(linkedinRawProfileJson))
+    {
+        return Results.NoContent();
+    }
+
+    return Results.Ok(new Visage.Shared.Models.PendingSocialProfilesDto
+    {
+        LinkedInProfile = linkedin,
+        LinkedInEmail = linkedinEmail,
+        LinkedInSubject = linkedinSubject,
+        LinkedInRawProfileJson = linkedinRawProfileJson,
+        LinkedInRawEmailJson = linkedinRawEmailJson,
+        GitHubProfile = github,
+        GitHubEmail = githubEmail
+    });
+}).RequireAuthorization();
+
+// US1: Endpoint to clear pending social profiles (session + draft). Used when user clicks Disconnect
+// before completing registration (no registrant row exists yet).
+app.MapPost("/api/profile/social/pending/clear", async (
+    HttpContext httpContext,
+    IRegistrationDraftService registrationDraftService,
+    string provider) =>
+{
+    if (string.IsNullOrWhiteSpace(provider))
+    {
+        return Results.BadRequest(new { error = "provider is required" });
+    }
+
+    var normalized = provider.Trim().ToLowerInvariant();
+    switch (normalized)
+    {
+        case "linkedin":
+            httpContext.Session.Remove("oauth:linkedin:pendingProfileUrl");
+            httpContext.Session.Remove("oauth:linkedin:pendingEmail");
+            httpContext.Session.Remove("oauth:linkedin:subject");
+            httpContext.Session.Remove("oauth:linkedin:rawProfileJson");
+            httpContext.Session.Remove("oauth:linkedin:rawEmailJson");
+            break;
+        case "github":
+            httpContext.Session.Remove("oauth:github:pendingProfileUrl");
+            httpContext.Session.Remove("oauth:github:pendingEmail");
+            break;
+        default:
+            return Results.BadRequest(new { error = $"Invalid provider: {provider}" });
+    }
+
+    var draft = await registrationDraftService.GetDraftAsync();
+    if (draft is not null)
+    {
+        if (normalized == "linkedin")
+        {
+            draft.LinkedInProfile = null;
+            draft.IsLinkedInVerified = false;
+        }
+        else
+        {
+            draft.GitHubProfile = null;
+            draft.IsGitHubVerified = false;
+        }
+
+        await registrationDraftService.SaveDraftAsync(draft);
+    }
+
+    return Results.NoContent();
+}).RequireAuthorization();
+
 app.MapGet("/oauth/github/callback", async (
     HttpContext httpContext,
     DirectOAuthService oAuth,
     IHttpClientFactory httpClientFactory,
+    IRegistrationDraftService registrationDraftService,
     ILogger<Program> logger,
     string? code,
     string? state,
@@ -373,6 +481,9 @@ app.MapGet("/oauth/github/callback", async (
 
     if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state) || string.IsNullOrWhiteSpace(expectedState))
     {
+        logger.LogWarning("GitHub callback missing parameters: code={HasCode}, state={HasState}, expectedState={HasExpectedState}", 
+            !string.IsNullOrWhiteSpace(code), !string.IsNullOrWhiteSpace(state), !string.IsNullOrWhiteSpace(expectedState));
+
         return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
         {
             ["social"] = "github",
@@ -399,7 +510,7 @@ app.MapGet("/oauth/github/callback", async (
     }
 
     var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-    var (success, profileUrl, errorMessage) = await oAuth.HandleGitHubCallbackAsync(code, baseUrl);
+    var (success, profileUrl, email, errorMessage) = await oAuth.HandleGitHubCallbackAsync(code, baseUrl);
     if (!success || string.IsNullOrWhiteSpace(profileUrl))
     {
         logger.LogWarning("GitHub OAuth verification failed: {Message}", errorMessage);
@@ -410,43 +521,36 @@ app.MapGet("/oauth/github/callback", async (
         }));
     }
 
-    var accessToken = await httpContext.GetTokenAsync("access_token");
-    if (string.IsNullOrWhiteSpace(accessToken))
+    // T087: Store in session
+    httpContext.Session.SetString("oauth:github:pendingProfileUrl", profileUrl);
+    if (!string.IsNullOrWhiteSpace(email))
     {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
-        {
-            ["social"] = "github",
-            ["result"] = "auth_missing"
-        }));
+        httpContext.Session.SetString("oauth:github:pendingEmail", email);
     }
 
-    var client = httpClientFactory.CreateClient("registrations-api-direct");
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-    var linkDto = new Visage.Shared.Models.SocialProfileLinkDto
+    // T087: Also persist into the server-side registration draft cache (keyed by Auth0 sub)
+    // to survive Blazor Server circuit teardown caused by external redirects.
+    try
     {
-        Provider = "github",
-        ProfileUrl = profileUrl
-    };
-
-    var response = await client.PostAsJsonAsync("/api/profile/social/link-callback", linkDto);
-    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-    {
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        var draft = await registrationDraftService.GetDraftAsync();
+        if (draft == null)
         {
-            ["social"] = "github",
-            ["result"] = "conflict"
-        }));
+            draft = new Registrant();
+        }
+        draft.GitHubProfile = profileUrl;
+        draft.IsGitHubVerified = true;
+
+        if (string.IsNullOrWhiteSpace(draft.Email) && !string.IsNullOrWhiteSpace(email))
+        {
+            draft.Email = email;
+        }
+
+        await registrationDraftService.SaveDraftAsync(draft);
+        logger.LogInformation("Persisted GitHub pending profile into registration draft cache");
     }
-
-    if (!response.IsSuccessStatusCode)
+    catch (Exception ex)
     {
-        logger.LogWarning("Registrations API link-callback failed for GitHub: {Status}", response.StatusCode);
-        return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
-        {
-            ["social"] = "github",
-            ["result"] = "error"
-        }));
+        logger.LogWarning(ex, "Failed to persist GitHub pending profile into registration draft cache");
     }
 
     return Results.Redirect(QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>

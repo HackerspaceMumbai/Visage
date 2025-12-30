@@ -160,6 +160,13 @@ For complete Aspire 9.5 features, see [What's new in Aspire 9.5](https://learn.m
     ```
   - Dispose resources properly to prevent memory leaks from double initialization
   - Query parameters from `[SupplyParameterFromQuery]` only available during prerender
+- **External Redirect Persistence Pattern**:
+  - **The Problem**: Unlike background operations (e.g., image uploads in `ScheduleEvent.razor`), external OAuth redirects (LinkedIn/GitHub) cause the browser to leave the site, which **destroys the Blazor Circuit** and wipes all in-memory state.
+  - **The Solution**: Use a server-side persistence layer (e.g., `IRegistrationDraftService` using `IMemoryCache` keyed by the user's Auth0 'sub' claim) to save form data before redirecting.
+  - **Implementation**:
+    1. Save draft: `await DraftService.SaveDraftAsync(model);`
+    2. Redirect to provider.
+    3. On return, restore in `OnInitializedAsync`: `model = await DraftService.GetDraftAsync() ?? new();`
 - **EF Core:** Use Repository and Unit of Work patterns. Configure StrictId in `OnModelCreating`.
 - **Service Defaults:** All services must call `AddServiceDefaults()` for health checks, OpenTelemetry, and service discovery.
 - **Commit Messages:** Imperative, sentence case, no trailing dot. All commits must be signed off.
@@ -228,6 +235,8 @@ For complete Aspire 9.5 features, see [What's new in Aspire 9.5](https://learn.m
     3. Add the new service to the `All_Http_Resources_Should_Have_Health_Endpoints` test in the `resourceNames` array
     4. Verify tests pass before merging: `dotnet test tests/Visage.Test.Aspire/HealthEndpointTests.cs`
 - **Configuration:** Use environment variables for secrets and service URLs. See `appsettings.json` and Aspire parameters.
+
+  - For direct provider OAuth (LinkedIn/GitHub) we support an optional `OAuth:BaseUrl` configuration. Set `OAuth__BaseUrl` to force the `redirect_uri` used in provider flows when behind proxies or when providers require a fixed callback URL. The `DirectOAuthService` logs the `redirect_uri` it generates (INFO level) with fields `redirect_uri` and `usingConfiguredBase` to aid debugging.
 
 ## Integration Points
 - **Cloudinary:** Secure image upload via `CloudinaryImageSigning` Node service. Use `/sign-upload` endpoint for signatures.

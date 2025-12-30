@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Visage.Services.Registration;
 
@@ -11,9 +12,11 @@ using Visage.Services.Registration;
 namespace Visage.Services.Registrations.Migrations
 {
     [DbContext(typeof(RegistrantDB))]
-    partial class RegistrantDBModelSnapshot : ModelSnapshot
+    [Migration("20251222120322_AddLinkedInSubjectIndex")]
+    partial class AddLinkedInSubjectIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -212,23 +215,11 @@ namespace Visage.Services.Registrations.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LinkedInPayloadFetchedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("LinkedInProfile")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("LinkedInRawEmailJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LinkedInRawProfileJson")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("LinkedInSubject")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("LinkedInVanityName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LinkedInVerifiedAt")
                         .HasColumnType("datetime2");

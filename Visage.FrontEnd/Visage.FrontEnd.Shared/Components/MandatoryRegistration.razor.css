@@ -1,0 +1,42 @@
+.social-connect-row {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    align-items: center;
+    column-gap: 1rem;
+    row-gap: 0.5rem;
+}
+
+.social-connect-label {
+    margin: 0;
+}
+
+.social-connect-action {
+    justify-self: start;
+}
+
+.social-connect-action .btn {
+    min-width: 14rem;
+    justify-content: flex-start;
+}
+
+.social-connect-link {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    .social-connect-row {
+        grid-template-columns: 1fr;
+    }
+
+    .social-connect-action .btn {
+        width: 100%;
+    }
+}
+
+.mandatory-form .join.items-stretch .join-item {
+    align-items: center;
+}
+
+.mandatory-form .join.items-stretch .join-item.input {
+    height: 3rem;
+}

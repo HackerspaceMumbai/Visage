@@ -11,9 +11,14 @@ public class SocialProfileLinkDto
     public string Provider { get; set; } = string.Empty;
 
     /// <summary>
-    /// OAuth-verified profile URL
+    /// OAuth-verified profile URL (may be null/empty for providers that don't return a public URL)
     /// </summary>
-    public string ProfileUrl { get; set; } = string.Empty;
+    public string? ProfileUrl { get; set; }
+
+    /// <summary>
+    /// OAuth-verified provider subject/id (e.g., LinkedIn sub/id). Used when ProfileUrl is absent.
+    /// </summary>
+    public string? Subject { get; set; }
 
     /// <summary>
     /// Optional: OAuth access token for future API calls (not stored in DB)

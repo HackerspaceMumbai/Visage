@@ -19,6 +19,7 @@ You will need OAuth apps configured with these callback URLs:
 - LinkedIn callback: `https://localhost:7400/oauth/linkedin/callback`
 - GitHub callback: `https://localhost:7400/oauth/github/callback`
 
+Tip: If you run the frontend behind a proxy, or your provider requires a fixed callback host/port, set the optional `OAuth:BaseUrl` configuration (e.g., `OAuth__BaseUrl=https://localhost:7400`) so the server generates a deterministic `redirect_uri`. The Direct OAuth service logs the `redirect_uri` it uses (INFO level) with keys `redirect_uri` and `usingConfiguredBase` to help debug mismatches.
 See:
 
 - `docs/Direct-OAuth-Profile-Verification.md`

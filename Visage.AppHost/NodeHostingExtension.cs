@@ -20,7 +20,7 @@ internal static class NodeHostingExtensions
         {
             DevCertHostingExtensions.RunWithHttpsDevCertificate(builder, certFileEnv, certKeyFileEnv, (certFilePath, certKeyPath) =>
             {
-                builder.WithHttpsEndpoint(env: "HTTPS_PORT");
+                builder.WithHttpsEndpoint(env:  "HTTPS_PORT");
                 var httpsEndpoint = builder.GetEndpoint("https");
 
                 builder.WithEnvironment(context =>

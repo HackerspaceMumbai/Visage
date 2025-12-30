@@ -81,35 +81,35 @@ description: "Task list for Verified social profile linking feature implementati
 
 ### Backend implementation for US1
 
-- [ ] T030 [US1] Update `POST /api/profile/social/link-callback` to be the authoritative persistence point for **direct provider OAuth**:
+- [x] T030 [US1] Update `POST /api/profile/social/link-callback` to be the authoritative persistence point for **direct provider OAuth**:
   - File: `Visage.Services.Registrations/ProfileApi.cs`
   - Normalize/canonicalize incoming `ProfileUrl` (trim; consider provider-specific canonicalization rules)
   - Add app-level uniqueness check (FR-006) and return `409` ProblemDetails per `contracts/social-profile-linking-api.yaml`
   - On success: set `<Provider>Profile`, `Is<Provider>Verified=true`, `<Provider>VerifiedAt=UtcNow`
   - Write `SocialVerificationEvent` rows for success/failure
-- [ ] T031 [P] [US1] Update OpenAPI metadata to remove Auth0-claim language and reflect direct OAuth flow  
+- [x] T031 [P] [US1] Update OpenAPI metadata to remove Auth0-claim language and reflect direct OAuth flow  
   File: `Visage.Services.Registrations/ProfileApi.cs` (the `.WithOpenApi(...)` description)
-- [ ] T032 [P] [US1] Ensure `GET /api/profile/social/status` continues to work and includes timestamps  
+- [x] T032 [P] [US1] Ensure `GET /api/profile/social/status` continues to work and includes timestamps  
   File: `Visage.Services.Registrations/ProfileApi.cs`
 
 ### Frontend web host (direct OAuth) for US1
 
 > Note: the current direct OAuth code lives under `Visage.FrontEnd.Web/` and is not part of the web project. US1 must implement direct OAuth inside `Visage.FrontEnd/Visage.FrontEnd.Web/`.
 
-- [ ] T040 [P] [US1] Move/recreate OAuth configuration types inside the web project:
+- [x] T040 [P] [US1] Move/recreate OAuth configuration types inside the web project:
   - Create `Visage.FrontEnd/Visage.FrontEnd.Web/Configuration/OAuthOptions.cs`
   - Bind `OAuth` section to these options in `Visage.FrontEnd/Visage.FrontEnd.Web/Program.cs`
-- [ ] T041 [P] [US1] Move/recreate `DirectOAuthService` inside the web project:
+- [x] T041 [P] [US1] Move/recreate `DirectOAuthService` inside the web project:
   - Create `Visage.FrontEnd/Visage.FrontEnd.Web/Services/DirectOAuthService.cs`
   - Register it in DI in `Visage.FrontEnd/Visage.FrontEnd.Web/Program.cs`
-- [ ] T042 [US1] Add session (or equivalent protected state store) for OAuth state + returnUrl:
+- [x] T042 [US1] Add session (or equivalent protected state store) for OAuth state + returnUrl:
   - `Visage.FrontEnd/Visage.FrontEnd.Web/Program.cs`: `AddDistributedMemoryCache`, `AddSession`, `UseSession`
   - Ensure state is validated on callback (CSRF protection)
-- [ ] T043 [US1] Implement direct OAuth start endpoints that redirect to providers:
+- [x] T043 [US1] Implement direct OAuth start endpoints that redirect to providers:
   - `GET /oauth/linkedin/start?returnUrl=...`
   - `GET /oauth/github/start?returnUrl=...`
   - File: `Visage.FrontEnd/Visage.FrontEnd.Web/Program.cs`
-- [ ] T044 [US1] Implement direct OAuth callback endpoints:
+- [x] T044 [US1] Implement direct OAuth callback endpoints:
   - `GET /oauth/linkedin/callback?code=...&state=...`
   - `GET /oauth/github/callback?code=...&state=...`
   - Validate state, exchange code, fetch provider profile URL via `DirectOAuthService`
@@ -127,7 +127,7 @@ description: "Task list for Verified social profile linking feature implementati
 - [ ] T051 [US1] Decide what to do with the old Auth0 claim-based callback page:
   - Deprecate or delete `Visage.FrontEnd/Visage.FrontEnd.Shared/Pages/OAuthCallback.razor`
   - If kept, ensure it can’t be reached from the Connect buttons
-- [ ] T052 [US1] Update `Visage.FrontEnd/Visage.FrontEnd.Shared/Components/MandatoryRegistration.razor.cs`:
+- [x] T052 [US1] Update `Visage.FrontEnd/Visage.FrontEnd.Shared/Components/MandatoryRegistration.razor.cs`:
   - After return from OAuth, refresh social status (`GetSocialStatusAsync`) and populate verified URLs into the registrant model
   - Improve error handling for 409 conflict (show actionable message per FR-009)
 - [ ] T053 [P] [US1] Accessibility pass on Connect buttons and Verified display:
@@ -157,7 +157,7 @@ description: "Task list for Verified social profile linking feature implementati
   - Request: `SocialDisconnectDto`
   - Behavior: clear URL + verified flag + timestamp; create `SocialVerificationEvent` row
   - Response: return updated `SocialConnectionStatusDto`
-- [ ] T071 [P] [US2] Add/extend `.http` examples for disconnect flow  
+- [x] T071 [P] [US2] Add/extend `.http` examples for disconnect flow  
   File: `Visage.Services.Registrations/app.http`
 
 ### Frontend shared UI for US2
