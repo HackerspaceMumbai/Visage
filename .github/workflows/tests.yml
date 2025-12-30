@@ -17,6 +17,8 @@ jobs:
         with:
           global-json-file: global.json
           cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
 
       - name: Display dotnet version
         run: dotnet --version
