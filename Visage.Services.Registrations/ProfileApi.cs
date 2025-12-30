@@ -1011,8 +1011,18 @@ public static class ProfileApi
             }
             catch (DbUpdateException ex)
             {
-                // Fallback for race conditions: translate DB uniqueness violations to 409 ProblemDetails.
-                logger.LogWarning(ex, "Social link callback failed due to database constraint");
+                // Check if this is specifically a uniqueness violation
+                var isUniqueConstraintViolation = ex.InnerException?.Message?.Contains("IX_Registrants_LinkedInSubject") == true
+                    || ex.InnerException?.Message?.Contains("IX_Registrants_LinkedInProfile") == true
+                    || ex.InnerException?.Message?.Contains("IX_Registrants_GitHubProfile") == true;
+                
+                if (!isUniqueConstraintViolation)
+                {
+                    logger.LogError(ex, "Unexpected database error during social link");
+                    throw; // Re-throw non-conflict errors
+                }
+                
+                logger.LogWarning(ex, "Social link callback failed due to uniqueness constraint");
 
                 db.ChangeTracker.Clear();
                 db.SocialVerificationEvents.Add(new SocialVerificationEvent
