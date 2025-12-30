@@ -1,0 +1,29 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/MobileApps/" />
+  <Folder Name="/Services/">
+    <Project Path="services/Visage.Services.Eventing/Visage.Services.Eventing.csproj" />
+    <Project Path="Visage.Services.Registrations/Visage.Services.Registrations.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Visage.Test.Aspire/Visage.Test.Aspire.csproj" />
+  </Folder>
+  <Folder Name="/WebApps/" />
+  <Project Path="Visage.AppHost/Visage.AppHost.csproj" />
+  <Project Path="Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.csproj" />
+  <Project Path="Visage.FrontEnd/Visage.FrontEnd.Web.Client/Visage.FrontEnd.Web.Client.csproj" />
+  <Project Path="Visage.FrontEnd/Visage.FrontEnd.Web/Visage.FrontEnd.Web.csproj" />
+  <Project Path="Visage.FrontEnd/Visage.FrontEnd/Visage.FrontEnd.csproj">
+    <Deploy Solution="*|Any CPU" />
+  </Project>
+  <Project Path="Visage.ServiceDefaults/Visage.ServiceDefaults.csproj" />
+  <Project Path="Visage.Shared/Visage.Shared.csproj" />
+</Solution>

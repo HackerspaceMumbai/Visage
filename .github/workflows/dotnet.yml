@@ -15,7 +15,7 @@ jobs:
           global-json-file: global.json
           cache: true
           cache-dependency-path: |
-            **/*.sln
+            **/*.slnx
             **/*.csproj
             **/packages.lock.json
             Directory.Packages.props

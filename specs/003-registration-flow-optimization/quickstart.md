@@ -116,7 +116,7 @@ aspire exec --resource registrations -- dotnet ef database update
 
 **Option 1: Visual Studio 2025**
 
-1. Open `Visage.sln` in Visual Studio
+1. Open `Visage.slnx` in Visual Studio
 2. Set `Visage.AppHost` as the startup project
 3. Press `F5` to run in debug mode
 4. Aspire Dashboard opens automatically: `http://localhost:15888`

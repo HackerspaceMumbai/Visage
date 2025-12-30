@@ -5,7 +5,7 @@
 The Visage solution follows a modular architecture with clear separation of concerns:
 
 ```
-Visage.sln
+Visage.slnx
 ├── Visage.AppHost/              # Aspire orchestration host
 ├── Visage.ServiceDefaults/      # Shared service configuration
 ├── Visage.Shared/              # Common models and DTOs
