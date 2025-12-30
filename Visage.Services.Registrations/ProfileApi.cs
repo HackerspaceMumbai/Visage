@@ -1034,7 +1034,11 @@ public static class ProfileApi
                     detail: "This LinkedIn/GitHub account is already verified for another registrant.");
             }
 
-            logger.LogInformation("Verified {Provider} profile for user {UserId}: {ProfileUrl}", normalizedProvider, registrant.Id, normalizedProfileUrl);
+            var sanitizedProviderForLog = normalizedProvider
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty);
+
+            logger.LogInformation("Verified {Provider} profile for user {UserId}: {ProfileUrl}", sanitizedProviderForLog, registrant.Id, normalizedProfileUrl);
 
             return Results.Ok(new
             {
