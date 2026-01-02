@@ -9,7 +9,10 @@
 *.userosscache
 *.sln.docstates
 
-# Exclue .env file
+# Repo uses Visage.slnx; ignore accidental generated solution
+/Visage.sln
+
+# Exclude .env file
 .env
 
 # User-specific files (MonoDevelop/Xamarin Studio)

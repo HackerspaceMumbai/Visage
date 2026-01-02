@@ -1,5 +1,5 @@
-
 using Microsoft.Extensions.Hosting;
+using Aspire.Hosting;
 using Visage.AppHost;
 using Scalar.Aspire;
 
@@ -111,7 +111,9 @@ var cloudinaryCloudName = builder.AddParameter("cloudinary-cloudname", secret: f
 var cloudinaryApiKey = builder.AddParameter("cloudinary-apikey", secret: true);
 var cloudinaryApiSecret = builder.AddParameter("cloudinary-apisecret", secret: true);
 
-var cloudinaryImageSigning = builder.AddNpmApp("cloudinary-image-signing", "../services/CloudinaryImageSigning", "watch")
+var cloudinaryImageSigning = builder.AddNodeApp("cloudinary-image-signing", "../services/CloudinaryImageSigning", "app.js")
+    .WithNpm()
+    .WithRunScript("watch")
     .WithEnvironment("Cloudinary__CloudName", cloudinaryCloudName)
     .WithEnvironment("Cloudinary__ApiKey", cloudinaryApiKey)
     .WithEnvironment("Cloudinary__ApiSecret", cloudinaryApiSecret)
