@@ -19,6 +19,8 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
+      - name: Restore .NET workloads
+        run: dotnet workload restore
 
       - name: Display dotnet version
         run: dotnet --version
