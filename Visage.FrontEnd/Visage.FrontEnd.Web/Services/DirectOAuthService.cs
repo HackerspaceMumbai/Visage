@@ -134,9 +134,17 @@ public sealed class DirectOAuthService
                             if (!string.IsNullOrWhiteSpace(fallbackContent))
                             {
                                 using var doc = JsonDocument.Parse(fallbackContent);
+                                if (doc.RootElement.TryGetProperty("message", out var m))
+                                {
+                                    var message = m.GetString();
+                                    if (!string.IsNullOrWhiteSpace(message)) err += $" - {message}";
+                                }
                             }
                         }
-                        catch { }
+                        catch (JsonException jex)
+                        {
+                            _logger.LogDebug(jex, "Failed to parse LinkedIn fallback error response as JSON");
+                        }
                         return (false, null, null, null, null, err);
                     }
                 }
@@ -148,10 +156,17 @@ public sealed class DirectOAuthService
                     if (!string.IsNullOrWhiteSpace(profileContent))
                     {
                         using var doc = JsonDocument.Parse(profileContent);
-                        if (doc.RootElement.TryGetProperty("message", out var m)) err2 += $" - {m.GetString()}";
+                        if (doc.RootElement.TryGetProperty("message", out var m))
+                        {
+                            var message = m.GetString();
+                            if (!string.IsNullOrWhiteSpace(message)) err2 += $" - {message}";
+                        }
                     }
                 }
-                catch { /* ignore parse errors */ }
+                catch (JsonException jex)
+                {
+                    _logger.LogDebug(jex, "Failed to parse LinkedIn error response as JSON");
+                }
                 return (false, null, null, null, null, err2);
             }
 
