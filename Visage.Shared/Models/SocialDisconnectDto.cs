@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Visage.Shared.Models;
 
 /// <summary>
