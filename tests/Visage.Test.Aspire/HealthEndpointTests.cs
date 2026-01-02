@@ -124,6 +124,42 @@ public class HealthEndpointTests
     }
 
     /// <summary>
+    /// Verify Cloudinary Image Signing health endpoint is accessible and returns 200 OK
+    /// </summary>
+    [Test]
+    public async Task CloudinaryImageSigning_Health_Endpoint_Should_Return_200()
+    {
+        // Arrange
+        var httpClient = TestAppContext.CreateHttpClient("cloudinary-image-signing");
+
+        // Act
+        var response = await httpClient.GetAsync("/health");
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue(
+            because: "cloudinary-image-signing /health endpoint must be accessible and return 200 OK");
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// Verify Cloudinary Image Signing alive endpoint is accessible and returns 200 OK
+    /// </summary>
+    [Test]
+    public async Task CloudinaryImageSigning_Alive_Endpoint_Should_Return_200()
+    {
+        // Arrange
+        var httpClient = TestAppContext.CreateHttpClient("cloudinary-image-signing");
+
+        // Act
+        var response = await httpClient.GetAsync("/alive");
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue(
+            because: "cloudinary-image-signing /alive endpoint must be accessible and return 200 OK");
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+    }
+
+    /// <summary>
     /// Verify all registered Aspire resources have health endpoints
     /// This test dynamically discovers all HTTP-based resources and validates their health endpoints
     /// </summary>
@@ -131,7 +167,7 @@ public class HealthEndpointTests
     public async Task All_Http_Resources_Should_Have_Health_Endpoints()
     {
         // Arrange
-        var resourceNames = new[] { "registrations-api", "eventing", "frontendweb" };
+        var resourceNames = new[] { "registrations-api", "eventing", "frontendweb", "cloudinary-image-signing" };
         var failures = new List<string>();
 
         // Act & Assert

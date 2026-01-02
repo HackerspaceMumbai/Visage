@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Aspire.Hosting.JavaScript;
 using Microsoft.Extensions.Hosting;
 
 namespace Visage.AppHost;
