@@ -10,13 +10,13 @@ using Visage.Shared.Models;
 namespace Visage.Test.Aspire;
 
 /// <summary>
-/// Integration tests for Registration service database migration to Aspire-managed SQL Server.
+/// Integration tests for UserProfile service database migration to Aspire-managed SQL Server.
 /// Uses a single Aspire app started once per test assembly (see TestAssemblyHooks).
 /// </summary>
 public class RegistrationDbTests
 {
     /// <summary>
-    /// T018: Verify Registration service connects to Aspire-managed database
+    /// T018: Verify UserProfile service connects to Aspire-managed database
     /// </summary>
     [Test]
     public async Task Registration_Service_Should_Connect_To_Aspire_Managed_Database()
@@ -35,10 +35,10 @@ public class RegistrationDbTests
     }
 
     /// <summary>
-    /// T019: Verify creating registrant records works with Aspire-managed database
+    /// T019: Verify creating user records works with Aspire-managed database
     /// </summary>
     [Test]
-    public async Task Should_Create_New_Registrant_Record_In_Aspire_Database()
+    public async Task Should_Create_New_User_Record_In_Aspire_Database()
     {
         // Arrange - Use shared app
         // Using shared TestAppContext for startup synchronization
@@ -48,43 +48,42 @@ public class RegistrationDbTests
         
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
         
-        // Create a valid registrant with all required properties
-        var newRegistrant = new Registrant
+        // Create a valid user with all required properties
+        var newUser = new User
         {
             FirstName = "Test",
             LastName = "User",
-            Email = "testuser@example.com",
+            Email = $"testuser-{Guid.NewGuid():N}@example.com",
             MobileNumber = "+919876543210",
             AddressLine1 = "123 Test Street",
             City = "Mumbai",
             State = "Maharashtra",
             PostalCode = "400001",
-            GovtId = "ABCD1234E",
-            GovtIdLast4Digits = "234E",
+            GovtIdLast4Digits = "1234",
+            GovtIdType = "Aadhaar",
             OccupationStatus = "Employed"
         };
         
-        // Act - POST to /register endpoint
-        var postResponse = await httpClient.PostAsJsonAsync("/register", newRegistrant);
+        // Act - POST to /api/users endpoint
+        var postResponse = await httpClient.PostAsJsonAsync("/api/users", newUser);
         
         // Assert - Verify successful creation
         postResponse.Should().NotBeNull("POST response should not be null");
         postResponse.IsSuccessStatusCode.Should().BeTrue($"POST should succeed but got {postResponse.StatusCode}");
         
-        // Verify the created registrant is returned
-        var createdRegistrant = await postResponse.Content.ReadFromJsonAsync<Registrant>();
-        createdRegistrant.Should().NotBeNull("Created registrant should be returned in response");
-        createdRegistrant!.FirstName.Should().Be("Test", "FirstName should match");
-        createdRegistrant.LastName.Should().Be("User", "LastName should match");
-        createdRegistrant.Email.Should().Be("testuser@example.com", "Email should match");
-        createdRegistrant.Id.Should().NotBeNull("Id should be auto-generated");
+        // Verify the created user is returned
+        var createdUser = await postResponse.Content.ReadFromJsonAsync<User>();
+        createdUser.Should().NotBeNull("Created user should be returned in response");
+        createdUser!.FirstName.Should().Be("Test", "FirstName should match");
+        createdUser.LastName.Should().Be("User", "LastName should match");
+        createdUser.Email.Should().Be(newUser.Email, "Email should match");
     }
 
     /// <summary>
-    /// T020: Verify querying registrants from Aspire-managed database
+    /// T020: Verify querying users from Aspire-managed database
     /// </summary>
     [Test]
-    public async Task Should_Query_Registrants_From_Aspire_Managed_Database()
+    public async Task Should_Query_Users_From_Aspire_Managed_Database()
     {
         // Arrange - Use shared app
         // Using shared TestAppContext for startup synchronization
@@ -92,21 +91,21 @@ public class RegistrationDbTests
         // Wait for services to be ready
             await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
-        // Act - Query registrants from the /register endpoint
+        // Act - Query users from the /api/users endpoint
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        var getResponse = await httpClient.GetAsync("/register");
+        var getResponse = await httpClient.GetAsync("/api/users");
         
         // Assert - Verify successful query
         getResponse.Should().NotBeNull("GET response should not be null");
         getResponse.IsSuccessStatusCode.Should().BeTrue($"GET should succeed but got {getResponse.StatusCode}");
         
-        // Deserialize and verify registrants collection
-        var registrants = await getResponse.Content.ReadFromJsonAsync<IEnumerable<Registrant>>();
-        registrants.Should().NotBeNull("Registrants collection should not be null");
+        // Deserialize and verify users collection
+        var users = await getResponse.Content.ReadFromJsonAsync<IEnumerable<User>>();
+        users.Should().NotBeNull("Users collection should not be null");
     }
 
     /// <summary>
-    /// T037: Posting the same email should update the existing registrant record instead of creating duplicates.
+    /// T037: Posting the same email should update the existing user record instead of creating duplicates.
     /// </summary>
     [Test]
     public async Task RegisterEndpoint_WhenSameEmailPosted_ShouldUpdateExistingRecord()
@@ -117,9 +116,9 @@ public class RegistrationDbTests
         await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        var email = "duplicate-update@example.com";
+        var email = $"duplicate-update-{Guid.NewGuid():N}@example.com";
 
-        var firstRegistrant = new Registrant
+        var firstUser = new User
         {
             FirstName = "First",
             LastName = "Person",
@@ -135,7 +134,7 @@ public class RegistrationDbTests
             CompanyName = "Initial Co"
         };
 
-        var secondRegistrant = new Registrant
+        var secondUser = new User
         {
             FirstName = "First",
             LastName = "Person",
@@ -151,20 +150,20 @@ public class RegistrationDbTests
             CompanyName = "Updated Co"
         };
 
-        var firstResponse = await httpClient.PostAsJsonAsync("/register", firstRegistrant);
+        var firstResponse = await httpClient.PostAsJsonAsync("/api/users", firstUser);
         firstResponse.IsSuccessStatusCode.Should().BeTrue();
 
-        var secondResponse = await httpClient.PostAsJsonAsync("/register", secondRegistrant);
+        var secondResponse = await httpClient.PostAsJsonAsync("/api/users", secondUser);
         secondResponse.IsSuccessStatusCode.Should().BeTrue();
 
-        var registrantsResponse = await httpClient.GetAsync("/register");
-        registrantsResponse.IsSuccessStatusCode.Should().BeTrue();
+        var usersResponse = await httpClient.GetAsync("/api/users");
+        usersResponse.IsSuccessStatusCode.Should().BeTrue();
 
-        var registrants = await registrantsResponse.Content.ReadFromJsonAsync<IEnumerable<Registrant>>();
-        registrants.Should().NotBeNull();
+        var users = await usersResponse.Content.ReadFromJsonAsync<IEnumerable<User>>();
+        users.Should().NotBeNull();
 
-        var matching = registrants!
-            .Where(r => string.Equals(r.Email, email, StringComparison.OrdinalIgnoreCase))
+        var matching = users!
+            .Where(u => string.Equals(u.Email, email, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         matching.Count.Should().Be(1, "upserts should avoid duplicate rows for the same email");

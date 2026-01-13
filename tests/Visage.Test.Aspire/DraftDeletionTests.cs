@@ -18,9 +18,36 @@ namespace Visage.Test.Aspire;
 /// </summary>
 // Requires Auth0 - mark tests explicitly to avoid running in default CI test runs
 [Category("RequiresAuth")]
+[AuthRequired]
 [NotInParallel]
 public class DraftDeletionTests
 {
+    private static async Task<User> CreateTestUserAsync(HttpClient httpClient, string email)
+    {
+        var user = new User
+        {
+            FirstName = "Delete",
+            LastName = "Test",
+            Email = email,
+            MobileNumber = "+919876543223",
+            AddressLine1 = "Test Address",
+            City = "Mumbai",
+            State = "Maharashtra",
+            PostalCode = "400001",
+            GovtIdLast4Digits = "9900",
+            GovtIdType = "Aadhaar",
+            OccupationStatus = "Employed",
+            CompanyName = "Visage Tests"
+        };
+
+        var response = await httpClient.PostAsJsonAsync("/api/users", user);
+        response.IsSuccessStatusCode.Should().BeTrue($"/api/users should succeed but got {response.StatusCode}");
+
+        var saved = await response.Content.ReadFromJsonAsync<User>();
+        saved.Should().NotBeNull("/api/users should return the saved user");
+        return saved!;
+    }
+
     /// <summary>
     /// T051.7: Verify deleting an existing draft removes it from database
     /// Validates draft cleanup after form submission
@@ -28,6 +55,7 @@ public class DraftDeletionTests
     [Test]
     public async Task Draft_Deletion_Should_Remove_Existing_Draft()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Arrange
         await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
@@ -36,28 +64,12 @@ public class DraftDeletionTests
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
-        // Create test registrant
-        var registrant = new Registrant
-        {
-            FirstName = "Delete",
-            LastName = "Test",
-            Email = "delete@example.com",
-            MobileNumber = "+919876543223",
-            AddressLine1 = "Test Address",
-            City = "Mumbai",
-            State = "Maharashtra",
-            PostalCode = "400001",
-            GovtIdLast4Digits = "9900",
-            OccupationStatus = "Employed"
-        };
-
-        var registrationResponse = await httpClient.PostAsJsonAsync("/register", registrant);
-        var createdRegistrant = await registrationResponse.Content.ReadFromJsonAsync<Registrant>();
+        var createdUser = await CreateTestUserAsync(httpClient, $"delete-{Guid.NewGuid():N}@example.com");
 
         // Save a draft first
         var draft = new
         {
-            UserId = createdRegistrant!.Id!.Value,
+            UserId = createdUser.Id.Value,
             Section = "aide",
             DraftData = JsonSerializer.Serialize(new Dictionary<string, string> { ["Gender"] = "Male" })
         };
@@ -66,17 +78,17 @@ public class DraftDeletionTests
         saveResponse.IsSuccessStatusCode.Should().BeTrue("Draft should save successfully");
 
         // Verify draft exists
-        var getBeforeDelete = await httpClient.GetAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
+        var getBeforeDelete = await httpClient.GetAsync("/api/profile/draft/aide");
         getBeforeDelete.IsSuccessStatusCode.Should().BeTrue("Draft should exist before deletion");
 
         // Act - Delete the draft
-        var deleteResponse = await httpClient.DeleteAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
+        var deleteResponse = await httpClient.DeleteAsync("/api/profile/draft/aide");
 
         // Assert - Deletion successful
         deleteResponse.IsSuccessStatusCode.Should().BeTrue("Draft deletion should succeed");
 
         // Verify draft no longer exists
-        var getAfterDelete = await httpClient.GetAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
+        var getAfterDelete = await httpClient.GetAsync("/api/profile/draft/aide");
         getAfterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound, "Draft should not exist after deletion");
     }
 
@@ -86,31 +98,19 @@ public class DraftDeletionTests
     [Test]
     public async Task Draft_Deletion_Should_Handle_Non_Existent_Draft_Gracefully()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Arrange
         await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
-        // Create test registrant
-        var registrant = new Registrant
-        {
-            FirstName = "No",
-            LastName = "DraftToDelete",
-            Email = "nodrafttodelete@example.com",
-            MobileNumber = "+919876543224",
-            AddressLine1 = "Test Address",
-            City = "Mumbai",
-            State = "Maharashtra",
-            PostalCode = "400001",
-            GovtIdLast4Digits = "1133",
-            OccupationStatus = "Student"
-        };
+        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
 
-        var registrationResponse = await httpClient.PostAsJsonAsync("/register", registrant);
-        var createdRegistrant = await registrationResponse.Content.ReadFromJsonAsync<Registrant>();
+        await CreateTestUserAsync(httpClient, $"nodrafttodelete-{Guid.NewGuid():N}@example.com");
 
         // Act - Try to delete a draft that doesn't exist
-        var deleteResponse = await httpClient.DeleteAsync($"/api/profile/draft/aide?userId={createdRegistrant!.Id!.Value}");
+        var deleteResponse = await httpClient.DeleteAsync("/api/profile/draft/aide");
 
         // Assert - Should either return 204 No Content (idempotent) or 404 Not Found
         (deleteResponse.StatusCode == HttpStatusCode.NoContent || 
@@ -119,91 +119,26 @@ public class DraftDeletionTests
     }
 
     /// <summary>
-    /// T051.9: Verify draft deletion with email-based user lookup
-    /// </summary>
-    [Test]
-    public async Task Draft_Deletion_Should_Work_With_Email_Based_Lookup()
-    {
-        // Arrange
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
-
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-
-        var email = "deleteemail@example.com";
-        var registrant = new Registrant
-        {
-            FirstName = "Email",
-            LastName = "Delete",
-            Email = email,
-            MobileNumber = "+919876543225",
-            AddressLine1 = "Test Address",
-            City = "Mumbai",
-            State = "Maharashtra",
-            PostalCode = "400001",
-            GovtIdLast4Digits = "2244",
-            OccupationStatus = "Self-Employed"
-        };
-
-        var registrationResponse = await httpClient.PostAsJsonAsync("/register", registrant);
-        var createdRegistrant = await registrationResponse.Content.ReadFromJsonAsync<Registrant>();
-
-        // Save draft
-        var draft = new
-        {
-            UserId = createdRegistrant!.Id!.Value,
-            Section = "aide",
-            DraftData = JsonSerializer.Serialize(new Dictionary<string, string> { ["Gender"] = "Female" })
-        };
-
-        await httpClient.PostAsJsonAsync("/api/profile/draft", draft);
-
-        // Act - Delete using email instead of userId
-        var deleteResponse = await httpClient.DeleteAsync($"/api/profile/draft/aide?email={Uri.EscapeDataString(email)}");
-
-        // Assert
-        if (deleteResponse.StatusCode == HttpStatusCode.BadRequest &&
-            (await deleteResponse.Content.ReadAsStringAsync()).Contains("UserId"))
-        {
-            return; // Skip test - email-based lookup not yet implemented
-        }
-        else
-        {
-            deleteResponse.IsSuccessStatusCode.Should().BeTrue("Email-based draft deletion should work");
-        }
-    }
-
-    /// <summary>
     /// T051.10: Verify deleting mandatory section draft works
     /// </summary>
     [Test]
     public async Task Draft_Deletion_Should_Work_For_Mandatory_Section()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Arrange
         await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
-        var registrant = new Registrant
-        {
-            FirstName = "Mandatory",
-            LastName = "Delete",
-            Email = "mandatorydelete@example.com",
-            MobileNumber = "+919876543226",
-            AddressLine1 = "Test Address",
-            City = "Mumbai",
-            State = "Maharashtra",
-            PostalCode = "400001",
-            GovtIdLast4Digits = "3355",
-            OccupationStatus = "Retired"
-        };
+        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
 
-        var registrationResponse = await httpClient.PostAsJsonAsync("/register", registrant);
-        var createdRegistrant = await registrationResponse.Content.ReadFromJsonAsync<Registrant>();
+        var createdUser = await CreateTestUserAsync(httpClient, $"mandatorydelete-{Guid.NewGuid():N}@example.com");
 
         // Save mandatory section draft
         var draft = new
         {
-            UserId = createdRegistrant!.Id!.Value,
+            UserId = createdUser.Id.Value,
             Section = "mandatory",
             DraftData = JsonSerializer.Serialize(new Dictionary<string, string>
             {
@@ -215,13 +150,13 @@ public class DraftDeletionTests
         await httpClient.PostAsJsonAsync("/api/profile/draft", draft);
 
         // Act - Delete mandatory section draft
-        var deleteResponse = await httpClient.DeleteAsync($"/api/profile/draft/mandatory?userId={createdRegistrant.Id.Value}");
+        var deleteResponse = await httpClient.DeleteAsync("/api/profile/draft/mandatory");
 
         // Assert
         deleteResponse.IsSuccessStatusCode.Should().BeTrue("Mandatory section draft deletion should work");
 
         // Verify draft was deleted
-        var getAfterDelete = await httpClient.GetAsync($"/api/profile/draft/mandatory?userId={createdRegistrant.Id.Value}");
+        var getAfterDelete = await httpClient.GetAsync("/api/profile/draft/mandatory");
         getAfterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound, "Draft should not exist after deletion");
     }
 
@@ -231,32 +166,21 @@ public class DraftDeletionTests
     [Test]
     public async Task Draft_Deletion_Should_Be_Idempotent()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Arrange
         await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
-        var registrant = new Registrant
-        {
-            FirstName = "Idempotent",
-            LastName = "Delete",
-            Email = "idempotentdelete@example.com",
-            MobileNumber = "+919876543227",
-            AddressLine1 = "Test Address",
-            City = "Mumbai",
-            State = "Maharashtra",
-            PostalCode = "400001",
-            GovtIdLast4Digits = "4466",
-            OccupationStatus = "Employed"
-        };
+        // Attach authorization header for protected endpoints
+        await TestAppContext.SetDefaultAuthHeader(httpClient);
 
-        var registrationResponse = await httpClient.PostAsJsonAsync("/register", registrant);
-        var createdRegistrant = await registrationResponse.Content.ReadFromJsonAsync<Registrant>();
+        var createdUser = await CreateTestUserAsync(httpClient, $"idempotentdelete-{Guid.NewGuid():N}@example.com");
 
         // Save draft
         var draft = new
         {
-            UserId = createdRegistrant!.Id!.Value,
+            UserId = createdUser.Id.Value,
             Section = "aide",
             DraftData = JsonSerializer.Serialize(new Dictionary<string, string> { ["Test"] = "Value" })
         };
@@ -264,9 +188,9 @@ public class DraftDeletionTests
         await httpClient.PostAsJsonAsync("/api/profile/draft", draft);
 
         // Act - Delete the same draft multiple times
-        var firstDelete = await httpClient.DeleteAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
-        var secondDelete = await httpClient.DeleteAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
-        var thirdDelete = await httpClient.DeleteAsync($"/api/profile/draft/aide?userId={createdRegistrant.Id.Value}");
+        var firstDelete = await httpClient.DeleteAsync("/api/profile/draft/aide");
+        var secondDelete = await httpClient.DeleteAsync("/api/profile/draft/aide");
+        var thirdDelete = await httpClient.DeleteAsync("/api/profile/draft/aide");
 
         // Assert - All deletes should succeed (idempotent)
         firstDelete.IsSuccessStatusCode.Should().BeTrue("First delete should succeed");

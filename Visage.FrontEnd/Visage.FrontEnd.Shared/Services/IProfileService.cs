@@ -24,14 +24,14 @@ public interface IProfileService
     /// Gets the full profile data for the current authenticated user.
     /// </summary>
     /// <returns>Full Registrant profile or null if not found</returns>
-    Task<Registrant?> GetProfileAsync();
+    Task<User?> GetProfileAsync();
 
     /// <summary>
     /// Updates the profile data for the current authenticated user.
     /// </summary>
     /// <param name="registrant">Updated registrant data</param>
     /// <returns>True if update succeeded, false otherwise</returns>
-    Task<bool> UpdateProfileAsync(Registrant registrant);
+    Task<bool> UpdateProfileAsync(User registrant);
 
     /// <summary>
     /// Saves a draft of the profile section (e.g., AIDE fields) for the current authenticated user.

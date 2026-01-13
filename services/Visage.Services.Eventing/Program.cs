@@ -3,10 +3,7 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Visage.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
-
-
+using Visage.Services.Eventing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -141,6 +138,36 @@ events.MapPost("/", ScheduleEvent)
     .WithName("Schedule Event")
     .WithOpenApi();
 
+// Event Registration endpoints
+var registrations = app.MapGroup("/registrations");
+
+registrations.MapPost("/", RegisterForEvent)
+    .WithName("Register for Event")
+    .WithOpenApi();
+
+registrations.MapGet("/my", GetMyRegistrations)
+    .WithName("Get My Registrations")
+    .WithOpenApi();
+
+registrations.MapPost("/{id}/approve", ApproveRegistration)
+    .WithName("Approve Registration")
+    .WithOpenApi();
+
+// Check-in/Check-out endpoints (optimized for door speed)
+var checkin = app.MapGroup("/checkin");
+
+checkin.MapPost("/", CheckInToSession)
+    .WithName("Check-in to Session")
+    .WithOpenApi();
+
+checkin.MapPost("/checkout", CheckOutFromSession)
+    .WithName("Check-out from Session")
+    .WithOpenApi();
+
+checkin.MapGet("/pin/{pin}", LookupByPin)
+    .WithName("Lookup Registration by PIN")
+    .WithOpenApi();
+
 app.MapDefaultEndpoints();
 
 app.Run();
@@ -199,6 +226,209 @@ static async Task<Results<BadRequest<String>, Created<Event>>> ScheduleEvent([Fr
         return TypedResults.BadRequest(ex.Message);
     }
 }
+
+// Event Registration handlers
+
+static async Task<Results<BadRequest<string>, Created<EventRegistration>>> RegisterForEvent(
+    [FromBody] RegisterEventRequest request, 
+    EventDB db, 
+    HttpContext http)
+{
+    var auth0Sub = http.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrEmpty(auth0Sub))
+    {
+        return TypedResults.BadRequest("Unauthorized: Auth0 subject not found");
+    }
+
+    // Check if event exists
+    var eventExists = await db.Events.AnyAsync(e => e.Id == request.EventId);
+    if (!eventExists)
+    {
+        return TypedResults.BadRequest($"Event {request.EventId} not found");
+    }
+
+    // Check if user already registered for this event
+    var existingReg = await db.EventRegistrations
+        .FirstOrDefaultAsync(r => r.EventId == request.EventId && r.Auth0Subject == auth0Sub);
+    
+    if (existingReg != null)
+    {
+        return TypedResults.BadRequest("You are already registered for this event");
+    }
+
+    var registration = new EventRegistration
+    {
+        EventId = request.EventId,
+        Auth0Subject = auth0Sub,
+        Status = RegistrationStatus.Pending,
+        AdditionalDetails = request.AdditionalDetails,
+        RegisteredAt = DateTime.UtcNow
+    };
+
+    db.EventRegistrations.Add(registration);
+    await db.SaveChangesAsync();
+
+    return TypedResults.Created($"/registrations/{registration.Id}", registration);
+}
+
+static async Task<Ok<List<EventRegistration>>> GetMyRegistrations(EventDB db, HttpContext http)
+{
+    var auth0Sub = http.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrEmpty(auth0Sub))
+    {
+        return TypedResults.Ok(new List<EventRegistration>());
+    }
+
+    var registrations = await db.EventRegistrations
+        .Where(r => r.Auth0Subject == auth0Sub)
+        .OrderByDescending(r => r.RegisteredAt)
+        .ToListAsync();
+
+    return TypedResults.Ok(registrations);
+}
+
+static async Task<Results<NotFound, BadRequest<string>, Ok<EventRegistration>>> ApproveRegistration(
+    StrictId.Id<EventRegistration> id, 
+    EventDB db, 
+    HttpContext http)
+{
+    var registration = await db.EventRegistrations.FindAsync(id);
+    if (registration == null)
+    {
+        return TypedResults.NotFound();
+    }
+
+    if (registration.Status != RegistrationStatus.Pending)
+    {
+        return TypedResults.BadRequest($"Registration is already {registration.Status}");
+    }
+
+    var approverSub = http.User.FindFirst("sub")?.Value;
+    
+    registration.Status = RegistrationStatus.Approved;
+    registration.ApprovedAt = DateTime.UtcNow;
+    registration.ApprovedBy = approverSub;
+    registration.CheckInPin = GenerateCheckInPin();
+
+    await db.SaveChangesAsync();
+
+    return TypedResults.Ok(registration);
+}
+
+// Check-in handlers (optimized for speed)
+
+static async Task<Results<BadRequest<string>, Ok<CheckInResponse>>> CheckInToSession(
+    [FromBody] CheckInRequest request, 
+    EventDB db, 
+    HttpContext http)
+{
+    var auth0Sub = http.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrEmpty(auth0Sub))
+    {
+        return TypedResults.BadRequest("Unauthorized: Auth0 subject not found");
+    }
+
+    // Fast lookup with composite index: EventId + Auth0Subject
+    var registration = await db.EventRegistrations
+        .AsNoTracking()
+        .FirstOrDefaultAsync(r => 
+            r.EventId == request.EventId && 
+            r.Auth0Subject == auth0Sub &&
+            r.Status == RegistrationStatus.Approved);
+
+    if (registration == null)
+    {
+        return TypedResults.BadRequest("No approved registration found for this event");
+    }
+
+    // Check if already checked in to this session
+    var existingCheckIn = await db.SessionCheckIns
+        .FirstOrDefaultAsync(c => 
+            c.EventRegistrationId == registration.Id && 
+            c.SessionId == request.SessionId &&
+            c.CheckedOutAt == null);
+
+    if (existingCheckIn != null)
+    {
+        return TypedResults.BadRequest($"Already checked in to session {request.SessionId}");
+    }
+
+    var checkIn = new SessionCheckIn
+    {
+        EventRegistrationId = registration.Id,
+        SessionId = request.SessionId,
+        CheckedInAt = DateTime.UtcNow,
+        CheckInMethod = "JWT"
+    };
+
+    db.SessionCheckIns.Add(checkIn);
+    await db.SaveChangesAsync();
+
+    return TypedResults.Ok(new CheckInResponse(
+        checkIn.Id,
+        registration.Id,
+        request.SessionId,
+        checkIn.CheckedInAt,
+        "Checked in successfully"));
+}
+
+static async Task<Results<BadRequest<string>, Ok<CheckOutResponse>>> CheckOutFromSession(
+    [FromBody] CheckOutRequest request,
+    EventDB db)
+{
+    var checkIn = await db.SessionCheckIns.FindAsync(request.CheckInId);
+    if (checkIn == null)
+    {
+        return TypedResults.BadRequest("Check-in record not found");
+    }
+
+    if (checkIn.CheckedOutAt != null)
+    {
+        return TypedResults.BadRequest("Already checked out");
+    }
+
+    var now = DateTime.UtcNow;
+    checkIn.CheckedOutAt = now;
+    checkIn.StayDurationMinutes = (int)(now - checkIn.CheckedInAt).TotalMinutes;
+
+    await db.SaveChangesAsync();
+
+    return TypedResults.Ok(new CheckOutResponse(
+        checkIn.Id,
+        now,
+        checkIn.StayDurationMinutes ?? 0,
+        "Checked out successfully"));
+}
+
+static async Task<Results<NotFound, Ok<EventRegistration>>> LookupByPin(
+    string pin, 
+    EventDB db)
+{
+    // Fast lookup using CheckInPin index
+    var registration = await db.EventRegistrations
+        .AsNoTracking()
+        .FirstOrDefaultAsync(r => r.CheckInPin == pin);
+
+    if (registration == null)
+    {
+        return TypedResults.NotFound();
+    }
+
+    return TypedResults.Ok(registration);
+}
+
+// Helper methods
+
+static string GenerateCheckInPin()
+{
+    var random = new Random();
+    return random.Next(1000, 9999).ToString();
+}
+
+// Request/Response DTOs
+
+// Use shared contracts so frontend and tests can reuse models.
+// (Defined in `Visage.Shared.Models.CheckInDtos`)
 
 
 

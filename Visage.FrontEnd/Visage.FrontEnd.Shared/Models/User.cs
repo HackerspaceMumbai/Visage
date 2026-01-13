@@ -3,13 +3,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Visage.FrontEnd.Shared.Models;
 
-public class Registrant
+/// <summary>
+/// User entity representing a person who can register for multiple events.
+/// Contains identity, contact, and demographic profile information.
+/// Frontend model matching the backend User entity.
+/// </summary>
+public class User
 {
-
     [Required]
-    //[StringLength(50, ErrorMessage = "Event ID must be less than 50 characters.")]
-    public Id<Registrant> Id { get; init; }
+    public Id<User> Id { get; init; }
 
+    // Personal Information
     [Required]
     public string FirstName { get; set; } = string.Empty;
 
@@ -18,8 +22,16 @@ public class Registrant
     [Required]
     public string LastName { get; set; } = string.Empty;
 
+    // Contact Information
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
 
+    [Required]
+    [Phone]
+    public string MobileNumber { get; set; } = string.Empty;
 
+    // Address Information
     public string Address { get; set; } = string.Empty;
 
     [Required]
@@ -36,14 +48,7 @@ public class Registrant
     [Required]
     public string PostalCode { get; set; } = string.Empty;
 
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    [Phone]
-    public string MobileNumber { get; set; } = string.Empty;
-
+    // Government ID (anonymized)
     [Required]
     public string GovtId { get; set; } = string.Empty;
 
@@ -54,35 +59,41 @@ public class Registrant
     [StringLength(4, MinimumLength = 4, ErrorMessage = "Must be 4 digits only.")]
     public string GovtIdLast4Digits { get; set; } = string.Empty;
 
+    // Occupation
     [Required]
     public string OccupationStatus { get; set; } = string.Empty;
 
     public string CompanyName { get; set; } = string.Empty;
 
+    public string EducationalInstituteName { get; set; } = string.Empty;
+
+    // Social Profiles with OAuth verification
     [Url]
     public string? LinkedInProfile { get; set; } = null;
 
     public string? LinkedInVanityName { get; set; } = null;
 
-    // Persist a stable LinkedIn identifier (sub/id) for triage when public profile URL isn't available.
     public string? LinkedInSubject { get; set; } = null;
 
-    // Persist raw LinkedIn payload for later registrant curation.
     public string? LinkedInRawProfileJson { get; set; } = null;
+
     public string? LinkedInRawEmailJson { get; set; } = null;
+
     public DateTime? LinkedInPayloadFetchedAt { get; set; }
 
     [Url]
     public string? GitHubProfile { get; set; } = null;
 
-    // OAuth verification tracking (T087)
+    // OAuth verification tracking
     public bool IsLinkedInVerified { get; set; } = false;
+
     public bool IsGitHubVerified { get; set; } = false;
+
     public DateTime? LinkedInVerifiedAt { get; set; }
+
     public DateTime? GitHubVerifiedAt { get; set; }
 
-    public string EducationalInstituteName { get; set; } = string.Empty;
-
+    // AIDE (Accessibility, Inclusiveness, Diversity, Equity) Profile Fields
     public string GenderIdentity { get; set; } = string.Empty;
 
     public string SelfDescribeGender { get; set; } = string.Empty;
@@ -113,22 +124,37 @@ public class Registrant
 
     public string ParentalStatus { get; set; } = string.Empty;
 
-    public string FirstTimeAttendee { get; set; } = string.Empty;
-
     public string HowDidYouHear { get; set; } = string.Empty;
 
     public string SelfDescribeHowDidYouHear { get; set; } = string.Empty;
 
-    public string AreasOfInterest { get; set; } = string.Empty;
-
-    public string SelfDescribeAreasOfInterest { get; set; } = string.Empty;
-
-    public string VolunteerOpportunities { get; set; } = string.Empty;
-
     public string AdditionalSupport { get; set; } = string.Empty;
 
     public string Religion { get; set; } = string.Empty;
+
     public string Caste { get; set; } = string.Empty;
+
     public string Neighborhood { get; set; } = string.Empty;
+
     public string ModeOfTransportation { get; set; } = string.Empty;
+
+    public string SocioeconomicBackground { get; set; } = string.Empty;
+
+    public string Neurodiversity { get; set; } = string.Empty;
+
+    public string CaregivingResponsibilities { get; set; } = string.Empty;
+
+    // Profile completion tracking
+    public bool IsProfileComplete { get; set; } = false;
+
+    public DateTime? ProfileCompletedAt { get; set; }
+
+    public bool IsAideProfileComplete { get; set; } = false;
+
+    public DateTime? AideProfileCompletedAt { get; set; }
+
+    // Account timestamps
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }
 }

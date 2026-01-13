@@ -6,5 +6,19 @@ namespace Visage.FrontEnd.Shared.Services;
 
 public interface IRegistrationService
 {
-    Task<RegistrationResult> RegisterAsync(Registrant registrant, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Creates or updates a user profile.
+    /// </summary>
+    Task<RegistrationResult> CreateUserAsync(User user, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registers a user for a specific event.
+    /// </summary>
+    Task<RegistrationResult> RegisterForEventAsync(EventRegistration registration, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Legacy method for backward compatibility - creates user profile.
+    /// </summary>
+    [Obsolete("Use CreateUserAsync instead")]
+    Task<RegistrationResult> RegisterAsync(User user, CancellationToken cancellationToken = default);
 }

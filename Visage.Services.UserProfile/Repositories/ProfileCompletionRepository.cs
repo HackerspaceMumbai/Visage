@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StrictId;
 using Visage.Shared.Models;
 
-namespace Visage.Services.Registration.Repositories;
+namespace Visage.Services.UserProfile.Repositories;
 
 /// <summary>
 /// T009: Repository for profile completion status checks.
@@ -10,9 +10,9 @@ namespace Visage.Services.Registration.Repositories;
 /// </summary>
 public class ProfileCompletionRepository
 {
-    private readonly RegistrantDB _db;
+    private readonly UserDB _db;
 
-    public ProfileCompletionRepository(RegistrantDB db)
+    public ProfileCompletionRepository(UserDB db)
     {
         _db = db;
     }
@@ -25,63 +25,63 @@ public class ProfileCompletionRepository
     /// - Identity: GovtId, GovtIdLast4Digits
     /// - Professional: OccupationStatus, CompanyName (if employed), EducationalInstituteName (if student)
     /// </summary>
-    public async Task<ProfileCompletionStatusDto?> GetCompletionStatusAsync(Id<Registrant> userId)
+    public async Task<ProfileCompletionStatusDto?> GetCompletionStatusAsync(Id<User> userId)
     {
-        var registrant = await _db.Registrants
+        var user = await _db.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-        if (registrant is null)
+        if (user is null)
             return null;
 
         var incompleteMandatoryFields = new List<string>();
 
         // Check mandatory personal fields
-        if (string.IsNullOrWhiteSpace(registrant.FirstName))
+        if (string.IsNullOrWhiteSpace(user.FirstName))
             incompleteMandatoryFields.Add("FirstName");
-        if (string.IsNullOrWhiteSpace(registrant.LastName))
+        if (string.IsNullOrWhiteSpace(user.LastName))
             incompleteMandatoryFields.Add("LastName");
-        if (string.IsNullOrWhiteSpace(registrant.Email))
+        if (string.IsNullOrWhiteSpace(user.Email))
             incompleteMandatoryFields.Add("Email");
-        if (string.IsNullOrWhiteSpace(registrant.MobileNumber))
+        if (string.IsNullOrWhiteSpace(user.MobileNumber))
             incompleteMandatoryFields.Add("MobileNumber");
 
         // Check mandatory address fields
-        if (string.IsNullOrWhiteSpace(registrant.AddressLine1))
+        if (string.IsNullOrWhiteSpace(user.AddressLine1))
             incompleteMandatoryFields.Add("AddressLine1");
-        if (string.IsNullOrWhiteSpace(registrant.City))
+        if (string.IsNullOrWhiteSpace(user.City))
             incompleteMandatoryFields.Add("City");
-        if (string.IsNullOrWhiteSpace(registrant.State))
+        if (string.IsNullOrWhiteSpace(user.State))
             incompleteMandatoryFields.Add("State");
-        if (string.IsNullOrWhiteSpace(registrant.PostalCode))
+        if (string.IsNullOrWhiteSpace(user.PostalCode))
             incompleteMandatoryFields.Add("PostalCode");
 
         // Check mandatory identity fields: only keep last-4 digits to avoid storing full PII
-        if (string.IsNullOrWhiteSpace(registrant.GovtIdLast4Digits))
+        if (string.IsNullOrWhiteSpace(user.GovtIdLast4Digits))
             incompleteMandatoryFields.Add("GovtIdLast4Digits");
 
         // Check mandatory professional fields
-        if (string.IsNullOrWhiteSpace(registrant.OccupationStatus))
+        if (string.IsNullOrWhiteSpace(user.OccupationStatus))
             incompleteMandatoryFields.Add("OccupationStatus");
 
         // Context-dependent mandatory fields per FR-001
-        if (registrant.OccupationStatus?.ToLowerInvariant() == "employed" &&
-            string.IsNullOrWhiteSpace(registrant.CompanyName))
+        if (user.OccupationStatus?.ToLowerInvariant() == "employed" &&
+            string.IsNullOrWhiteSpace(user.CompanyName))
             incompleteMandatoryFields.Add("CompanyName");
 
-        if (registrant.OccupationStatus?.ToLowerInvariant() == "student" &&
-            string.IsNullOrWhiteSpace(registrant.EducationalInstituteName))
+        if (user.OccupationStatus?.ToLowerInvariant() == "student" &&
+            string.IsNullOrWhiteSpace(user.EducationalInstituteName))
             incompleteMandatoryFields.Add("EducationalInstituteName");
 
         var isProfileComplete = incompleteMandatoryFields.Count == 0;
 
         return new ProfileCompletionStatusDto
         {
-            UserId = registrant.Id.ToString(),
+            UserId = user.Id.ToString(),
             IsProfileComplete = isProfileComplete,
-            IsAideProfileComplete = registrant.IsAideProfileComplete,
-            ProfileCompletedAt = registrant.ProfileCompletedAt,
-            AideProfileCompletedAt = registrant.AideProfileCompletedAt,
+            IsAideProfileComplete = user.IsAideProfileComplete,
+            ProfileCompletedAt = user.ProfileCompletedAt,
+            AideProfileCompletedAt = user.AideProfileCompletedAt,
             IncompleteMandatoryFields = incompleteMandatoryFields.Count > 0 ? incompleteMandatoryFields : null,
             CheckedAt = DateTime.UtcNow
         };
@@ -91,16 +91,17 @@ public class ProfileCompletionRepository
     /// Marks mandatory profile as complete.
     /// Updates IsProfileComplete flag and ProfileCompletedAt timestamp.
     /// </summary>
-    public async Task<bool> MarkProfileCompleteAsync(Id<Registrant> userId)
+    public async Task<bool> MarkProfileCompleteAsync(Id<User> userId)
     {
-        var registrant = await _db.Registrants
-            .FirstOrDefaultAsync(r => r.Id == userId);
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-        if (registrant is null)
+        if (user is null)
             return false;
 
-        registrant.IsProfileComplete = true;
-        registrant.ProfileCompletedAt = DateTime.UtcNow;
+        user.IsProfileComplete = true;
+        user.ProfileCompletedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         
         return true;
@@ -110,16 +111,17 @@ public class ProfileCompletionRepository
     /// Marks AIDE profile as complete.
     /// Updates IsAideProfileComplete flag and AideProfileCompletedAt timestamp.
     /// </summary>
-    public async Task<bool> MarkAideProfileCompleteAsync(Id<Registrant> userId)
+    public async Task<bool> MarkAideProfileCompleteAsync(Id<User> userId)
     {
-        var registrant = await _db.Registrants
-            .FirstOrDefaultAsync(r => r.Id == userId);
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-        if (registrant is null)
+        if (user is null)
             return false;
 
-        registrant.IsAideProfileComplete = true;
-        registrant.AideProfileCompletedAt = DateTime.UtcNow;
+        user.IsAideProfileComplete = true;
+        user.AideProfileCompletedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         
         return true;

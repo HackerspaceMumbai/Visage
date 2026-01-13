@@ -4,45 +4,46 @@ using System.Net;
 using System.Net.Http.Json;
 using TUnit.Core;
 using Visage.Shared.Models;
-using Visage.Services.Registration;
+using Visage.Services.UserProfile;
 using Microsoft.Extensions.Configuration;
+
 namespace Visage.Test.Aspire;
 
 [NotInParallel]
 public sealed class RegistrantCurationSocialFieldsTests
 {
-    private static string GetRegistrationDbConnectionString()
-        => ResolveRegistrationDbConnectionString();
+    private static string GetUserProfileDbConnectionString()
+        => ResolveUserProfileDbConnectionString();
 
-    private static RegistrantDB CreateRegistrantDb()
+    private static UserDB CreateUserDb()
     {
-        var options = new DbContextOptionsBuilder<RegistrantDB>()
-            .UseSqlServer(ResolveRegistrationDbConnectionString())
+        var options = new DbContextOptionsBuilder<UserDB>()
+            .UseSqlServer(ResolveUserProfileDbConnectionString())
             .Options;
 
-        return new RegistrantDB(options);
+        return new UserDB(options);
     }
 
-    private static string ResolveRegistrationDbConnectionString()
+    private static string ResolveUserProfileDbConnectionString()
     {
         var configuration = TestAppContext.App.Services.GetRequiredService<IConfiguration>();
 
-        var cs = configuration.GetConnectionString("registrationdb")
-                 ?? configuration["ConnectionStrings:registrationdb"]
-                 ?? configuration["ConnectionStrings__registrationdb"];
+        var cs = configuration.GetConnectionString("userprofiledb")
+                 ?? configuration["ConnectionStrings:userprofiledb"]
+                 ?? configuration["ConnectionStrings__userprofiledb"];
 
         if (!string.IsNullOrWhiteSpace(cs))
             return cs;
 
         var match = configuration
             .AsEnumerable()
-            .FirstOrDefault(kvp => kvp.Key.Contains("registrationdb", StringComparison.OrdinalIgnoreCase)
+            .FirstOrDefault(kvp => kvp.Key.Contains("userprofiledb", StringComparison.OrdinalIgnoreCase)
                                   && !string.IsNullOrWhiteSpace(kvp.Value));
 
         if (!string.IsNullOrWhiteSpace(match.Value))
             return match.Value!;
 
-        throw new InvalidOperationException("Unable to resolve registrationdb connection string from configuration.");
+        throw new InvalidOperationException("Unable to resolve userprofiledb connection string from configuration.");
     }
 
     [Test]
@@ -52,13 +53,13 @@ public sealed class RegistrantCurationSocialFieldsTests
 
         var httpClient = TestAppContext.CreateHttpClient("registrations-api");
 
-        // Seed a registrant with verified social fields
+        // Seed a user with verified social fields
         string linkedin = $"https://www.linkedin.com/in/curation-{Guid.NewGuid():N}";
         string github = $"https://github.com/curation-{Guid.NewGuid():N}";
 
-        await using (var db = CreateRegistrantDb())
+        await using (var db = CreateUserDb())
         {
-            var r = new Registrant
+            var u = new User
             {
                 FirstName = "Curate",
                 LastName = "Me",
@@ -77,18 +78,22 @@ public sealed class RegistrantCurationSocialFieldsTests
 
                 GitHubProfile = github,
                 IsGitHubVerified = true,
-                GitHubVerifiedAt = DateTime.UtcNow
+                GitHubVerifiedAt = DateTime.UtcNow,
+
+                IsProfileComplete = true,
+                ProfileCompletedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             };
 
-            db.Registrants.Add(r);
+            db.Users.Add(u);
             await db.SaveChangesAsync();
         }
 
         var response = await httpClient.GetAsync("/register");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var registrants = await response.Content.ReadFromJsonAsync<Registrant[]>();
-        registrants.Should().NotBeNull();
-        registrants!.Should().Contain(r => r.LinkedInProfile == linkedin && r.IsLinkedInVerified && r.GitHubProfile == github && r.IsGitHubVerified);
+        var users = await response.Content.ReadFromJsonAsync<User[]>();
+        users.Should().NotBeNull();
+        users!.Should().Contain(u => u.LinkedInProfile == linkedin && u.IsLinkedInVerified && u.GitHubProfile == github && u.IsGitHubVerified);
     }
 }

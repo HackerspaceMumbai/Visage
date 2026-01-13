@@ -35,6 +35,19 @@
             <span>➕</span> Schedule Event
         </NavLink>
     </div>
+
+    @* RSVP feedback *@
+    @if (!string.IsNullOrEmpty(rsvpMessage))
+    {
+        <div class="alert alert-success mb-4">
+            <span>@rsvpMessage</span>
+        </div>
+    }
+
+    @if (rsvpInProgress)
+    {
+        <div class="mb-4"><span class="loading loading-spinner loading-sm"></span> Registering...</div>
+    }
     
     <!-- T021: Load upcoming events with error handling -->
     @if (errorMessage != null)
@@ -61,6 +74,7 @@
     {
         <EventList 
             Events="@upcomingEventViewModels"
+            OnRSVP="HandleEventRSVP"
             EmptyIcon="📅"
             EmptyTitle="No Upcoming Events"
             EmptyMessage="Check back soon for exciting new events from Hackerspace Mumbai!" />
@@ -105,6 +119,10 @@
     private ProfileCompletionStatusDto? profileCompletionStatus;
     private bool hasCheckedProfileCompletion;
     private bool shouldRedirectToMandatoryRegistration;
+
+    // RSVP UI state
+    private string? rsvpMessage;
+    private bool rsvpInProgress;
 
     // T021: Inject EventService and load upcoming events
     // T036: Check profile completion DURING PRERENDER when HttpContext is available
@@ -213,8 +231,74 @@
         await LoadEventsAsync();
     }
 
+    // Handle RSVP from event cards
+    private async Task HandleEventRSVP(EventViewModel evt)
+    {
+        // Reset any previous message
+        rsvpMessage = null;
+
+        try
+        {
+            rsvpInProgress = true;
+
+            // Ensure user is authenticated
+            if (authenticationState is null)
+            {
+                // If we don't have auth info, just send user to login
+                var redirect = $"Account/Login?redirectUri={Uri.EscapeDataString(NavigationManager.Uri)}";
+                NavigationManager.NavigateTo(redirect, forceLoad: true);
+                return;
+            }
+
+            var authState = await authenticationState;
+            var user = authState?.User;
+            if (user?.Identity is null || !user.Identity.IsAuthenticated)
+            {
+                var redirect = $"Account/Login?redirectUri={Uri.EscapeDataString(NavigationManager.Uri)}";
+                NavigationManager.NavigateTo(redirect, forceLoad: true);
+                return;
+            }
+
+            // Check profile completion
+            if (!hasCheckedProfileCompletion || profileCompletionStatus == null)
+            {
+                profileCompletionStatus = await ProfileService.GetCompletionStatusAsync();
+                hasCheckedProfileCompletion = true;
+            }
+
+            if (profileCompletionStatus is null || !profileCompletionStatus.IsProfileComplete)
+            {
+                // Redirect user to mandatory registration
+                NavigationManager.NavigateTo("/registration/mandatory", forceLoad: true);
+                return;
+            }
+
+            // Call EventService to register
+            var registration = await EventService.RegisterForEventAsync(evt.EventId);
+
+            if (registration != null)
+            {
+                rsvpMessage = "You're registered — check 'My Registrations' for details.";
+            }
+            else
+            {
+                rsvpMessage = "Registration failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during RSVP for event {EventId}", evt.EventId);
+            rsvpMessage = "An error occurred while registering. Please try again.";
+        }
+        finally
+        {
+            rsvpInProgress = false;
+            StateHasChanged();
+        }
+    }
+
     // T025: Helper method to map Event to EventViewModel with image URL transformation
-    private List<EventViewModel> MapToViewModels(List<Visage.FrontEnd.Shared.Models.Event> events)
+    private List<EventViewModel> MapToViewModels(List<Visage.FrontEnd.Shared.Models.EventDto> events)
     {
         var viewModels = events.Select(evt => {
             Logger.LogInformation("Mapping event: {Title}, CoverPicture: {CoverPicture}", 
@@ -227,6 +311,7 @@
             
             return new EventViewModel
             {
+                EventId = evt.Id,
                 Id = evt.Id.Value.ToGuid(), // Convert StrictId's Ulid to Guid
                 Name = evt.Title,
                 Date = eventDateTime,

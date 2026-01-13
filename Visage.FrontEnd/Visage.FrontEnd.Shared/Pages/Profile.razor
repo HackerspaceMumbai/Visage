@@ -88,8 +88,8 @@ else if (UserProfile is not null)
 }
 
 @code {
-    private Visage.Shared.Models.Registrant? UserProfile;
-    private Visage.Shared.Models.Registrant? OriginalProfile;
+    private Visage.Shared.Models.User? UserProfile;
+    private Visage.Shared.Models.User? OriginalProfile;
     private bool IsLoading = true;
     private bool HasError = false;
     private bool IsSaving = false;
@@ -109,7 +109,7 @@ else if (UserProfile is not null)
             if (UserProfile != null)
             {
                 // Create a copy for reset functionality
-                OriginalProfile = new Visage.Shared.Models.Registrant
+                OriginalProfile = new Visage.Shared.Models.User
                 {
                     Id = UserProfile.Id,
                     FirstName = UserProfile.FirstName,
@@ -147,7 +147,7 @@ else if (UserProfile is not null)
                 {
                     SaveSuccess = true;
                     // Update original profile copy
-                    OriginalProfile = new Visage.Shared.Models.Registrant
+                    OriginalProfile = new Visage.Shared.Models.User
                     {
                         Id = UserProfile.Id,
                         FirstName = UserProfile.FirstName,

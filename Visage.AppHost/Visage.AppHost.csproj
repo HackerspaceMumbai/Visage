@@ -16,6 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\services\Visage.Services.Eventing\Visage.Services.Eventing.csproj" />
     <ProjectReference Include="..\Visage.FrontEnd\Visage.FrontEnd.Web\Visage.FrontEnd.Web.csproj" />
-    <ProjectReference Include="..\Visage.Services.Registrations\Visage.Services.Registrations.csproj" />
+    <ProjectReference Include="..\Visage.Services.UserProfile\Visage.Services.UserProfile.csproj" />
   </ItemGroup>
 </Project>

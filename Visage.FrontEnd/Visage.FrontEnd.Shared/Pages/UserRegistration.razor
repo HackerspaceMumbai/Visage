@@ -377,17 +377,19 @@
                             </InputSelect>
                         </label>
                     </div>
+                    @* Event-specific fields removed - these belong in EventRegistration
                     <div class="sm:col-span-2">
                         <label for="firstTimeAttendee" class="form-control">
                             <div class="label">
                                 <span class="label-text font-bold">First-Time Attendee</span>
                             </div>
-                            <InputSelect id="firstTimeAttendee" class="block input input-bordered focus:input-primary" placeholder="Select if you are first time attendee" @bind-Value="registrant.FirstTimeAttendee">
+                            <InputSelect id="firstTimeAttendee" class="block input input-bordered focus:input-primary" placeholder="Select if you are first time attendee">
                                 <option value="111">Yes</option>
                                 <option value="222">No</option>
                             </InputSelect>
                         </label>
                     </div>
+                    *@
                     <div class="sm:col-span-2">
                         <label for="howDidYouHear" class="form-control">
                             <div class="label">
@@ -411,12 +413,13 @@
                             </label>
                         }
                     </div>
+                    @* Event-specific fields removed - these belong in EventRegistration
                     <div class="sm:col-span-2">
                         <label for="areasOfInterest" class="form-control">
                             <div class="label">
                                 <span class="label-text font-bold">Areas of Interest</span>
                             </div>
-                            <InputSelect id="areasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.AreasOfInterest">
+                            <InputSelect id="areasOfInterest" class="block input input-bordered focus:input-primary">
                                 <option value="Software Development">Software Development</option>
                                 <option value="Open Source Contributions">Open Source Contributions</option>
                                 <option value="Data Science">Data Science</option>
@@ -427,28 +430,20 @@
                                 <option value="Other">Other</option>
                             </InputSelect>
                         </label>
-                        @if (registrant.AreasOfInterest == "Other")
-                        {
-                            <label for="selfDescribeAreasOfInterest" class="form-control">
-                                <div class="label">
-                                    <span class="label-text font-bold">Please specify</span>
-                                </div>
-                                <InputText id="selfDescribeAreasOfInterest" class="block input input-bordered focus:input-primary" @bind-Value="registrant.SelfDescribeAreasOfInterest" placeholder="Enter your areas of interest" />
-                            </label>
-                        }
                     </div>
                     <div class="sm:col-span-2">
                         <label for="volunteerOpportunities" class="form-control">
                             <div class="label">
                                 <span class="label-text font-bold">Volunteer Opportunities</span>
                             </div>
-                            <InputSelect id="volunteerOpportunities" class="block input input-bordered focus:input-primary" @bind-Value="registrant.VolunteerOpportunities">
+                            <InputSelect id="volunteerOpportunities" class="block input input-bordered focus:input-primary">
                                 <option value="Yes">Yes</option>
                                 <option value="No">No</option>
                                 <option value="Maybe later">Maybe later</option>
                             </InputSelect>
                         </label>
                     </div>
+                    *@
                     <div class="sm:col-span-2">
                     <label for="additionalSupport" class="form-control">
                         <div class="label">
@@ -542,11 +537,11 @@
     private ValidationMessageStore? messageStore;
 
     [SupplyParameterFromForm(FormName = "ScheduleNewRegistration")]
-    private Visage.Shared.Models.Registrant? registrant { get; set; }
+    private Visage.Shared.Models.User? registrant { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        registrant = new Visage.Shared.Models.Registrant();
+        registrant = new Visage.Shared.Models.User();
         editContext = new EditContext(registrant);
         editContext.SetFieldCssClassProvider(new DaisyUIInputError());
         editContext.OnValidationRequested += HandleValidationRequested;
@@ -567,11 +562,11 @@
 
     private async Task HandleValidSubmit()
     {
-        var registrationResult = await RegistrationService.RegisterAsync(registrant!);
+        var registrationResult = await RegistrationService.CreateUserAsync(registrant!);
 
-        if (registrationResult.IsSuccess && registrationResult.Registrant is { } createdRegistrant)
+        if (registrationResult.IsSuccess && registrationResult.User is { } createdUser)
         {
-            NavigationManager.NavigateTo($"/profile/{createdRegistrant.Id}");
+            NavigationManager.NavigateTo($"/profile/{createdUser.Id}");
             return;
         }
 
@@ -597,13 +592,13 @@
         var selectedValue = e.Value?.ToString();
         if (selectedValue == "Working Professional")
         {
-            registrant.CompanyName = string.Empty;      
+            registrant!.CompanyName = string.Empty;      
             registrant.LinkedInProfile = string.Empty;
             registrant.GitHubProfile = string.Empty;
         }
         else if (selectedValue == "Student")
         {
-            registrant.EducationalInstituteName = string.Empty;
+            registrant!.EducationalInstituteName = string.Empty;
             registrant.LinkedInProfile = string.Empty;
             registrant.GitHubProfile = string.Empty;
         }

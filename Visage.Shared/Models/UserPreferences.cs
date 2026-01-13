@@ -13,7 +13,7 @@ public class UserPreferences
     /// User ID serves as primary key (one preferences record per user).
     /// </summary>
     [Required]
-    public Id<Registrant> UserId { get; set; }
+    public Id<User> UserId { get; set; }
 
     /// <summary>
     /// Timestamp when the AIDE completion banner was dismissed.
