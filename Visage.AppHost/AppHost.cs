@@ -5,6 +5,16 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+
+#region InfrastructureSetup
+
+// Configure the Azure App Container environment
+builder.AddAzureContainerAppEnvironment("env");
+
+
+#endregion
+
+
 #region Auth0Configuration
 
 var iamDomain = builder.AddParameter("auth0-domain");
