@@ -31,4 +31,4 @@ jobs:
           dotnet restore Visage.FrontEnd/Visage.FrontEnd.Web.Client/Visage.FrontEnd.Web.Client.csproj
           dotnet restore Visage.FrontEnd/Visage.FrontEnd.Shared/Visage.FrontEnd.Shared.csproj
           dotnet restore services/Visage.Services.Eventing/Visage.Services.Eventing.csproj
-          dotnet restore services/Visage.Services.UserProfile/Visage.Services.UserProfile.csproj
+          dotnet restore Visage.Services.UserProfile/Visage.Services.UserProfile.csproj
