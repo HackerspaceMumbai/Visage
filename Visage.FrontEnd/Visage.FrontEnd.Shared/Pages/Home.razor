@@ -31,9 +31,11 @@
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-bold text-base-content">Upcoming Events</h2>
         
-        <NavLink class="btn btn-primary btn-sm" href="/schedule-event"> 
-            <span>➕</span> Schedule Event
-        </NavLink>
+        <AuthorizeView Roles="VisageAdmin">
+            <NavLink class="btn btn-primary btn-sm" href="/schedule-event"> 
+                <span>➕</span> Schedule Event
+            </NavLink>
+        </AuthorizeView>
     </div>
 
     @* RSVP feedback *@
