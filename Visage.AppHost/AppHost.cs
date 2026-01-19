@@ -6,11 +6,9 @@ using Scalar.Aspire;
 var builder = DistributedApplication.CreateBuilder(args);
 
 
-#region InfrastructureSetup
-
-// Configure the Azure App Container environment
-builder.AddAzureContainerAppEnvironment("env");
-
+#region Infra
+// Add the Azure App Container environment
+builder.AddAzureContainerAppEnvironment("dev");
 
 #endregion
 
@@ -96,25 +94,23 @@ var userProfileApi = builder.AddProject<Projects.Visage_Services_UserProfile>("u
 
 #region ScalarApiReference
 
-// Add Scalar API Reference for all services
-var scalar = builder.AddScalarApiReference(options =>
+if (builder.Environment.IsDevelopment())
 {
-    options.WithTheme(ScalarTheme.BluePlanet);
-    //options.WithSidebar(false);
-    // You can add more options here (title, sidebar, etc.)
-})
-.WithLifetime(ContainerLifetime.Persistent);
-
-// Register your APIs with Scalar
-scalar
-    .WithApiReference(userProfileApi, options =>
+    // Add Scalar API Reference for all services (development only)
+    var scalar = builder.AddScalarApiReference(options =>
     {
-        options.WithOpenApiRoutePattern("scalar/v1");
-        });
-    // .WithApiReference(registrationAPI, options =>
-    // {
-    //     options.WithOpenApiRoutePattern("/swagger/v1/swagger.json");
-    // });
+        options
+            .PreferHttpsEndpoint()
+            .AllowSelfSignedCertificates()
+            .WithTheme(ScalarTheme.BluePlanet);
+    })
+    .WithLifetime(ContainerLifetime.Persistent);
+
+    // Register your APIs with Scalar
+    scalar
+        .WithApiReference(eventAPI)
+        .WithApiReference(userProfileApi);
+}
 
 #endregion
 
@@ -166,8 +162,11 @@ var webapp = builder.AddProject<Projects.Visage_FrontEnd_Web>("frontendweb")
     .WithReference(cloudinaryImageSigning)
     .WaitFor(cloudinaryImageSigning)
     .WithExternalHttpEndpoints();
-
 #endregion
 
-
 builder.Build().Run();
+
+// ENC0118 is a hot reload warning indicating that changes to top-level statements (like those in Program.cs or AppHost.cs) will not take effect until the application is restarted.
+// This is not a code error, but a limitation of .NET Hot Reload for top-level statements.
+// To resolve this warning, you must stop and restart the application after making changes to this file.
+// No code changes are required to fix ENC0118 itself, but you should always restart the app after editing this file to ensure changes are applied.
