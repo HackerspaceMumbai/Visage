@@ -55,10 +55,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var logger = ctx.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()?.CreateLogger("JwtEvents");
                 logger?.LogInformation("JwtEvents: Token validated for {Sub}", ctx.Principal?.FindFirst("sub")?.Value);
-                foreach (var claim in ctx.Principal?.Claims ?? Array.Empty<System.Security.Claims.Claim>())
+                
+                // Only log detailed claims in development to prevent PII exposure
+                var env = ctx.HttpContext.RequestServices.GetService<IHostEnvironment>();
+                if (env?.IsDevelopment() == true)
                 {
-                    logger?.LogDebug("Claim: {Type} = {Value}", claim.Type, claim.Value);
+                    foreach (var claim in ctx.Principal?.Claims ?? Array.Empty<System.Security.Claims.Claim>())
+                    {
+                        logger?.LogDebug("Claim: {Type} = {Value}", claim.Type, claim.Value);
+                    }
                 }
+                
                 return Task.CompletedTask;
             }
         };
@@ -81,8 +88,10 @@ builder.Services.AddScoped<Visage.Services.UserProfile.Repositories.UserPreferen
 
 builder.Services.AddHttpLogging(logging =>
 {
-    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
-    logging.RequestHeaders.Add("Authorization");
+    logging.LoggingFields =
+        Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPropertiesAndHeaders |
+        Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponsePropertiesAndHeaders;
+    // Do not log Authorization header to prevent bearer tokens from being captured
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
