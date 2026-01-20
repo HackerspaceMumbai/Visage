@@ -110,7 +110,7 @@ if (app.Environment.IsDevelopment() ||
     Console.WriteLine("Ensuring EF Core database exists...");
     try
     {
-        await userDb.Database.EnsureCreatedAsync();
+        await userDb.Database.MigrateAsync();
         Console.WriteLine("Database is ready.");
     }
     catch (Exception ex)
@@ -168,16 +168,9 @@ app.MapPost("/api/users", async Task<Results<Created<User>, Ok<User>, BadRequest
     {
         inputUser.Email = inputUser.Email.Trim();
 
-        User? existing = null;
-
-        if (inputUser.Id != default)
-        {
-            existing = await db.Users.FirstOrDefaultAsync(u => u.Id == inputUser.Id);
-        }
-
-        existing ??= await db.Users
-            .OrderByDescending(u => u.ProfileCompletedAt)
-            .FirstOrDefaultAsync(u => u.Email == inputUser.Email);
+        // Find user by Auth0Subject to ensure authenticated ownership
+        var existing = await db.Users
+            .FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
 
         if (existing is null)
         {
@@ -233,35 +226,50 @@ app.MapPost("/api/users", async Task<Results<Created<User>, Ok<User>, BadRequest
         logger.LogError(ex, "User upsert failed for {Email}", inputUser.Email);
         return TypedResults.BadRequest();
     }
-});
+}).RequireAuthorization();
 
 // Get all users endpoint
 app.MapGet("/api/users", async Task<IEnumerable<User>> (UserDB db) =>
 {
     return await db.Users.ToListAsync();
-});
+}).RequireAuthorization();
 
 // Event registration endpoint
 app.MapPost("/api/registrations", async Task<Results<Created<EventRegistration>, BadRequest<string>>> (
     [FromBody] EventRegistration registration,
     UserDB db,
+    HttpContext httpContext,
     ILogger<Program> logger) =>
 {
-    if (registration.UserId == default || registration.EventId == default)
+    var auth0Subject =
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? httpContext.User.FindFirst("sub")?.Value;
+
+    if (string.IsNullOrWhiteSpace(auth0Subject))
     {
-        logger.LogWarning("Event registration rejected: missing UserId or EventId");
-        return TypedResults.BadRequest("UserId and EventId are required");
+        logger.LogWarning("Event registration rejected: missing Auth0 subject claim");
+        return TypedResults.BadRequest("Authentication required");
+    }
+
+    if (registration.EventId == default)
+    {
+        logger.LogWarning("Event registration rejected: missing EventId");
+        return TypedResults.BadRequest("EventId is required");
     }
 
     try
     {
-        // Check if user exists
-        var userExists = await db.Users.AnyAsync(u => u.Id == registration.UserId);
-        if (!userExists)
+        // Resolve user by Auth0Subject to ensure authenticated ownership
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
+        if (user is null)
         {
-            logger.LogWarning("Event registration rejected: User {UserId} not found", registration.UserId);
-            return TypedResults.BadRequest("User not found");
+            logger.LogWarning("Event registration rejected: User profile not found for Auth0Subject");
+            return TypedResults.BadRequest("User profile not found");
         }
+
+        // Set UserId and Auth0Subject from authenticated user
+        registration.UserId = user.Id;
+        registration.Auth0Subject = auth0Subject;
 
         // Check if already registered for this event
         var existingRegistration = await db.EventRegistrations
@@ -289,7 +297,7 @@ app.MapPost("/api/registrations", async Task<Results<Created<EventRegistration>,
             registration.UserId, registration.EventId);
         return TypedResults.BadRequest("Registration failed");
     }
-});
+}).RequireAuthorization();
 
 // Get user's event registrations
 app.MapGet("/api/users/{userId}/registrations", async Task<IEnumerable<EventRegistration>> (
@@ -306,7 +314,7 @@ app.MapGet("/api/users/{userId}/registrations", async Task<IEnumerable<EventRegi
     return await db.EventRegistrations
         .Where(r => r.UserId == parsedUserId)
         .ToListAsync();
-});
+}).RequireAuthorization();
 
 // Legacy endpoint for backward compatibility
 app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>> (
@@ -407,7 +415,7 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
 app.MapGet("/register", async Task<IEnumerable<User>> (UserDB db) =>
 {
     return await db.Users.ToListAsync();
-});
+}).RequireAuthorization();
 
 ProfileApi.MapProfileEndpoints(app);
 
