@@ -57,9 +57,9 @@ public class DraftDeletionTests
     {
         AuthTestGuard.RequireAuthConfigured();
         // Arrange
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);
@@ -100,9 +100,9 @@ public class DraftDeletionTests
     {
         AuthTestGuard.RequireAuthConfigured();
         // Arrange
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);
@@ -126,9 +126,9 @@ public class DraftDeletionTests
     {
         AuthTestGuard.RequireAuthConfigured();
         // Arrange
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);
@@ -168,9 +168,9 @@ public class DraftDeletionTests
     {
         AuthTestGuard.RequireAuthConfigured();
         // Arrange
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         // Attach authorization header for protected endpoints
         await TestAppContext.SetDefaultAuthHeader(httpClient);

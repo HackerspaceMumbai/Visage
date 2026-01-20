@@ -117,9 +117,9 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_Status_Should_Default_To_Disconnected_When_Not_Linked()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
@@ -145,9 +145,9 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_LinkCallback_Should_Persist_Verification_And_Create_Audit_Event()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
@@ -201,9 +201,9 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_LinkCallback_Should_Return_409_When_Profile_Is_Already_Verified_By_Another_Registrant()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();

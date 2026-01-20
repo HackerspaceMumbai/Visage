@@ -450,7 +450,17 @@ public static class ProfileApi
             if (user is null)
                 return Results.NotFound();
 
-            user.FirstName = dto.Name;
+            // Split dto.Name into first and last names
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+            {
+                var nameParts = dto.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (nameParts.Length > 0)
+                {
+                    user.FirstName = nameParts[0];
+                    user.LastName = nameParts.Length > 1 ? nameParts[1] : user.LastName;
+                }
+            }
+            
             user.LinkedInProfile = dto.LinkedIn;
             user.GitHubProfile = dto.GitHub;
             user.UpdatedAt = DateTime.UtcNow;

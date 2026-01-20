@@ -68,15 +68,15 @@ TUnit supports selecting tests using `--treenode-filter`.
 ```powershell
 # Run all E2E tests
 
-dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=E2E]"
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category=E2E]"
 
 # Run only draft persistence tests
 
-dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=DraftPersistence]"
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category=DraftPersistence]"
 
 # Run smoke tests only (quick sanity check)
 
-dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=Smoke]"
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category=Smoke]"
 ```
 
 ### Excluding Auth0-dependent tests from default runs
@@ -86,7 +86,7 @@ If you want to run the test suite but exclude tests that need an Auth0 tenant or
 ```powershell
 # Run all tests in this project but exclude tests that require Auth0
 
-dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category!=RequiresAuth]"
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category!=RequiresAuth]"
 ```
 
 ---

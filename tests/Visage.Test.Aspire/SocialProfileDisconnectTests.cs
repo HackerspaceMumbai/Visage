@@ -82,9 +82,9 @@ public sealed class SocialProfileDisconnectTests
     [Test]
     public async Task Disconnect_Should_Clear_Verification_And_Record_Audit()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();

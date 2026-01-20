@@ -48,8 +48,7 @@ public class User
     [Required]
     public string PostalCode { get; set; } = string.Empty;
 
-    // Government ID (anonymized)
-    [Required]
+    // Government ID (anonymized - full GovtId is not required/stored)
     public string GovtId { get; set; } = string.Empty;
 
     [Required]

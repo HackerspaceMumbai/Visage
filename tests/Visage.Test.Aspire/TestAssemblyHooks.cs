@@ -35,14 +35,14 @@ public static class TestAssemblyHooks
                 }
             }
 
-            AddIfPresent("registrations-api");
+            AddIfPresent("userprofile-api");
             AddIfPresent("eventing");
             AddIfPresent("frontendweb");
             AddIfPresent("cloudinary-image-signing");
 
             // Verify that external endpoints are reachable quickly (fail early)
             var checkTimeout = TimeSpan.FromSeconds(45);
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, checkTimeout);
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, checkTimeout);
             await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, checkTimeout);
             await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, checkTimeout);
             return;
@@ -68,7 +68,7 @@ public static class TestAssemblyHooks
             .WaitAsync(TimeSpan.FromSeconds(60));
         await rns.WaitForResourceAsync("eventingdb", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(60));
-        await rns.WaitForResourceAsync("registrations-api", KnownResourceStates.Running)
+        await rns.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(90));
         await rns.WaitForResourceAsync("eventing", KnownResourceStates.Running)
             .WaitAsync(TimeSpan.FromSeconds(90));
