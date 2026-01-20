@@ -22,7 +22,7 @@ public class EventRegistration
 
     // Registration status tracking
     [Required]
-    public RegistrationStatus Status { get; set; } = RegistrationStatus.Registered;
+    public RegistrationStatus Status { get; set; } = RegistrationStatus.Pending;
 
     public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
 
