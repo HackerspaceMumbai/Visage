@@ -436,6 +436,8 @@ static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> 
 
 static string GenerateCheckInPin()
 {
+    // Generates cryptographically secure 4-digit PIN (1000-9999)
+    // Upper bound 10000 is exclusive, so range is [1000, 10000) = [1000, 9999]
     return RandomNumberGenerator.GetInt32(1000, 10000).ToString();
 }
 

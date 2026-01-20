@@ -102,6 +102,9 @@ var app = builder.Build();
 // T026: Run EF Core migrations automatically on service startup
 // NOTE: When running under Aspire, the connection string is injected via service discovery.
 // For non-Aspire runs, set ConnectionStrings__registrationdb or use `dotnet ef database update`.
+// DEPLOYMENT NOTE: In multi-instance production scenarios, use a dedicated migration step
+// in your deployment pipeline to avoid race conditions. Startup migrations are suitable
+// for development and single-instance deployments.
 if (app.Environment.IsDevelopment() ||
     bool.TryParse(app.Configuration["MIGRATE_ON_STARTUP"], out var migrateOnStartup) && migrateOnStartup)
 {

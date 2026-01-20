@@ -451,6 +451,10 @@ public static class ProfileApi
                 return Results.NotFound();
 
             // Split dto.Name into first and last names
+            // NOTE: This assumes Western name conventions (FirstName LastName).
+            // For internationalization, consider allowing separate first/last name inputs
+            // or using a more sophisticated name parsing library that handles various
+            // cultural naming patterns (e.g., East Asian surname-first formats).
             if (!string.IsNullOrWhiteSpace(dto.Name))
             {
                 var nameParts = dto.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
