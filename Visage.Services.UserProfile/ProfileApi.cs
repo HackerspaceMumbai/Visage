@@ -47,13 +47,8 @@ public static class ProfileApi
                             var jwtParts = token.Split('.');
                             if (jwtParts.Length >= 2)
                             {
-                                string payload = jwtParts[1];
-                                // Add padding if necessary
-                                int mod4 = payload.Length % 4;
-                                if (mod4 > 0) payload += new string('=', 4 - mod4);
-                                var bytes = Convert.FromBase64String(payload);
-                                var json = System.Text.Encoding.UTF8.GetString(bytes);
-                                logger.LogInformation("DEBUG: Access token payload (truncated): {Payload}", json.Length > 1000 ? json.Substring(0, 1000) : json);
+                                // Do not log JWT payload as it may contain sensitive PII
+                                logger.LogInformation("DEBUG: JWT token structure validated (3 parts present)");
                             }
                             else
                             {
@@ -347,8 +342,8 @@ public static class ProfileApi
 
             if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
             {
-                var token = authHeader.ToString();
-                logger.LogInformation("Authorization Header: {Token}", token);
+                // Do not log the actual token value for security reasons
+                logger.LogInformation("Authorization Header present: {HasBearer}", authHeader.ToString().StartsWith("Bearer "));
             }
             else
             {

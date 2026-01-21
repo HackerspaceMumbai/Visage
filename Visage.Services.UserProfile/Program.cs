@@ -118,7 +118,8 @@ if (app.Environment.IsDevelopment() ||
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database initialization failed: {ex.Message}");
+        // Log general error without exposing exception details
+        Console.WriteLine("Database initialization failed. Check database configuration and connectivity.");
         throw;
     }
 }

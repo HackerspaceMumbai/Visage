@@ -224,7 +224,8 @@ static async Task<Results<BadRequest<String>, Created<Event>>> ScheduleEvent([Fr
     }
     catch (Exception ex)
     {
-        return TypedResults.BadRequest(ex.Message);
+        // Do not expose exception details to prevent information disclosure
+        return TypedResults.BadRequest("Failed to schedule event. Please check your input and try again.");
     }
 }
 
