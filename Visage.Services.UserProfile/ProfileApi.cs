@@ -48,19 +48,19 @@ public static class ProfileApi
                             {
                                 // Attempt to decode JWT payload (safe, no signature validation here)
                                 var jwtParts = token.Split('.');
-                                if (jwtParts.Length >= 2)
+                                if (jwtParts.Length == 3)
                                 {
                                     // Do not log JWT payload as it may contain sensitive PII
                                     logger.LogDebug("JWT token structure validated (3 parts present)");
                                 }
                                 else
                                 {
-                                    logger.LogDebug("Token does not appear to be a JWT (no dot separators)");
+                                    logger.LogDebug("Token does not appear to be a valid JWT (expected 3 parts, got {Count})", jwtParts.Length);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                logger.LogWarning(ex, "Failed to decode access token payload");
+                                logger.LogWarning(ex, "Failed to validate token structure");
                             }
                         }
                     }

@@ -119,9 +119,10 @@ if (app.Environment.IsDevelopment() ||
     }
     catch (Exception ex)
     {
-        // Log general error without exposing exception details
-        logger.LogError("Database initialization failed. Check database configuration and connectivity.");
-        throw;
+        // Log detailed error privately for debugging
+        logger.LogError(ex, "Database initialization failed");
+        // Throw generic exception to prevent information disclosure
+        throw new InvalidOperationException("Database initialization failed. Check database configuration and connectivity.");
     }
 }
 
