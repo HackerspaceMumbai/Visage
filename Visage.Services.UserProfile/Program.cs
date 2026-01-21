@@ -110,16 +110,17 @@ if (app.Environment.IsDevelopment() ||
 {
     using var scope = app.Services.CreateScope();
     var userDb = scope.ServiceProvider.GetRequiredService<UserDB>();
-    Console.WriteLine("Ensuring EF Core database exists...");
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Ensuring EF Core database exists...");
     try
     {
         await userDb.Database.MigrateAsync();
-        Console.WriteLine("Database is ready.");
+        logger.LogInformation("Database is ready.");
     }
     catch (Exception ex)
     {
         // Log general error without exposing exception details
-        Console.WriteLine("Database initialization failed. Check database configuration and connectivity.");
+        logger.LogError("Database initialization failed. Check database configuration and connectivity.");
         throw;
     }
 }

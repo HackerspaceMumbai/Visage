@@ -29,46 +29,50 @@ public static class ProfileApi
             HttpContext http,
             ProfileCompletionRepository repo,
             UserDB db,
+            IHostEnvironment environment,
             ILogger<ProfileCompletionRepository> logger) =>
         {
-            // DEBUG: Log raw Authorization header and attempt to decode JWT payload
-            try
+            // DEBUG: Log raw Authorization header and attempt to decode JWT payload (development only)
+            if (environment.IsDevelopment())
             {
-                if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
+                try
                 {
-                    logger.LogInformation("DEBUG: Authorization Header: {AuthHeader}", authHeader.ToString());
-                    var parts = authHeader.ToString().Split(' ');
-                    if (parts.Length >= 2)
+                    if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
                     {
-                        var token = parts[1];
-                        try
+                        logger.LogDebug("Authorization Header: {AuthHeader}", authHeader.ToString());
+                        var parts = authHeader.ToString().Split(' ');
+                        if (parts.Length >= 2)
                         {
-                            // Attempt to decode JWT payload (safe, no signature validation here)
-                            var jwtParts = token.Split('.');
-                            if (jwtParts.Length >= 2)
+                            var token = parts[1];
+                            try
                             {
-                                // Do not log JWT payload as it may contain sensitive PII
-                                logger.LogInformation("DEBUG: JWT token structure validated (3 parts present)");
+                                // Attempt to decode JWT payload (safe, no signature validation here)
+                                var jwtParts = token.Split('.');
+                                if (jwtParts.Length >= 2)
+                                {
+                                    // Do not log JWT payload as it may contain sensitive PII
+                                    logger.LogDebug("JWT token structure validated (3 parts present)");
+                                }
+                                else
+                                {
+                                    logger.LogDebug("Token does not appear to be a JWT (no dot separators)");
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                logger.LogInformation("DEBUG: Token does not appear to be a JWT (no dot separators)");
+                                logger.LogWarning(ex, "Failed to decode access token payload");
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogWarning(ex, "DEBUG: Failed to decode access token payload");
                         }
                     }
+                    else
+                    {
+                        logger.LogDebug("Authorization header not present on request");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    logger.LogInformation("DEBUG: Authorization header not present on request");
+                    logger.LogWarning(ex, "Error while logging Authorization header");
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "DEBUG: Error while logging Authorization header");
             }
 
             // T013: Add OpenTelemetry tracing
