@@ -278,14 +278,9 @@
             // Call EventService to register
             var registration = await EventService.RegisterForEventAsync(evt.EventId);
 
-            if (registration != null)
-            {
-                rsvpMessage = "You're registered — check 'My Registrations' for details.";
-            }
-            else
-            {
-                rsvpMessage = "Registration failed. Please try again.";
-            }
+            rsvpMessage = registration != null
+                ? "You're registered — check 'My Registrations' for details."
+                : "Registration failed. Please try again.";
         }
         catch (Exception ex)
         {

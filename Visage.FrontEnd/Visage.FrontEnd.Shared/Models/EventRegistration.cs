@@ -22,7 +22,7 @@ public class EventRegistration
 
     // Registration status tracking
     [Required]
-    public RegistrationStatus Status { get; set; } = RegistrationStatus.Registered;
+    public RegistrationStatus Status { get; set; } = RegistrationStatus.Pending;
 
     public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
 
@@ -60,27 +60,22 @@ public class EventRegistration
 
 /// <summary>
 /// Registration status enumeration for tracking the lifecycle of an event registration.
+/// Aligned with backend Visage.Shared.Models.RegistrationStatus
 /// </summary>
 public enum RegistrationStatus
 {
-    /// <summary>Initial registration submitted</summary>
-    Registered = 0,
+    /// <summary>Registration submitted, awaiting review</summary>
+    Pending = 0,
 
-    /// <summary>Registration confirmed (e.g., after payment or verification)</summary>
-    Confirmed = 1,
+    /// <summary>Registration approved, user can attend</summary>
+    Approved = 1,
 
-    /// <summary>User cancelled their registration</summary>
-    Cancelled = 2,
+    /// <summary>Registration rejected (e.g., event full, doesn't meet criteria)</summary>
+    Rejected = 2,
 
-    /// <summary>Registration waitlisted due to capacity</summary>
+    /// <summary>Event full, user is on waitlist</summary>
     Waitlisted = 3,
 
-    /// <summary>User checked in at the event</summary>
-    CheckedIn = 4,
-
-    /// <summary>User attended and completed the event</summary>
-    Attended = 5,
-
-    /// <summary>User did not attend (no-show)</summary>
-    NoShow = 6
+    /// <summary>User cancelled their registration</summary>
+    Cancelled = 4
 }

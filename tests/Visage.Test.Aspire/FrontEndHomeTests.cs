@@ -24,7 +24,7 @@ namespace Visage.Tests.Frontend.Web
         {
             // Wait for all backend services
             await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             await TestAppContext.WaitForResourceAsync("cloudinary-image-signing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             
@@ -34,7 +34,7 @@ namespace Visage.Tests.Frontend.Web
             eventingClient.Should().NotBeNull("eventing service should be discoverable");
             eventingClient.BaseAddress.Should().NotBeNull("eventing service should have a base address");
             
-            var registrationsClient = TestAppContext.CreateHttpClient("registrations-api");
+            var registrationsClient = TestAppContext.CreateHttpClient("userprofile-api");
             registrationsClient.Should().NotBeNull("registrations-api service should be discoverable");
             registrationsClient.BaseAddress.Should().NotBeNull("registrations-api service should have a base address");
             
@@ -72,7 +72,7 @@ namespace Visage.Tests.Frontend.Web
         {
             // CRITICAL: Wait for ALL services the frontend depends on, not just the frontend itself
             await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
 
             // Seed data via Event API
@@ -173,7 +173,7 @@ namespace Visage.Tests.Frontend.Web
         {
             // Wait for backend services
             await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             var feClient = TestAppContext.CreateHttpClient("frontendweb");
             var baseUrl = feClient.BaseAddress?.ToString() ?? throw new InvalidOperationException("frontendweb base address not found");
@@ -195,7 +195,7 @@ namespace Visage.Tests.Frontend.Web
         {
             // Wait for backend services before frontend
             await TestAppContext.WaitForResourceAsync("eventing", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
             await TestAppContext.WaitForResourceAsync("frontendweb", KnownResourceStates.Running, TimeSpan.FromSeconds(60));
 
             // Seed one upcoming event

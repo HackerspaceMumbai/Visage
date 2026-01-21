@@ -55,10 +55,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var logger = ctx.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()?.CreateLogger("JwtEvents");
                 logger?.LogInformation("JwtEvents: Token validated for {Sub}", ctx.Principal?.FindFirst("sub")?.Value);
-                foreach (var claim in ctx.Principal?.Claims ?? Array.Empty<System.Security.Claims.Claim>())
+                
+                // Only log detailed claims in development to prevent PII exposure
+                var env = ctx.HttpContext.RequestServices.GetService<IHostEnvironment>();
+                if (env?.IsDevelopment() == true)
                 {
-                    logger?.LogDebug("Claim: {Type} = {Value}", claim.Type, claim.Value);
+                    foreach (var claim in ctx.Principal?.Claims ?? Array.Empty<System.Security.Claims.Claim>())
+                    {
+                        logger?.LogDebug("Claim: {Type} = {Value}", claim.Type, claim.Value);
+                    }
                 }
+                
                 return Task.CompletedTask;
             }
         };
@@ -81,8 +88,10 @@ builder.Services.AddScoped<Visage.Services.UserProfile.Repositories.UserPreferen
 
 builder.Services.AddHttpLogging(logging =>
 {
-    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
-    logging.RequestHeaders.Add("Authorization");
+    logging.LoggingFields =
+        Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPropertiesAndHeaders |
+        Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponsePropertiesAndHeaders;
+    // Do not log Authorization header to prevent bearer tokens from being captured
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -93,21 +102,27 @@ var app = builder.Build();
 // T026: Run EF Core migrations automatically on service startup
 // NOTE: When running under Aspire, the connection string is injected via service discovery.
 // For non-Aspire runs, set ConnectionStrings__registrationdb or use `dotnet ef database update`.
+// DEPLOYMENT NOTE: In multi-instance production scenarios, use a dedicated migration step
+// in your deployment pipeline to avoid race conditions. Startup migrations are suitable
+// for development and single-instance deployments.
 if (app.Environment.IsDevelopment() ||
     bool.TryParse(app.Configuration["MIGRATE_ON_STARTUP"], out var migrateOnStartup) && migrateOnStartup)
 {
     using var scope = app.Services.CreateScope();
     var userDb = scope.ServiceProvider.GetRequiredService<UserDB>();
-    Console.WriteLine("Ensuring EF Core database exists...");
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Ensuring EF Core database exists...");
     try
     {
-        await userDb.Database.EnsureCreatedAsync();
-        Console.WriteLine("Database is ready.");
+        await userDb.Database.MigrateAsync();
+        logger.LogInformation("Database is ready.");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database initialization failed: {ex.Message}");
-        throw;
+        // Log detailed error privately for debugging
+        logger.LogError(ex, "Database initialization failed");
+        // Throw generic exception to prevent information disclosure
+        throw new InvalidOperationException("Database initialization failed. Check database configuration and connectivity.");
     }
 }
 
@@ -159,16 +174,9 @@ app.MapPost("/api/users", async Task<Results<Created<User>, Ok<User>, BadRequest
     {
         inputUser.Email = inputUser.Email.Trim();
 
-        User? existing = null;
-
-        if (inputUser.Id != default)
-        {
-            existing = await db.Users.FirstOrDefaultAsync(u => u.Id == inputUser.Id);
-        }
-
-        existing ??= await db.Users
-            .OrderByDescending(u => u.ProfileCompletedAt)
-            .FirstOrDefaultAsync(u => u.Email == inputUser.Email);
+        // Find user by Auth0Subject to ensure authenticated ownership
+        var existing = await db.Users
+            .FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
 
         if (existing is null)
         {
@@ -224,35 +232,50 @@ app.MapPost("/api/users", async Task<Results<Created<User>, Ok<User>, BadRequest
         logger.LogError(ex, "User upsert failed for {Email}", inputUser.Email);
         return TypedResults.BadRequest();
     }
-});
+}).RequireAuthorization();
 
 // Get all users endpoint
 app.MapGet("/api/users", async Task<IEnumerable<User>> (UserDB db) =>
 {
     return await db.Users.ToListAsync();
-});
+}).RequireAuthorization();
 
 // Event registration endpoint
 app.MapPost("/api/registrations", async Task<Results<Created<EventRegistration>, BadRequest<string>>> (
     [FromBody] EventRegistration registration,
     UserDB db,
+    HttpContext httpContext,
     ILogger<Program> logger) =>
 {
-    if (registration.UserId == default || registration.EventId == default)
+    var auth0Subject =
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? httpContext.User.FindFirst("sub")?.Value;
+
+    if (string.IsNullOrWhiteSpace(auth0Subject))
     {
-        logger.LogWarning("Event registration rejected: missing UserId or EventId");
-        return TypedResults.BadRequest("UserId and EventId are required");
+        logger.LogWarning("Event registration rejected: missing Auth0 subject claim");
+        return TypedResults.BadRequest("Authentication required");
+    }
+
+    if (registration.EventId == default)
+    {
+        logger.LogWarning("Event registration rejected: missing EventId");
+        return TypedResults.BadRequest("EventId is required");
     }
 
     try
     {
-        // Check if user exists
-        var userExists = await db.Users.AnyAsync(u => u.Id == registration.UserId);
-        if (!userExists)
+        // Resolve user by Auth0Subject to ensure authenticated ownership
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
+        if (user is null)
         {
-            logger.LogWarning("Event registration rejected: User {UserId} not found", registration.UserId);
-            return TypedResults.BadRequest("User not found");
+            logger.LogWarning("Event registration rejected: User profile not found for Auth0Subject");
+            return TypedResults.BadRequest("User profile not found");
         }
+
+        // Set UserId and Auth0Subject from authenticated user
+        registration.UserId = user.Id;
+        registration.Auth0Subject = auth0Subject;
 
         // Check if already registered for this event
         var existingRegistration = await db.EventRegistrations
@@ -280,7 +303,7 @@ app.MapPost("/api/registrations", async Task<Results<Created<EventRegistration>,
             registration.UserId, registration.EventId);
         return TypedResults.BadRequest("Registration failed");
     }
-});
+}).RequireAuthorization();
 
 // Get user's event registrations
 app.MapGet("/api/users/{userId}/registrations", async Task<IEnumerable<EventRegistration>> (
@@ -297,7 +320,7 @@ app.MapGet("/api/users/{userId}/registrations", async Task<IEnumerable<EventRegi
     return await db.EventRegistrations
         .Where(r => r.UserId == parsedUserId)
         .ToListAsync();
-});
+}).RequireAuthorization();
 
 // Legacy endpoint for backward compatibility
 app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>> (
@@ -398,7 +421,7 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
 app.MapGet("/register", async Task<IEnumerable<User>> (UserDB db) =>
 {
     return await db.Users.ToListAsync();
-});
+}).RequireAuthorization();
 
 ProfileApi.MapProfileEndpoints(app);
 

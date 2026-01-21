@@ -48,7 +48,7 @@ public class User
     [Required]
     public string PostalCode { get; set; } = string.Empty;
 
-    // Government ID (anonymized)
+    // Government ID (required for registration, but only last 4 digits are stored for privacy)
     [Required]
     public string GovtId { get; set; } = string.Empty;
 

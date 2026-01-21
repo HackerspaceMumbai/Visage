@@ -49,9 +49,9 @@ public sealed class RegistrantCurationSocialFieldsTests
     [Test]
     public async Task Register_List_Should_Include_Verified_Social_Fields()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         // Seed a user with verified social fields
         string linkedin = $"https://www.linkedin.com/in/curation-{Guid.NewGuid():N}";

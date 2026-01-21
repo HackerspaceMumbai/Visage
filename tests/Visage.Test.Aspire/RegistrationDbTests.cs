@@ -25,10 +25,10 @@ public class RegistrationDbTests
         // Using shared TestAppContext for startup synchronization
         
         // Wait for registrations-api to be ready
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Assert - Verify database connectivity via health endpoint
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         var healthResponse = await httpClient.GetAsync("/health");
         healthResponse.IsSuccessStatusCode.Should().BeTrue(
             "Registration service health check should succeed, confirming database connectivity");
@@ -44,9 +44,9 @@ public class RegistrationDbTests
         // Using shared TestAppContext for startup synchronization
         
         // Wait for Registration service to be ready
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         
         // Create a valid user with all required properties
         var newUser = new User
@@ -89,10 +89,10 @@ public class RegistrationDbTests
         // Using shared TestAppContext for startup synchronization
         
         // Wait for services to be ready
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Act - Query users from the /api/users endpoint
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         var getResponse = await httpClient.GetAsync("/api/users");
         
         // Assert - Verify successful query
@@ -113,9 +113,9 @@ public class RegistrationDbTests
         // Arrange - Use shared app
         // Using shared TestAppContext for startup synchronization
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         var email = $"duplicate-update-{Guid.NewGuid():N}@example.com";
 
         var firstUser = new User
@@ -181,11 +181,11 @@ public class RegistrationDbTests
         // Arrange - Use shared app (migrations already ran during assembly initialization)
         
         // Wait for service to be ready
-            await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+            await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
         
         // Assert - If service is running, migrations succeeded (checked during fixture initialization)
         // Verify we can query the service health endpoint
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         var healthResponse = await httpClient.GetAsync("/health");
         healthResponse.IsSuccessStatusCode.Should().BeTrue("Service should be healthy after migrations");
     }

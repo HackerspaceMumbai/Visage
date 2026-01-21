@@ -57,9 +57,9 @@ public class DraftSaveTests
     {
         AuthTestGuard.RequireAuthConfigured();
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
 
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
@@ -105,9 +105,9 @@ public class DraftSaveTests
     {
         AuthTestGuard.RequireAuthConfigured();
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
         var createdUser = await CreateTestUserAsync(httpClient, $"upserttest-{Guid.NewGuid():N}@example.com");
@@ -153,9 +153,9 @@ public class DraftSaveTests
     {
         AuthTestGuard.RequireAuthConfigured();
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
         var createdUser = await CreateTestUserAsync(httpClient, $"invalidsection-{Guid.NewGuid():N}@example.com");
@@ -180,9 +180,9 @@ public class DraftSaveTests
     {
         AuthTestGuard.RequireAuthConfigured();
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
         var createdUser = await CreateTestUserAsync(httpClient, $"mandatorydraft-{Guid.NewGuid():N}@example.com");
@@ -217,9 +217,9 @@ public class DraftSaveTests
     {
         AuthTestGuard.RequireAuthConfigured();
 
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         await TestAppContext.SetDefaultAuthHeader(httpClient);
 
         var createdUser = await CreateTestUserAsync(httpClient, $"concurrent-{Guid.NewGuid():N}@example.com");

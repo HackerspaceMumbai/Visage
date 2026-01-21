@@ -29,51 +29,50 @@ public static class ProfileApi
             HttpContext http,
             ProfileCompletionRepository repo,
             UserDB db,
+            IHostEnvironment environment,
             ILogger<ProfileCompletionRepository> logger) =>
         {
-            // DEBUG: Log raw Authorization header and attempt to decode JWT payload
-            try
+            // DEBUG: Log raw Authorization header and attempt to decode JWT payload (development only)
+            if (environment.IsDevelopment())
             {
-                if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
+                try
                 {
-                    logger.LogInformation("DEBUG: Authorization Header: {AuthHeader}", authHeader.ToString());
-                    var parts = authHeader.ToString().Split(' ');
-                    if (parts.Length >= 2)
+                    if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
                     {
-                        var token = parts[1];
-                        try
+                        logger.LogDebug("Authorization Header: {AuthHeader}", authHeader.ToString());
+                        var parts = authHeader.ToString().Split(' ');
+                        if (parts.Length >= 2)
                         {
-                            // Attempt to decode JWT payload (safe, no signature validation here)
-                            var jwtParts = token.Split('.');
-                            if (jwtParts.Length >= 2)
+                            var token = parts[1];
+                            try
                             {
-                                string payload = jwtParts[1];
-                                // Add padding if necessary
-                                int mod4 = payload.Length % 4;
-                                if (mod4 > 0) payload += new string('=', 4 - mod4);
-                                var bytes = Convert.FromBase64String(payload);
-                                var json = System.Text.Encoding.UTF8.GetString(bytes);
-                                logger.LogInformation("DEBUG: Access token payload (truncated): {Payload}", json.Length > 1000 ? json.Substring(0, 1000) : json);
+                                // Attempt to decode JWT payload (safe, no signature validation here)
+                                var jwtParts = token.Split('.');
+                                if (jwtParts.Length == 3)
+                                {
+                                    // Do not log JWT payload as it may contain sensitive PII
+                                    logger.LogDebug("JWT token structure validated (3 parts present)");
+                                }
+                                else
+                                {
+                                    logger.LogDebug("Token does not appear to be a valid JWT (expected 3 parts, got {Count})", jwtParts.Length);
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                logger.LogInformation("DEBUG: Token does not appear to be a JWT (no dot separators)");
+                                logger.LogWarning(ex, "Failed to validate token structure");
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogWarning(ex, "DEBUG: Failed to decode access token payload");
                         }
                     }
+                    else
+                    {
+                        logger.LogDebug("Authorization header not present on request");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    logger.LogInformation("DEBUG: Authorization header not present on request");
+                    logger.LogWarning(ex, "Error while logging Authorization header");
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "DEBUG: Error while logging Authorization header");
             }
 
             // T013: Add OpenTelemetry tracing
@@ -347,8 +346,8 @@ public static class ProfileApi
 
             if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
             {
-                var token = authHeader.ToString();
-                logger.LogInformation("Authorization Header: {Token}", token);
+                // Do not log the actual token value for security reasons
+                logger.LogInformation("Authorization Header present: {HasBearer}", authHeader.ToString().StartsWith("Bearer "));
             }
             else
             {
@@ -450,7 +449,21 @@ public static class ProfileApi
             if (user is null)
                 return Results.NotFound();
 
-            user.FirstName = dto.Name;
+            // Split dto.Name into first and last names
+            // NOTE: This assumes Western name conventions (FirstName LastName).
+            // For internationalization, consider allowing separate first/last name inputs
+            // or using a more sophisticated name parsing library that handles various
+            // cultural naming patterns (e.g., East Asian surname-first formats).
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+            {
+                var nameParts = dto.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (nameParts.Length > 0)
+                {
+                    user.FirstName = nameParts[0];
+                    user.LastName = nameParts.Length > 1 ? nameParts[1] : user.LastName;
+                }
+            }
+            
             user.LinkedInProfile = dto.LinkedIn;
             user.GitHubProfile = dto.GitHub;
             user.UpdatedAt = DateTime.UtcNow;

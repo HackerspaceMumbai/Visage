@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Visage.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using Visage.Services.Eventing;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -223,7 +224,8 @@ static async Task<Results<BadRequest<String>, Created<Event>>> ScheduleEvent([Fr
     }
     catch (Exception ex)
     {
-        return TypedResults.BadRequest(ex.Message);
+        // Do not expose exception details to prevent information disclosure
+        return TypedResults.BadRequest("Failed to schedule event. Please check your input and try again.");
     }
 }
 
@@ -292,6 +294,12 @@ static async Task<Results<NotFound, BadRequest<string>, Ok<EventRegistration>>> 
     EventDB db, 
     HttpContext http)
 {
+    // Verify approver has admin privileges
+    if (!http.User.IsInRole("VisageAdmin"))
+    {
+        return TypedResults.BadRequest("Insufficient privileges to approve registrations");
+    }
+
     var registration = await db.EventRegistrations.FindAsync(id);
     if (registration == null)
     {
@@ -400,10 +408,18 @@ static async Task<Results<BadRequest<string>, Ok<CheckOutResponse>>> CheckOutFro
         "Checked out successfully"));
 }
 
-static async Task<Results<NotFound, Ok<EventRegistration>>> LookupByPin(
+static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> LookupByPin(
     string pin, 
-    EventDB db)
+    EventDB db,
+    HttpContext http)
 {
+    // Require authentication
+    var auth0Sub = http.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrEmpty(auth0Sub))
+    {
+        return TypedResults.BadRequest("Authentication required");
+    }
+
     // Fast lookup using CheckInPin index
     var registration = await db.EventRegistrations
         .AsNoTracking()
@@ -421,8 +437,9 @@ static async Task<Results<NotFound, Ok<EventRegistration>>> LookupByPin(
 
 static string GenerateCheckInPin()
 {
-    var random = new Random();
-    return random.Next(1000, 9999).ToString();
+    // Generates cryptographically secure 4-digit PIN (1000-9999)
+    // Upper bound 10000 is exclusive, so range is [1000, 10000) = [1000, 9999]
+    return RandomNumberGenerator.GetInt32(1000, 10000).ToString();
 }
 
 // Request/Response DTOs
