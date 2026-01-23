@@ -99,30 +99,46 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// T026: Run EF Core migrations automatically on service startup
+// T026: Database initialization strategy
+// Development: Use EnsureCreated() to sync schema directly (no migrations needed during rapid iteration)
+// Production: Use migrations for safe, versioned schema evolution
 // NOTE: When running under Aspire, the connection string is injected via service discovery.
-// For non-Aspire runs, set ConnectionStrings__registrationdb or use `dotnet ef database update`.
-// DEPLOYMENT NOTE: In multi-instance production scenarios, use a dedicated migration step
-// in your deployment pipeline to avoid race conditions. Startup migrations are suitable
-// for development and single-instance deployments.
-if (app.Environment.IsDevelopment() ||
-    bool.TryParse(app.Configuration["MIGRATE_ON_STARTUP"], out var migrateOnStartup) && migrateOnStartup)
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var userDb = scope.ServiceProvider.GetRequiredService<UserDB>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("Ensuring EF Core database exists...");
-    try
+
+    if (app.Environment.IsDevelopment())
     {
-        await userDb.Database.MigrateAsync();
-        logger.LogInformation("Database is ready.");
+        // Development: Drop and recreate database to match current model
+        // This avoids migration issues during rapid schema iteration
+        logger.LogInformation("Development mode: Ensuring database schema matches current model...");
+        try
+        {
+            await userDb.Database.EnsureDeletedAsync();
+            await userDb.Database.EnsureCreatedAsync();
+            logger.LogInformation("Database schema synchronized successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database initialization failed");
+            throw new InvalidOperationException("Database initialization failed. Check database configuration and connectivity.");
+        }
     }
-    catch (Exception ex)
+    else if (bool.TryParse(app.Configuration["MIGRATE_ON_STARTUP"], out var migrateOnStartup) && migrateOnStartup)
     {
-        // Log detailed error privately for debugging
-        logger.LogError(ex, "Database initialization failed");
-        // Throw generic exception to prevent information disclosure
-        throw new InvalidOperationException("Database initialization failed. Check database configuration and connectivity.");
+        // Production: Use migrations for safe schema evolution
+        logger.LogInformation("Production mode: Applying EF Core migrations...");
+        try
+        {
+            await userDb.Database.MigrateAsync();
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database migration failed");
+            throw new InvalidOperationException("Database initialization failed. Check database configuration and connectivity.");
+        }
     }
 }
 
