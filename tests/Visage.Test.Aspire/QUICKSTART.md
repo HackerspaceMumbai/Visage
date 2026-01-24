@@ -57,7 +57,7 @@ dotnet run --project Visage.AppHost/Visage.AppHost.csproj
 
 Wait until you see:
 
-```
+```text
 Now listening on: https://localhost:5001
 ```
 

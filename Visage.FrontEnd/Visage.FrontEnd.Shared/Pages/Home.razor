@@ -125,6 +125,7 @@
     // RSVP UI state
     private string? rsvpMessage;
     private bool rsvpInProgress;
+    private bool rsvpSuccess;
 
     // T021: Inject EventService and load upcoming events
     // T036: Check profile completion DURING PRERENDER when HttpContext is available
@@ -238,6 +239,7 @@
     {
         // Reset any previous message
         rsvpMessage = null;
+        rsvpSuccess = false;
 
         try
         {
@@ -278,13 +280,21 @@
             // Call EventService to register
             var registration = await EventService.RegisterForEventAsync(evt.EventId);
 
-            rsvpMessage = registration != null
-                ? "You're registered — check 'My Registrations' for details."
-                : "Registration failed. Please try again.";
+            if (registration != null)
+            {
+                rsvpSuccess = true;
+                rsvpMessage = "You're registered — check 'My Registrations' for details.";
+            }
+            else
+            {
+                rsvpSuccess = false;
+                rsvpMessage = "Registration failed. Please try again.";
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during RSVP for event {EventId}", evt.EventId);
+            rsvpSuccess = false;
             rsvpMessage = "An error occurred while registering. Please try again.";
         }
         finally

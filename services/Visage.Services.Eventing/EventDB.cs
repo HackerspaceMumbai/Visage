@@ -101,8 +101,9 @@ namespace Visage.Services.Eventing
                       .ValueGeneratedOnAdd()
                       .HasStrictIdValueGenerator();
 
-                // Composite index for session attendance queries
+                // Composite unique index for session attendance queries
                 entity.HasIndex(e => new { e.EventRegistrationId, e.SessionId })
+                      .IsUnique()
                       .HasDatabaseName("IX_SessionCheckIns_Registration_Session");
 
                 // Index on CheckedInAt for time-based queries (compliance reports)

@@ -367,14 +367,7 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
     {
         inputUser.Email = inputUser.Email.Trim();
 
-        User? existing = null;
-
-        if (inputUser.Id != default)
-        {
-            existing = await db.Users.FirstOrDefaultAsync(u => u.Id == inputUser.Id);
-        }
-
-        existing ??= await db.Users
+        var existing = await db.Users
             .OrderByDescending(u => u.ProfileCompletedAt)
             .FirstOrDefaultAsync(u => u.Email == inputUser.Email);
 
@@ -387,8 +380,14 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
             return TypedResults.Created($"/register/{inputUser.Id}", inputUser);
         }
 
-        existing.Auth0Subject = auth0Subject;
+        // Enforce that only the authenticated owner can update their profile
+        if (!string.Equals(existing.Auth0Subject, auth0Subject, StringComparison.Ordinal))
+        {
+            logger.LogWarning("Registration upsert rejected: Auth0 subject mismatch for {Email}", inputUser.Email);
+            return TypedResults.BadRequest();
+        }
 
+        // Update allowed fields
         existing.FirstName = inputUser.FirstName;
         existing.MiddleName = inputUser.MiddleName;
         existing.LastName = inputUser.LastName;
@@ -432,7 +431,7 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
         logger.LogError(ex, "Registration upsert failed for {Email}", inputUser.Email);
         return TypedResults.BadRequest();
     }
-});
+}).RequireAuthorization();
 
 app.MapGet("/register", async Task<IEnumerable<User>> (UserDB db) =>
 {
