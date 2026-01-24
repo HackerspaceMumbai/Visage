@@ -23,14 +23,8 @@
 
 ### 2) Set Environment Variables
 
-**Option A: Interactive Script (Recommended)**
+#### Option A: Interactive Script (Recommended)
 
-```powershell
-# Run the setup script - it will prompt for all values
-pwsh tests/Visage.Test.Aspire/setup-test-env.ps1
-```
-
-**Option B: Manual Setup**
 
 ```powershell
 # Auth0 Configuration (from Auth0 Dashboard)
