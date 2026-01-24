@@ -289,7 +289,7 @@ static async Task<Ok<List<EventRegistration>>> GetMyRegistrations(EventDB db, Ht
     return TypedResults.Ok(registrations);
 }
 
-static async Task<Results<NotFound, BadRequest<string>, Ok<EventRegistration>>> ApproveRegistration(
+static async Task<Results<NotFound, ForbidHttpResult, BadRequest<string>, Ok<EventRegistration>>> ApproveRegistration(
     StrictId.Id<EventRegistration> id, 
     EventDB db, 
     HttpContext http)
@@ -297,7 +297,7 @@ static async Task<Results<NotFound, BadRequest<string>, Ok<EventRegistration>>> 
     // Verify approver has admin privileges
     if (!http.User.IsInRole("VisageAdmin"))
     {
-        return TypedResults.BadRequest("Insufficient privileges to approve registrations");
+        return TypedResults.Forbid();
     }
 
     var registration = await db.EventRegistrations.FindAsync(id);
