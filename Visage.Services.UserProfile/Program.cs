@@ -250,10 +250,31 @@ app.MapPost("/api/users", async Task<Results<Created<User>, Ok<User>, BadRequest
     }
 }).RequireAuthorization();
 
-// Get all users endpoint
-app.MapGet("/api/users", async Task<IEnumerable<User>> (UserDB db) =>
+// Get current user profile endpoint
+app.MapGet("/api/users", async Task<Results<UnauthorizedHttpResult, NotFound, Ok<User>>> (
+    UserDB db,
+    HttpContext httpContext,
+    ILogger<Program> logger) =>
 {
-    return await db.Users.ToListAsync();
+    var auth0Subject =
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? httpContext.User.FindFirst("sub")?.Value;
+
+    if (string.IsNullOrWhiteSpace(auth0Subject))
+    {
+        logger.LogWarning("User profile access rejected: missing Auth0 subject claim");
+        return TypedResults.Unauthorized();
+    }
+
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
+    
+    if (user == null)
+    {
+        logger.LogWarning("User profile not found for Auth0Subject: {Auth0Subject}", auth0Subject);
+        return TypedResults.NotFound();
+    }
+
+    return TypedResults.Ok(user);
 }).RequireAuthorization();
 
 // Event registration endpoint
@@ -322,20 +343,56 @@ app.MapPost("/api/registrations", async Task<Results<Created<EventRegistration>,
 }).RequireAuthorization();
 
 // Get user's event registrations
-app.MapGet("/api/users/{userId}/registrations", async Task<IEnumerable<EventRegistration>> (
+app.MapGet("/api/users/{userId}/registrations", async Task<Results<UnauthorizedHttpResult, ForbidHttpResult, BadRequest<string>, Ok<IEnumerable<EventRegistration>>>> (
     string userId,
     UserDB db,
+    HttpContext httpContext,
     ILogger<Program> logger) =>
 {
     if (!StrictId.Id<User>.TryParse(userId, out var parsedUserId))
     {
         logger.LogWarning("Invalid userId format: {UserId}", userId);
-        return [];
+        return TypedResults.BadRequest("Invalid user ID format");
     }
 
-    return await db.EventRegistrations
+    // Extract authenticated user id
+    var auth0Subject =
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? httpContext.User.FindFirst("sub")?.Value;
+
+    if (string.IsNullOrWhiteSpace(auth0Subject))
+    {
+        logger.LogWarning("Registrations access rejected: missing Auth0 subject claim");
+        return TypedResults.Unauthorized();
+    }
+
+    // Get authenticated user's profile
+    var currentUser = await db.Users.FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
+    
+    if (currentUser == null)
+    {
+        logger.LogWarning("User profile not found for Auth0Subject: {Auth0Subject}", auth0Subject);
+        return TypedResults.Unauthorized();
+    }
+
+    // Check if user is accessing their own registrations or is an admin
+    var isOwner = currentUser.Id == parsedUserId;
+    var isAdmin = httpContext.User.IsInRole("Admin");
+
+    if (!isOwner && !isAdmin)
+    {
+        logger.LogWarning(
+            "Unauthorized access attempt: User {CurrentUserId} attempted to access registrations for User {TargetUserId}",
+            currentUser.Id,
+            parsedUserId);
+        return TypedResults.Forbid();
+    }
+
+    var registrations = await db.EventRegistrations
         .Where(r => r.UserId == parsedUserId)
         .ToListAsync();
+
+    return TypedResults.Ok<IEnumerable<EventRegistration>>(registrations);
 }).RequireAuthorization();
 
 // Legacy endpoint for backward compatibility
@@ -367,24 +424,19 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
     {
         inputUser.Email = inputUser.Email.Trim();
 
+        // Find user by Auth0Subject to ensure authenticated ownership
         var existing = await db.Users
             .OrderByDescending(u => u.ProfileCompletedAt)
-            .FirstOrDefaultAsync(u => u.Email == inputUser.Email);
+            .FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
 
         if (existing is null)
         {
+            inputUser.Auth0Subject = auth0Subject;
             inputUser.CreatedAt = DateTime.UtcNow;
             await db.Users.AddAsync(inputUser);
             await db.SaveChangesAsync();
             logger.LogInformation("Created user for {Email}", inputUser.Email);
             return TypedResults.Created($"/register/{inputUser.Id}", inputUser);
-        }
-
-        // Enforce that only the authenticated owner can update their profile
-        if (!string.Equals(existing.Auth0Subject, auth0Subject, StringComparison.Ordinal))
-        {
-            logger.LogWarning("Registration upsert rejected: Auth0 subject mismatch for {Email}", inputUser.Email);
-            return TypedResults.BadRequest();
         }
 
         // Update allowed fields
@@ -433,9 +485,30 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
     }
 }).RequireAuthorization();
 
-app.MapGet("/register", async Task<IEnumerable<User>> (UserDB db) =>
+app.MapGet("/register", async Task<Results<UnauthorizedHttpResult, NotFound, Ok<User>>> (
+    UserDB db,
+    HttpContext httpContext,
+    ILogger<Program> logger) =>
 {
-    return await db.Users.ToListAsync();
+    var auth0Subject =
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? httpContext.User.FindFirst("sub")?.Value;
+
+    if (string.IsNullOrWhiteSpace(auth0Subject))
+    {
+        logger.LogWarning("User profile access rejected: missing Auth0 subject claim");
+        return TypedResults.Unauthorized();
+    }
+
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Auth0Subject == auth0Subject);
+    
+    if (user == null)
+    {
+        logger.LogWarning("User profile not found for Auth0Subject: {Auth0Subject}", auth0Subject);
+        return TypedResults.NotFound();
+    }
+
+    return TypedResults.Ok(user);
 }).RequireAuthorization();
 
 ProfileApi.MapProfileEndpoints(app);

@@ -475,7 +475,7 @@ static async Task<Results<BadRequest<string>, UnauthorizedHttpResult, ForbidHttp
         "Checked out successfully"));
 }
 
-static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> LookupByPin(
+static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>> LookupByPin(
     string pin, 
     EventDB db,
     HttpContext http)
@@ -484,7 +484,7 @@ static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> 
     var auth0Sub = http.User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(auth0Sub))
     {
-        return TypedResults.BadRequest("Authentication required");
+        return TypedResults.Unauthorized();
     }
 
     // Fast lookup using CheckInPin index
@@ -497,7 +497,15 @@ static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> 
         return TypedResults.NotFound();
     }
 
-    return TypedResults.Ok(registration);
+    // Return limited DTO to avoid exposing sensitive fields
+    var dto = new RegistrationDto(
+        registration.Id,
+        registration.EventId,
+        registration.Status,
+        registration.RegisteredAt,
+        registration.ApprovedAt);
+
+    return TypedResults.Ok(dto);
 }
 
 // Helper methods
@@ -513,6 +521,16 @@ static string GenerateCheckInPin()
 
 // Use shared contracts so frontend and tests can reuse models.
 // (Defined in `Visage.Shared.Models.CheckInDtos`)
+
+/// <summary>
+/// Limited DTO for registration lookup to avoid exposing sensitive fields
+/// </summary>
+public record RegistrationDto(
+    StrictId.Id<EventRegistration> Id,
+    StrictId.Id<Event> EventId,
+    RegistrationStatus Status,
+    DateTime RegisteredAt,
+    DateTime? ApprovedAt);
 
 
 
