@@ -68,8 +68,8 @@ namespace Visage.Services.Eventing
                       .HasConversion<string>()
                       .HasMaxLength(50);
 
-                // Ignore cross-DbContext navigation and scalar properties
-                // These belong to UserProfile DB and should not be mapped in EventDB
+                // Ignore cross-DbContext navigation/value properties to avoid shadow properties
+                // These properties are specific to UserProfile DB and should not be mapped here
                 entity.Ignore(e => e.User);
                 entity.Ignore(e => e.UserId);
 

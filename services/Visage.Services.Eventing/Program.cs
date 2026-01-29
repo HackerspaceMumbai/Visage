@@ -497,14 +497,13 @@ static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>
         return TypedResults.NotFound();
     }
 
-    // Map to DTO to avoid exposing sensitive fields
+    // Return limited DTO to avoid exposing sensitive fields
     var dto = new RegistrationDto(
         registration.Id,
         registration.EventId,
-        registration.RegisteredAt,
         registration.Status,
-        registration.CheckInPin
-    );
+        registration.RegisteredAt,
+        registration.ApprovedAt);
 
     return TypedResults.Ok(dto);
 }
@@ -526,13 +525,13 @@ static string GenerateCheckInPin()
 /// <summary>
 /// Limited DTO for registration lookup to avoid exposing sensitive fields
 /// </summary>
-record RegistrationDto(
+public record RegistrationDto(
     StrictId.Id<EventRegistration> Id,
     StrictId.Id<Event> EventId,
-    DateTime RegisteredAt,
     RegistrationStatus Status,
-    string? CheckInPin
-);
+    DateTime RegisteredAt,
+    DateTime? ApprovedAt);
+
 
 
 
