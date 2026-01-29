@@ -375,7 +375,7 @@ app.MapGet("/api/users/{userId}/registrations", async Task<Results<Ok<IEnumerabl
 
     // Check if the caller is the owner or an admin
     bool isOwner = authenticatedUser.Id == parsedUserId;
-    bool isAdmin = httpContext.User.IsInRole("Admin");
+    bool isAdmin = httpContext.User.IsInRole("VisageAdmin");
 
     if (!isOwner && !isAdmin)
     {
@@ -427,7 +427,6 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
 
         if (existing is null)
         {
-            inputUser.Auth0Subject = auth0Subject;
             inputUser.CreatedAt = DateTime.UtcNow;
             await db.Users.AddAsync(inputUser);
             await db.SaveChangesAsync();

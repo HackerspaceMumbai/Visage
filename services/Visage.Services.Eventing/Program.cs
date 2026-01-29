@@ -501,7 +501,6 @@ static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>
     var dto = new RegistrationDto(
         registration.Id,
         registration.EventId,
-        registration.Auth0Subject,
         registration.RegisteredAt,
         registration.Status,
         registration.CheckInPin
@@ -530,7 +529,6 @@ static string GenerateCheckInPin()
 record RegistrationDto(
     StrictId.Id<EventRegistration> Id,
     StrictId.Id<Event> EventId,
-    string Auth0Subject,
     DateTime RegisteredAt,
     RegistrationStatus Status,
     string? CheckInPin
