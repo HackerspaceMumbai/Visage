@@ -18,6 +18,8 @@ This guide provides information on filing issues and guidelines for open source 
 
 [How Can I Contribute?](#how-can-i-contribute)
 
+[Testing (TUnit)](#testing-tunit)
+
 ## Code of Conduct
 
 Keep our community approachable and respectable. This project and everyone participating in it is governed by the [Hackerspace Mumbai's Code of Conduct](https://github.com/HackerspaceMumbai/HackerspaceMumbai/blob/master/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to community@hackmum.in.
@@ -61,5 +63,51 @@ Following the guidelines as mentioned in the respective template will help maint
 PR are always welcome, even if they only contain small fixes like typos or a few lines of code. But, please document it as an issue as per the [PR template](./pull_request_template.md) , get a discussion going, and ensure a maintainer has approved the go-ahead before starting to work on it.
 
 If its hacktoberfest related, the maintainer will suitably label the PR as hacktoberfest.
+
+## Testing (TUnit)
+
+Visage uses **TUnit** for automated tests.
+
+### Running tests
+
+```powershell
+# Run all tests
+
+dotnet test
+```
+
+### Selecting tests (TUnit `--treenode-filter`)
+
+TUnit supports selecting tests using `--treenode-filter`.
+
+Filter format: `/<Assembly>/<Namespace>/<Class name>/<Test name>` (wildcards supported with `*`).
+
+```powershell
+# Run all tests in a class
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/HealthEndpointTests/*"
+
+# Run a single test by name
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/All_Http_Resources_Should_Have_Health_Endpoints"
+```
+
+### Selecting by category
+
+Many tests use `[Category("...")]` (for example `RequiresAuth`, `AspireHealth`, `E2E`).
+
+TUnit supports property-based filters:
+
+```powershell
+# Run RequiresAuth tests
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=RequiresAuth]"
+
+# Exclude RequiresAuth tests
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category!=RequiresAuth]"
+```
+
+> **Note:** Avoid vstest `--filter` guidance for TUnit runs; prefer `--treenode-filter`.
 
 **Looking forward to your contribution 🙏**

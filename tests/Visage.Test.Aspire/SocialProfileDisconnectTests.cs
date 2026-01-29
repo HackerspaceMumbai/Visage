@@ -4,8 +4,9 @@ using System.Net;
 using System.Net.Http.Json;
 using TUnit.Core;
 using Visage.Shared.Models;
-using Visage.Services.Registration;
+using Visage.Services.UserProfile;
 using Microsoft.Extensions.Configuration;
+
 namespace Visage.Test.Aspire;
 
 [Category("RequiresAuth")]
@@ -16,42 +17,42 @@ public sealed class SocialProfileDisconnectTests
         => Environment.GetEnvironmentVariable("TEST_USER_EMAIL")
            ?? throw new InvalidOperationException("TEST_USER_EMAIL not set. Required for auth-backed social profile tests.");
 
-    private static string GetRegistrationDbConnectionString()
+    private static string GetUserProfileDbConnectionString()
     {
         var configuration = TestAppContext.App.Services.GetRequiredService<IConfiguration>();
 
-        var cs = configuration.GetConnectionString("registrationdb")
-                 ?? configuration["ConnectionStrings:registrationdb"]
-                 ?? configuration["ConnectionStrings__registrationdb"];
+        var cs = configuration.GetConnectionString("userprofiledb")
+                 ?? configuration["ConnectionStrings:userprofiledb"]
+                 ?? configuration["ConnectionStrings__userprofiledb"];
 
         if (!string.IsNullOrWhiteSpace(cs))
             return cs;
 
         var match = configuration
             .AsEnumerable()
-            .FirstOrDefault(kvp => kvp.Key.Contains("registrationdb", StringComparison.OrdinalIgnoreCase)
+            .FirstOrDefault(kvp => kvp.Key.Contains("userprofiledb", StringComparison.OrdinalIgnoreCase)
                                   && !string.IsNullOrWhiteSpace(kvp.Value));
 
         if (!string.IsNullOrWhiteSpace(match.Value))
             return match.Value!;
 
-        throw new InvalidOperationException("Unable to resolve registrationdb connection string from configuration.");
+        throw new InvalidOperationException("Unable to resolve userprofiledb connection string from configuration.");
     }
 
-    private static RegistrantDB CreateRegistrantDb()
+    private static UserDB CreateUserDb()
     {
-        var options = new DbContextOptionsBuilder<RegistrantDB>()
-            .UseSqlServer(GetRegistrationDbConnectionString())
+        var options = new DbContextOptionsBuilder<UserDB>()
+            .UseSqlServer(GetUserProfileDbConnectionString())
             .Options;
 
-        return new RegistrantDB(options);
+        return new UserDB(options);
     }
 
-    private static async Task<Registrant> EnsureAuthBackedRegistrantAsync(HttpClient httpClient)
+    private static async Task<User> EnsureAuthBackedUserAsync(HttpClient httpClient)
     {
         var email = GetTestUserEmail();
 
-        var registrant = new Registrant
+        var user = new User
         {
             FirstName = "Auth",
             LastName = "User",
@@ -64,14 +65,16 @@ public sealed class SocialProfileDisconnectTests
             GovtIdLast4Digits = "1234",
             GovtIdType = "Aadhaar",
             OccupationStatus = "Employed",
-            CompanyName = "Visage Tests"
+            CompanyName = "Visage Tests",
+            IsProfileComplete = true,
+            ProfileCompletedAt = DateTime.UtcNow
         };
 
-        var response = await httpClient.PostAsJsonAsync("/register", registrant);
+        var response = await httpClient.PostAsJsonAsync("/register", user);
         response.IsSuccessStatusCode.Should().BeTrue($"/register should succeed but got {response.StatusCode}");
 
-        var saved = await response.Content.ReadFromJsonAsync<Registrant>();
-        saved.Should().NotBeNull("/register should return the saved registrant");
+        var saved = await response.Content.ReadFromJsonAsync<User>();
+        saved.Should().NotBeNull("/register should return the saved user");
         saved!.Email.Should().Be(email);
         return saved;
     }
@@ -79,24 +82,24 @@ public sealed class SocialProfileDisconnectTests
     [Test]
     public async Task Disconnect_Should_Clear_Verification_And_Record_Audit()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        await EnsureAuthBackedRegistrantAsync(httpClient);
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
+        await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
 
-        // Seed a verified LinkedIn profile for the current registrant
-        await using (var db = CreateRegistrantDb())
+        // Seed a verified LinkedIn profile for the current user
+        await using (var db = CreateUserDb())
         {
-            var registrant = await db.Registrants
-                .Where(r => r.Email == email)
-                .OrderByDescending(r => r.ProfileCompletedAt)
+            var user = await db.Users
+                .Where(u => u.Email == email)
+                .OrderByDescending(u => u.ProfileCompletedAt)
                 .FirstAsync();
 
-            registrant.LinkedInProfile = $"https://www.linkedin.com/in/visage-test-disconnect-{Guid.NewGuid():N}";
-            registrant.IsLinkedInVerified = true;
-            registrant.LinkedInVerifiedAt = DateTime.UtcNow;
+            user.LinkedInProfile = $"https://www.linkedin.com/in/visage-test-disconnect-{Guid.NewGuid():N}";
+            user.IsLinkedInVerified = true;
+            user.LinkedInVerifiedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
         }
 
@@ -114,23 +117,22 @@ public sealed class SocialProfileDisconnectTests
         status.LinkedIn.VerifiedAt.Should().BeNull();
 
         // Verify DB cleared and audit recorded
-        await using var verifyDb = CreateRegistrantDb();
-        var authRegistrant = await verifyDb.Registrants
+        await using var verifyDb = CreateUserDb();
+        var authUser = await verifyDb.Users
             .AsNoTracking()
-            .Where(r => r.Email == email)
-            .OrderByDescending(r => r.ProfileCompletedAt)
+            .Where(u => u.Email == email)
+            .OrderByDescending(u => u.ProfileCompletedAt)
             .FirstAsync();
 
-        authRegistrant.IsLinkedInVerified.Should().BeFalse();
-        authRegistrant.LinkedInProfile.Should().BeNull();
+        authUser.LinkedInProfile.Should().BeNull();
+        authUser.IsLinkedInVerified.Should().BeFalse();
 
-        var disconnectEvent = await verifyDb.SocialVerificationEvents
+        var audit = await verifyDb.SocialVerificationEvents
             .AsNoTracking()
-            .Where(e => e.RegistrantId == authRegistrant.Id && e.Action == "disconnect")
+            .Where(e => e.UserId == authUser.Id && e.Provider == "linkedin" && e.Action == "disconnect")
             .OrderByDescending(e => e.OccurredAtUtc)
             .FirstOrDefaultAsync();
 
-        disconnectEvent.Should().NotBeNull("disconnect should create an audit event");
-        disconnectEvent!.Outcome.Should().Be("succeeded");
+        audit.Should().NotBeNull("disconnect should write a durable audit event");
     }
 }

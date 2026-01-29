@@ -9,7 +9,7 @@ public sealed class SocialVerificationEvent
 {
     public Id<SocialVerificationEvent> Id { get; init; }
 
-    public Id<Registrant> RegistrantId { get; set; }
+    public Id<User> UserId { get; set; }
 
     /// <summary>
     /// Social provider name ("linkedin" or "github").

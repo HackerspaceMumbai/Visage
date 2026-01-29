@@ -5,9 +5,9 @@ using System.Diagnostics;
 using System.Security.Claims;
 using StrictId;
 using Visage.Shared.Models;
-using Visage.Services.Registration.Repositories;
+using Visage.Services.UserProfile.Repositories;
 
-namespace Visage.Services.Registration;
+namespace Visage.Services.UserProfile;
 
 public static class ProfileApi
 {
@@ -28,52 +28,51 @@ public static class ProfileApi
         group.MapGet("/completion-status", async (
             HttpContext http,
             ProfileCompletionRepository repo,
-            RegistrantDB db,
+            UserDB db,
+            IHostEnvironment environment,
             ILogger<ProfileCompletionRepository> logger) =>
         {
-            // DEBUG: Log raw Authorization header and attempt to decode JWT payload
-            try
+            // DEBUG: Log raw Authorization header and attempt to decode JWT payload (development only)
+            if (environment.IsDevelopment())
             {
-                if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
+                try
                 {
-                    logger.LogInformation("DEBUG: Authorization Header: {AuthHeader}", authHeader.ToString());
-                    var parts = authHeader.ToString().Split(' ');
-                    if (parts.Length >= 2)
+                    if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
                     {
-                        var token = parts[1];
-                        try
+                        logger.LogDebug("Authorization Header: {AuthHeader}", authHeader.ToString());
+                        var parts = authHeader.ToString().Split(' ');
+                        if (parts.Length >= 2)
                         {
-                            // Attempt to decode JWT payload (safe, no signature validation here)
-                            var jwtParts = token.Split('.');
-                            if (jwtParts.Length >= 2)
+                            var token = parts[1];
+                            try
                             {
-                                string payload = jwtParts[1];
-                                // Add padding if necessary
-                                int mod4 = payload.Length % 4;
-                                if (mod4 > 0) payload += new string('=', 4 - mod4);
-                                var bytes = Convert.FromBase64String(payload);
-                                var json = System.Text.Encoding.UTF8.GetString(bytes);
-                                logger.LogInformation("DEBUG: Access token payload (truncated): {Payload}", json.Length > 1000 ? json.Substring(0, 1000) : json);
+                                // Attempt to decode JWT payload (safe, no signature validation here)
+                                var jwtParts = token.Split('.');
+                                if (jwtParts.Length == 3)
+                                {
+                                    // Do not log JWT payload as it may contain sensitive PII
+                                    logger.LogDebug("JWT token structure validated (3 parts present)");
+                                }
+                                else
+                                {
+                                    logger.LogDebug("Token does not appear to be a valid JWT (expected 3 parts, got {Count})", jwtParts.Length);
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                logger.LogInformation("DEBUG: Token does not appear to be a JWT (no dot separators)");
+                                logger.LogWarning(ex, "Failed to validate token structure");
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogWarning(ex, "DEBUG: Failed to decode access token payload");
                         }
                     }
+                    else
+                    {
+                        logger.LogDebug("Authorization header not present on request");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    logger.LogInformation("DEBUG: Authorization header not present on request");
+                    logger.LogWarning(ex, "Error while logging Authorization header");
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "DEBUG: Error while logging Authorization header");
             }
 
             // T013: Add OpenTelemetry tracing
@@ -110,12 +109,12 @@ public static class ProfileApi
                 return Results.Unauthorized();
             }
 
-            Id<Registrant>? parsedUserId = null;
+            Id<User>? parsedUserId = null;
 
             // If token contains our internal StrictId, use it directly
-            if (!Id<Registrant>.TryParse(userId, out var tmpParsed))
+            if (!Id<User>.TryParse(userId, out var tmpParsed))
             {
-                // Not an internal StrictId. Try to locate the registrant by email (common pattern for external Id providers)
+                // Not an internal StrictId. Try to locate the user by email (common pattern for external Id providers)
                 var email = ResolveEmail(http.User);
                 if (string.IsNullOrWhiteSpace(email))
                 {
@@ -126,20 +125,20 @@ public static class ProfileApi
 
                 // T036: Simplified query - EF Core can't translate StrictId.Value
                 // Just get first match by email with most complete profile
-                var registrantByEmail = await db.Registrants
+                var userByEmail = await db.Users
                     .AsNoTracking()
-                    .Where(r => r.Email == email)
-                    .OrderByDescending(r => r.IsProfileComplete)
-                    .ThenByDescending(r => r.ProfileCompletedAt.HasValue)
-                    .ThenByDescending(r => r.ProfileCompletedAt)
+                    .Where(u => u.Email == email)
+                    .OrderByDescending(u => u.IsProfileComplete)
+                    .ThenByDescending(u => u.ProfileCompletedAt.HasValue)
+                    .ThenByDescending(u => u.ProfileCompletedAt)
                     .FirstOrDefaultAsync();
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Profile completion check failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("Profile completion check failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -185,25 +184,25 @@ public static class ProfileApi
         });
         
         // T037: Retrieve full profile by user ID for editing
-        group.MapGet("/{userId}", async (string userId, RegistrantDB db, ILogger<RegistrantDB> logger) =>
+        group.MapGet("/{userId}", async (string userId, UserDB db, ILogger<UserDB> logger) =>
         {
             // Validate StrictId format - if not, try email lookup
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId))
             {
                 // Try email lookup (for external auth providers like Auth0)
                 logger.LogInformation("Profile GET: userId {UserId} is not a StrictId, attempting email lookup", userId);
-                var registrantByEmail = await db.Registrants
+                var userByEmail = await db.Users
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.Email == userId);
+                    .FirstOrDefaultAsync(u => u.Email == userId);
                 
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Profile GET: No registrant found for userId/email {UserId}", userId);
+                    logger.LogWarning("Profile GET: No user found for userId/email {UserId}", userId);
                     return Results.NotFound();
                 }
                 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -217,40 +216,40 @@ public static class ProfileApi
                 return Results.Problem("Internal error processing user ID");
             }
 
-            var registrant = await db.Registrants
+            var user = await db.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
+                .FirstOrDefaultAsync(u => u.Id == parsedUserId.Value);
             
-            if (registrant is null)
+            if (user is null)
             {
-                logger.LogWarning("Profile GET: Registrant not found for ID {UserId}", parsedUserId);
+                logger.LogWarning("Profile GET: User not found for ID {UserId}", parsedUserId);
                 return Results.NotFound();
             }
             
-            logger.LogInformation("Profile GET: Found registrant {Id} for userId {UserId}", registrant.Id, userId);
+            logger.LogInformation("Profile GET: Found user {Id} for userId {UserId}", user.Id, userId);
             
-            // T037: Return full Registrant for ProfileEdit component
-            return Results.Ok(registrant);
+            // T037: Return full User for ProfileEdit component
+            return Results.Ok(user);
         });
         
         // T037: Update full profile by user ID
-        group.MapPut("/{userId}", async (string userId, RegistrantDB db, Registrant updatedRegistrant, ILogger<RegistrantDB> logger) =>
+        group.MapPut("/{userId}", async (string userId, UserDB db, User updatedUser, ILogger<UserDB> logger) =>
         {
             // Validate StrictId format - if not, try email lookup
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId))
             {
                 logger.LogInformation("Profile PUT: userId {UserId} is not a StrictId, attempting email lookup", userId);
-                var registrantByEmail = await db.Registrants
-                    .FirstOrDefaultAsync(r => r.Email == userId);
+                var userByEmail = await db.Users
+                    .FirstOrDefaultAsync(u => u.Email == userId);
                 
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Profile PUT: No registrant found for userId/email {UserId}", userId);
+                    logger.LogWarning("Profile PUT: No user found for userId/email {UserId}", userId);
                     return Results.NotFound();
                 }
                 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -264,94 +263,91 @@ public static class ProfileApi
                 return Results.Problem("Internal error processing user ID");
             }
 
-            var registrant = await db.Registrants
-                .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
+            var user = await db.Users
+                .FirstOrDefaultAsync(u => u.Id == parsedUserId.Value);
             
-            if (registrant is null)
+            if (user is null)
             {
-                logger.LogWarning("Profile PUT: Registrant not found for ID {UserId}", parsedUserId);
+                logger.LogWarning("Profile PUT: User not found for ID {UserId}", parsedUserId);
                 return Results.NotFound();
             }
             
             // T037: Update AIDE fields (allow editing)
             // We do NOT allow editing mandatory fields (FirstName, LastName, etc.)
-            registrant.GenderIdentity = updatedRegistrant.GenderIdentity;
-            registrant.SelfDescribeGender = updatedRegistrant.SelfDescribeGender;
-            registrant.AgeRange = updatedRegistrant.AgeRange;
-            registrant.Ethnicity = updatedRegistrant.Ethnicity;
-            registrant.SelfDescribeEthnicity = updatedRegistrant.SelfDescribeEthnicity;
-            registrant.LanguageProficiency = updatedRegistrant.LanguageProficiency;
-            registrant.SelfDescribeLanguage = updatedRegistrant.SelfDescribeLanguage;
-            registrant.EducationalBackground = updatedRegistrant.EducationalBackground;
-            registrant.SelfDescribeEducation = updatedRegistrant.SelfDescribeEducation;
-            registrant.Disability = updatedRegistrant.Disability;
-            registrant.DisabilityDetails = updatedRegistrant.DisabilityDetails;
-            registrant.DietaryRequirements = updatedRegistrant.DietaryRequirements;
-            registrant.SelfDescribeDietary = updatedRegistrant.SelfDescribeDietary;
-            registrant.LgbtqIdentity = updatedRegistrant.LgbtqIdentity;
-            registrant.ParentalStatus = updatedRegistrant.ParentalStatus;
-            registrant.FirstTimeAttendee = updatedRegistrant.FirstTimeAttendee;
-            registrant.HowDidYouHear = updatedRegistrant.HowDidYouHear;
-            registrant.SelfDescribeHowDidYouHear = updatedRegistrant.SelfDescribeHowDidYouHear;
-            registrant.AreasOfInterest = updatedRegistrant.AreasOfInterest;
-            registrant.SelfDescribeAreasOfInterest = updatedRegistrant.SelfDescribeAreasOfInterest;
-            registrant.VolunteerOpportunities = updatedRegistrant.VolunteerOpportunities;
-            registrant.AdditionalSupport = updatedRegistrant.AdditionalSupport;
-            registrant.Religion = updatedRegistrant.Religion;
-            registrant.Caste = updatedRegistrant.Caste;
-            registrant.Neighborhood = updatedRegistrant.Neighborhood;
-            registrant.ModeOfTransportation = updatedRegistrant.ModeOfTransportation;
-            registrant.SocioeconomicBackground = updatedRegistrant.SocioeconomicBackground;
-            registrant.Neurodiversity = updatedRegistrant.Neurodiversity;
-            registrant.CaregivingResponsibilities = updatedRegistrant.CaregivingResponsibilities;
+            user.GenderIdentity = updatedUser.GenderIdentity;
+            user.SelfDescribeGender = updatedUser.SelfDescribeGender;
+            user.AgeRange = updatedUser.AgeRange;
+            user.Ethnicity = updatedUser.Ethnicity;
+            user.SelfDescribeEthnicity = updatedUser.SelfDescribeEthnicity;
+            user.LanguageProficiency = updatedUser.LanguageProficiency;
+            user.SelfDescribeLanguage = updatedUser.SelfDescribeLanguage;
+            user.EducationalBackground = updatedUser.EducationalBackground;
+            user.SelfDescribeEducation = updatedUser.SelfDescribeEducation;
+            user.Disability = updatedUser.Disability;
+            user.DisabilityDetails = updatedUser.DisabilityDetails;
+            user.DietaryRequirements = updatedUser.DietaryRequirements;
+            user.SelfDescribeDietary = updatedUser.SelfDescribeDietary;
+            user.LgbtqIdentity = updatedUser.LgbtqIdentity;
+            user.ParentalStatus = updatedUser.ParentalStatus;
+            user.HowDidYouHear = updatedUser.HowDidYouHear;
+            user.SelfDescribeHowDidYouHear = updatedUser.SelfDescribeHowDidYouHear;
+            user.AdditionalSupport = updatedUser.AdditionalSupport;
+            user.Religion = updatedUser.Religion;
+            user.Caste = updatedUser.Caste;
+            user.Neighborhood = updatedUser.Neighborhood;
+            user.ModeOfTransportation = updatedUser.ModeOfTransportation;
+            user.SocioeconomicBackground = updatedUser.SocioeconomicBackground;
+            user.Neurodiversity = updatedUser.Neurodiversity;
+            user.CaregivingResponsibilities = updatedUser.CaregivingResponsibilities;
             
             // Also allow updating LinkedIn/GitHub
-            registrant.LinkedInProfile = updatedRegistrant.LinkedInProfile;
-            registrant.GitHubProfile = updatedRegistrant.GitHubProfile;
+            user.LinkedInProfile = updatedUser.LinkedInProfile;
+            user.GitHubProfile = updatedUser.GitHubProfile;
             
             // Check if AIDE profile is now complete
             // (This logic should match ProfileCompletionRepository.IsAideComplete)
             // Updated: Removed FirstTimeAttendee, AreasOfInterest, VolunteerOpportunities (event-management fields)
             // Added: SocioeconomicBackground, Neurodiversity, CaregivingResponsibilities (AIDE mandate fields)
-            var isAideComplete = !string.IsNullOrWhiteSpace(registrant.GenderIdentity) &&
-                                !string.IsNullOrWhiteSpace(registrant.AgeRange) &&
-                                !string.IsNullOrWhiteSpace(registrant.Ethnicity) &&
-                                !string.IsNullOrWhiteSpace(registrant.LanguageProficiency) &&
-                                !string.IsNullOrWhiteSpace(registrant.EducationalBackground) &&
-                                !string.IsNullOrWhiteSpace(registrant.Disability) &&
-                                !string.IsNullOrWhiteSpace(registrant.DietaryRequirements) &&
-                                !string.IsNullOrWhiteSpace(registrant.LgbtqIdentity) &&
-                                !string.IsNullOrWhiteSpace(registrant.ParentalStatus) &&
-                                !string.IsNullOrWhiteSpace(registrant.HowDidYouHear) &&
-                                !string.IsNullOrWhiteSpace(registrant.Religion) &&
-                                !string.IsNullOrWhiteSpace(registrant.Caste) &&
-                                !string.IsNullOrWhiteSpace(registrant.Neighborhood) &&
-                                !string.IsNullOrWhiteSpace(registrant.ModeOfTransportation) &&
-                                !string.IsNullOrWhiteSpace(registrant.SocioeconomicBackground) &&
-                                !string.IsNullOrWhiteSpace(registrant.Neurodiversity) &&
-                                !string.IsNullOrWhiteSpace(registrant.CaregivingResponsibilities);
+            var isAideComplete = !string.IsNullOrWhiteSpace(user.GenderIdentity) &&
+                                !string.IsNullOrWhiteSpace(user.AgeRange) &&
+                                !string.IsNullOrWhiteSpace(user.Ethnicity) &&
+                                !string.IsNullOrWhiteSpace(user.LanguageProficiency) &&
+                                !string.IsNullOrWhiteSpace(user.EducationalBackground) &&
+                                !string.IsNullOrWhiteSpace(user.Disability) &&
+                                !string.IsNullOrWhiteSpace(user.DietaryRequirements) &&
+                                !string.IsNullOrWhiteSpace(user.LgbtqIdentity) &&
+                                !string.IsNullOrWhiteSpace(user.ParentalStatus) &&
+                                !string.IsNullOrWhiteSpace(user.HowDidYouHear) &&
+                                !string.IsNullOrWhiteSpace(user.Religion) &&
+                                !string.IsNullOrWhiteSpace(user.Caste) &&
+                                !string.IsNullOrWhiteSpace(user.Neighborhood) &&
+                                !string.IsNullOrWhiteSpace(user.ModeOfTransportation) &&
+                                !string.IsNullOrWhiteSpace(user.SocioeconomicBackground) &&
+                                !string.IsNullOrWhiteSpace(user.Neurodiversity) &&
+                                !string.IsNullOrWhiteSpace(user.CaregivingResponsibilities);
             
-            registrant.IsAideProfileComplete = isAideComplete;
-            if (isAideComplete && registrant.AideProfileCompletedAt == null)
+            user.IsAideProfileComplete = isAideComplete;
+            if (isAideComplete && user.AideProfileCompletedAt == null)
             {
-                registrant.AideProfileCompletedAt = DateTime.UtcNow;
-                logger.LogInformation("AIDE profile completed for registrant {Id}", registrant.Id);
+                user.AideProfileCompletedAt = DateTime.UtcNow;
+                logger.LogInformation("AIDE profile completed for user {Id}", user.Id);
             }
             
+            user.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
             
-            logger.LogInformation("Profile updated for registrant {Id}", registrant.Id);
+            logger.LogInformation("Profile updated for user {Id}", user.Id);
             return Results.NoContent();
         });
 
-        group.MapGet("/", async (HttpContext http, RegistrantDB db, ILoggerFactory loggerFactory) =>
+        group.MapGet("/", async (HttpContext http, UserDB db, ILoggerFactory loggerFactory) =>
         {
             var logger = loggerFactory.CreateLogger("AuthorizationLogger");
 
             if (http.Request.Headers.TryGetValue("Authorization", out var authHeader))
             {
-                var token = authHeader.ToString();
-                logger.LogInformation("Authorization Header: {Token}", token);
+                // Do not log the actual token value for security reasons
+                logger.LogInformation("Authorization Header present: {HasBearer}", authHeader.ToString().StartsWith("Bearer "));
             }
             else
             {
@@ -365,24 +361,24 @@ public static class ProfileApi
             if (userId is null)
                 return Results.Unauthorized();
 
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId))
             {
                 var email = ResolveEmail(http.User);
                 if (string.IsNullOrWhiteSpace(email))
                     return Results.NotFound();
 
-                var registrantByEmail = await db.Registrants
+                var userByEmail = await db.Users
                     .AsNoTracking()
-                    .Where(r => r.Email == email)
-                    .OrderByDescending(r => r.IsProfileComplete)
-                    .ThenByDescending(r => r.ProfileCompletedAt ?? DateTime.MinValue)
-                    .ThenByDescending(r => r.Id.Value)
+                    .Where(u => u.Email == email)
+                    .OrderByDescending(u => u.IsProfileComplete)
+                    .ThenByDescending(u => u.ProfileCompletedAt ?? DateTime.MinValue)
+                    .ThenByDescending(u => u.Id.Value)
                     .FirstOrDefaultAsync();
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                     return Results.NotFound();
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -396,46 +392,45 @@ public static class ProfileApi
                 return Results.Problem("Internal error processing user ID");
             }
 
-            var registrant = await db.Registrants
+            var user = await db.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
+                .FirstOrDefaultAsync(u => u.Id == parsedUserId.Value);
 
-            if (registrant is null)
+            if (user is null)
                 return Results.NotFound();
 
             return Results.Ok(new UserProfileDto
             {
-                Name = registrant.FirstName + " " + registrant.LastName,
-                Email = registrant.Email,
-                LinkedIn = registrant.LinkedInProfile ?? string.Empty,
-                GitHub = registrant.GitHubProfile ?? string.Empty,
-                //RegistrationDate = registrant
+                Name = user.FirstName + " " + user.LastName,
+                Email = user.Email,
+                LinkedIn = user.LinkedInProfile ?? string.Empty,
+                GitHub = user.GitHubProfile ?? string.Empty,
             });
         });
 
-        group.MapPut("/", async (HttpContext http, RegistrantDB db, UserProfileDto dto) =>
+        group.MapPut("/", async (HttpContext http, UserDB db, UserProfileDto dto) =>
         {
             var userId = http.User.FindFirst("sub")?.Value;
             if (userId is null)
                 return Results.Unauthorized();
 
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId2))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId2))
             {
                 var email = ResolveEmail(http.User);
                 if (string.IsNullOrWhiteSpace(email))
                     return Results.NotFound();
 
-                var registrantByEmail = await db.Registrants
-                    .Where(r => r.Email == email)
-                    .OrderByDescending(r => r.IsProfileComplete)
-                    .ThenByDescending(r => r.ProfileCompletedAt ?? DateTime.MinValue)
-                    .ThenByDescending(r => r.Id.Value)
+                var userByEmail = await db.Users
+                    .Where(u => u.Email == email)
+                    .OrderByDescending(u => u.IsProfileComplete)
+                    .ThenByDescending(u => u.ProfileCompletedAt ?? DateTime.MinValue)
+                    .ThenByDescending(u => u.Id.Value)
                     .FirstOrDefaultAsync();
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                     return Results.NotFound();
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -448,15 +443,30 @@ public static class ProfileApi
                 return Results.Problem("Internal error processing user ID");
             }
 
-            var registrant = await db.Registrants
-                .FirstOrDefaultAsync(r => r.Id == parsedUserId.Value);
+            var user = await db.Users
+                .FirstOrDefaultAsync(u => u.Id == parsedUserId.Value);
 
-            if (registrant is null)
+            if (user is null)
                 return Results.NotFound();
 
-            registrant.FirstName = dto.Name;
-            registrant.LinkedInProfile = dto.LinkedIn;
-            registrant.GitHubProfile = dto.GitHub;
+            // Split dto.Name into first and last names
+            // NOTE: This assumes Western name conventions (FirstName LastName).
+            // For internationalization, consider allowing separate first/last name inputs
+            // or using a more sophisticated name parsing library that handles various
+            // cultural naming patterns (e.g., East Asian surname-first formats).
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+            {
+                var nameParts = dto.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (nameParts.Length > 0)
+                {
+                    user.FirstName = nameParts[0];
+                    user.LastName = nameParts.Length > 1 ? nameParts[1] : user.LastName;
+                }
+            }
+            
+            user.LinkedInProfile = dto.LinkedIn;
+            user.GitHubProfile = dto.GitHub;
+            user.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
 
             return Results.NoContent();
@@ -465,7 +475,7 @@ public static class ProfileApi
         // T026: POST /api/profile/preferences/aide-banner/dismiss - Dismiss AIDE banner for 30 days
         group.MapPost("/preferences/aide-banner/dismiss", async (
             HttpContext http,
-            RegistrantDB db,
+            UserDB db,
             UserPreferencesRepository preferencesRepo,
             ILogger<UserPreferencesRepository> logger) =>
         {
@@ -476,8 +486,8 @@ public static class ProfileApi
                 logger.LogWarning("AIDE banner dismissal failed: No user ID in token");
                 return Results.Unauthorized();
             }
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId3))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId3))
             {
                 var email = ResolveEmail(http.User);
                 if (string.IsNullOrWhiteSpace(email))
@@ -486,14 +496,14 @@ public static class ProfileApi
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                var registrantByEmail = await db.Registrants.FirstOrDefaultAsync(r => r.Email == email);
-                if (registrantByEmail is null)
+                var userByEmail = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("AIDE banner dismissal failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("AIDE banner dismissal failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -525,7 +535,7 @@ public static class ProfileApi
         // T027: GET /api/profile/preferences/aide-banner - Get AIDE banner status
         group.MapGet("/preferences/aide-banner", async (
             HttpContext http,
-            RegistrantDB db,
+            UserDB db,
             UserPreferencesRepository preferencesRepo,
             ILogger<UserPreferencesRepository> logger) =>
         {
@@ -536,8 +546,8 @@ public static class ProfileApi
                 logger.LogWarning("AIDE banner status check failed: No user ID in token");
                 return Results.Unauthorized();
             }
-            Id<Registrant>? parsedUserId = null;
-            if (!Id<Registrant>.TryParse(userId, out var tmpId4))
+            Id<User>? parsedUserId = null;
+            if (!Id<User>.TryParse(userId, out var tmpId4))
             {
                 var email = ResolveEmail(http.User);
                 if (string.IsNullOrWhiteSpace(email))
@@ -546,20 +556,20 @@ public static class ProfileApi
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                var registrantByEmail = await db.Registrants
+                var userByEmail = await db.Users
                     .AsNoTracking()
-                    .Where(r => r.Email == email)
-                    .OrderByDescending(r => r.IsProfileComplete)
-                    .ThenByDescending(r => r.ProfileCompletedAt ?? DateTime.MinValue)
-                    .ThenByDescending(r => r.Id.Value)
+                    .Where(u => u.Email == email)
+                    .OrderByDescending(u => u.IsProfileComplete)
+                    .ThenByDescending(u => u.ProfileCompletedAt ?? DateTime.MinValue)
+                    .ThenByDescending(u => u.Id.Value)
                     .FirstOrDefaultAsync();
-                if (registrantByEmail is null)
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("AIDE banner status check failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("AIDE banner status check failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
             }
             else
             {
@@ -598,15 +608,15 @@ public static class ProfileApi
         // T041: POST /api/profile/draft - Save registration draft
         group.MapPost("/draft", async (
             HttpContext http,
-            RegistrantDB db,
+            UserDB db,
             RegistrationDraftDto draftDto,
-            ILogger<RegistrantDB> logger) =>
+            ILogger<UserDB> logger) =>
         {
             // Try to get user ID from sub claim, fallback to email
             var userId = http.User.FindFirst("sub")?.Value;
-            Id<Registrant>? parsedUserId = null;
+            Id<User>? parsedUserId = null;
 
-            if (!string.IsNullOrWhiteSpace(userId) && Id<Registrant>.TryParse(userId, out var tmpId))
+            if (!string.IsNullOrWhiteSpace(userId) && Id<User>.TryParse(userId, out var tmpId))
             {
                 parsedUserId = tmpId;
             }
@@ -620,14 +630,14 @@ public static class ProfileApi
                     return Results.Unauthorized();
                 }
 
-                var registrantByEmail = await db.Registrants.FirstOrDefaultAsync(r => r.Email == email);
-                if (registrantByEmail is null)
+                var userByEmail = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Draft save failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("Draft save failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
                 logger.LogInformation("Draft save: Resolved user ID {UserId} from email {Email}", parsedUserId, email);
             }
 
@@ -698,14 +708,14 @@ public static class ProfileApi
         group.MapGet("/draft/{section}", async (
             string section,
             HttpContext http,
-            RegistrantDB db,
-            ILogger<RegistrantDB> logger) =>
+            UserDB db,
+            ILogger<UserDB> logger) =>
         {
             // Try to get user ID from sub claim, fallback to email
             var userId = http.User.FindFirst("sub")?.Value;
-            Id<Registrant>? parsedUserId = null;
+            Id<User>? parsedUserId = null;
 
-            if (!string.IsNullOrWhiteSpace(userId) && Id<Registrant>.TryParse(userId, out var tmpId))
+            if (!string.IsNullOrWhiteSpace(userId) && Id<User>.TryParse(userId, out var tmpId))
             {
                 parsedUserId = tmpId;
             }
@@ -719,16 +729,16 @@ public static class ProfileApi
                     return Results.Unauthorized();
                 }
 
-                var registrantByEmail = await db.Registrants
+                var userByEmail = await db.Users
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.Email == email);
-                if (registrantByEmail is null)
+                    .FirstOrDefaultAsync(u => u.Email == email);
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Draft retrieval failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("Draft retrieval failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
                 logger.LogInformation("Draft retrieval: Resolved user ID {UserId} from email {Email}", parsedUserId, email);
             }
 
@@ -800,14 +810,14 @@ public static class ProfileApi
         group.MapDelete("/draft/{section}", async (
             string section,
             HttpContext http,
-            RegistrantDB db,
-            ILogger<RegistrantDB> logger) =>
+            UserDB db,
+            ILogger<UserDB> logger) =>
         {
             // Try to get user ID from sub claim, fallback to email
             var userId = http.User.FindFirst("sub")?.Value;
-            Id<Registrant>? parsedUserId = null;
+            Id<User>? parsedUserId = null;
 
-            if (!string.IsNullOrWhiteSpace(userId) && Id<Registrant>.TryParse(userId, out var tmpId))
+            if (!string.IsNullOrWhiteSpace(userId) && Id<User>.TryParse(userId, out var tmpId))
             {
                 parsedUserId = tmpId;
             }
@@ -821,14 +831,14 @@ public static class ProfileApi
                     return Results.Unauthorized();
                 }
 
-                var registrantByEmail = await db.Registrants.FirstOrDefaultAsync(r => r.Email == email);
-                if (registrantByEmail is null)
+                var userByEmail = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (userByEmail is null)
                 {
-                    logger.LogWarning("Draft deletion failed: No registrant found for email {Email}", email);
+                    logger.LogWarning("Draft deletion failed: No user found for email {Email}", email);
                     return Results.NotFound(new { error = "User profile not found" });
                 }
 
-                parsedUserId = registrantByEmail.Id;
+                parsedUserId = userByEmail.Id;
                 logger.LogInformation("Draft deletion: Resolved user ID {UserId} from email {Email}", parsedUserId, email);
             }
 
@@ -874,9 +884,9 @@ public static class ProfileApi
         // T087: POST /api/profile/social/link-callback - Handle OAuth callback for social connections
         group.MapPost("/social/link-callback", async (
             HttpContext http,
-            RegistrantDB db,
+            UserDB db,
             SocialProfileLinkDto linkDto,
-            ILogger<RegistrantDB> logger) =>
+            ILogger<UserDB> logger) =>
         {
             if (string.IsNullOrWhiteSpace(linkDto.Provider) || string.IsNullOrWhiteSpace(linkDto.ProfileUrl))
             {
@@ -890,18 +900,18 @@ public static class ProfileApi
             var normalizedProfileUrl = linkDto.ProfileUrl.Trim();
             var now = DateTime.UtcNow;
 
-            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: true);
-            if (registrant is null)
+            var user = await ResolveUserForCurrentUserAsync(http, db, logger, asTracking: true);
+            if (user is null)
             {
                 return Results.Problem(
                     statusCode: StatusCodes.Status404NotFound,
-                    title: "Registrant profile not found");
+                    title: "User profile not found");
             }
 
             // Defensive: record attempt (succeeds or fails)
             db.SocialVerificationEvents.Add(new SocialVerificationEvent
             {
-                RegistrantId = registrant.Id,
+                UserId = user.Id,
                 Provider = normalizedProvider,
                 Action = "link_attempt",
                 ProfileUrl = normalizedProfileUrl,
@@ -914,7 +924,7 @@ public static class ProfileApi
             {
                 db.SocialVerificationEvents.Add(new SocialVerificationEvent
                 {
-                    RegistrantId = registrant.Id,
+                    UserId = user.Id,
                     Provider = normalizedProvider,
                     Action = "link_failed",
                     ProfileUrl = normalizedProfileUrl,
@@ -932,16 +942,16 @@ public static class ProfileApi
 
             if (normalizedProvider == "linkedin")
             {
-                var isConflict = await db.Registrants
+                var isConflict = await db.Users
                     .AsNoTracking()
-                    .AnyAsync(r => r.IsLinkedInVerified
-                                   && r.LinkedInProfile == normalizedProfileUrl
-                                   && r.Id != registrant.Id);
+                    .AnyAsync(u => u.IsLinkedInVerified
+                                   && u.LinkedInProfile == normalizedProfileUrl
+                                   && u.Id != user.Id);
                 if (isConflict)
                 {
                     db.SocialVerificationEvents.Add(new SocialVerificationEvent
                     {
-                        RegistrantId = registrant.Id,
+                        UserId = user.Id,
                         Provider = normalizedProvider,
                         Action = "link_failed",
                         ProfileUrl = normalizedProfileUrl,
@@ -955,25 +965,25 @@ public static class ProfileApi
                         statusCode: StatusCodes.Status409Conflict,
                         type: "https://visage.app/problems/social-profile-conflict",
                         title: "Social profile already linked",
-                        detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+                        detail: "This LinkedIn/GitHub account is already verified for another user.");
                 }
 
-                registrant.LinkedInProfile = normalizedProfileUrl;
-                registrant.IsLinkedInVerified = true;
-                registrant.LinkedInVerifiedAt = now;
+                user.LinkedInProfile = normalizedProfileUrl;
+                user.IsLinkedInVerified = true;
+                user.LinkedInVerifiedAt = now;
             }
             else
             {
-                var isConflict = await db.Registrants
+                var isConflict = await db.Users
                     .AsNoTracking()
-                    .AnyAsync(r => r.IsGitHubVerified
-                                   && r.GitHubProfile == normalizedProfileUrl
-                                   && r.Id != registrant.Id);
+                    .AnyAsync(u => u.IsGitHubVerified
+                                   && u.GitHubProfile == normalizedProfileUrl
+                                   && u.Id != user.Id);
                 if (isConflict)
                 {
                     db.SocialVerificationEvents.Add(new SocialVerificationEvent
                     {
-                        RegistrantId = registrant.Id,
+                        UserId = user.Id,
                         Provider = normalizedProvider,
                         Action = "link_failed",
                         ProfileUrl = normalizedProfileUrl,
@@ -987,17 +997,17 @@ public static class ProfileApi
                         statusCode: StatusCodes.Status409Conflict,
                         type: "https://visage.app/problems/social-profile-conflict",
                         title: "Social profile already linked",
-                        detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+                        detail: "This LinkedIn/GitHub account is already verified for another user.");
                 }
 
-                registrant.GitHubProfile = normalizedProfileUrl;
-                registrant.IsGitHubVerified = true;
-                registrant.GitHubVerifiedAt = now;
+                user.GitHubProfile = normalizedProfileUrl;
+                user.IsGitHubVerified = true;
+                user.GitHubVerifiedAt = now;
             }
 
             db.SocialVerificationEvents.Add(new SocialVerificationEvent
             {
-                RegistrantId = registrant.Id,
+                UserId = user.Id,
                 Provider = normalizedProvider,
                 Action = "link_succeeded",
                 ProfileUrl = normalizedProfileUrl,
@@ -1007,14 +1017,15 @@ public static class ProfileApi
 
             try
             {
+                user.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
                 // Check if this is specifically a uniqueness violation
-                var isUniqueConstraintViolation = ex.InnerException?.Message?.Contains("IX_Registrants_LinkedInSubject") == true
-                    || ex.InnerException?.Message?.Contains("IX_Registrants_LinkedInProfile") == true
-                    || ex.InnerException?.Message?.Contains("IX_Registrants_GitHubProfile") == true;
+                var isUniqueConstraintViolation = ex.InnerException?.Message?.Contains("IX_Users_LinkedInSubject") == true
+                    || ex.InnerException?.Message?.Contains("IX_Users_LinkedInProfile") == true
+                    || ex.InnerException?.Message?.Contains("IX_Users_GitHubProfile") == true;
                 
                 if (!isUniqueConstraintViolation)
                 {
@@ -1027,7 +1038,7 @@ public static class ProfileApi
                 db.ChangeTracker.Clear();
                 db.SocialVerificationEvents.Add(new SocialVerificationEvent
                 {
-                    RegistrantId = registrant.Id,
+                    UserId = user.Id,
                     Provider = normalizedProvider,
                     Action = "link_failed",
                     ProfileUrl = normalizedProfileUrl,
@@ -1041,14 +1052,14 @@ public static class ProfileApi
                     statusCode: StatusCodes.Status409Conflict,
                     type: "https://visage.app/problems/social-profile-conflict",
                     title: "Social profile already linked",
-                    detail: "This LinkedIn/GitHub account is already verified for another registrant.");
+                    detail: "This LinkedIn/GitHub account is already verified for another user.");
             }
 
             var sanitizedProviderForLog = normalizedProvider
                 .Replace("\r", string.Empty)
                 .Replace("\n", string.Empty);
 
-            logger.LogInformation("Verified {Provider} profile for user {UserId}: {ProfileUrl}", sanitizedProviderForLog, registrant.Id, normalizedProfileUrl);
+            logger.LogInformation("Verified {Provider} profile for user {UserId}: {ProfileUrl}", sanitizedProviderForLog, user.Id, normalizedProfileUrl);
 
             return Results.Ok(new
             {
@@ -1070,34 +1081,34 @@ public static class ProfileApi
         // T088: GET /api/profile/social/status - Get social connection status
         group.MapGet("/social/status", async (
             HttpContext http,
-            RegistrantDB db,
-            ILogger<RegistrantDB> logger) =>
+            UserDB db,
+            ILogger<UserDB> logger) =>
         {
-            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: false);
-            if (registrant is null)
+            var user = await ResolveUserForCurrentUserAsync(http, db, logger, asTracking: false);
+            if (user is null)
             {
                 return Results.Problem(
                     statusCode: StatusCodes.Status404NotFound,
-                    title: "Registrant profile not found");
+                    title: "User profile not found");
             }
 
             var status = new SocialConnectionStatusDto
             {
                 LinkedIn = new SocialProviderStatusDto
                 {
-                    IsConnected = registrant.IsLinkedInVerified,
-                    ProfileUrl = registrant.LinkedInProfile,
-                    VerifiedAt = registrant.LinkedInVerifiedAt
+                    IsConnected = user.IsLinkedInVerified,
+                    ProfileUrl = user.LinkedInProfile,
+                    VerifiedAt = user.LinkedInVerifiedAt
                 },
                 GitHub = new SocialProviderStatusDto
                 {
-                    IsConnected = registrant.IsGitHubVerified,
-                    ProfileUrl = registrant.GitHubProfile,
-                    VerifiedAt = registrant.GitHubVerifiedAt
+                    IsConnected = user.IsGitHubVerified,
+                    ProfileUrl = user.GitHubProfile,
+                    VerifiedAt = user.GitHubVerifiedAt
                 }
             };
 
-            logger.LogInformation("Retrieved social status for user {UserId}", registrant.Id);
+            logger.LogInformation("Retrieved social status for user {UserId}", user.Id);
             return Results.Ok(status);
         })
         .WithName("GetSocialConnectionStatus")
@@ -1111,9 +1122,9 @@ public static class ProfileApi
         // T090: POST /api/profile/social/disconnect - Disconnect a verified social profile
         group.MapPost("/social/disconnect", async (
             HttpContext http,
-            RegistrantDB db,
+            UserDB db,
             SocialDisconnectDto dto,
-            ILogger<RegistrantDB> logger) =>
+            ILogger<UserDB> logger) =>
         {
             if (string.IsNullOrWhiteSpace(dto.Provider))
             {
@@ -1126,25 +1137,25 @@ public static class ProfileApi
             var provider = dto.Provider.Trim().ToLowerInvariant();
             var now = DateTime.UtcNow;
 
-            var registrant = await ResolveRegistrantForCurrentUserAsync(http, db, logger, asTracking: true);
-            if (registrant is null)
+            var user = await ResolveUserForCurrentUserAsync(http, db, logger, asTracking: true);
+            if (user is null)
             {
                 return Results.Problem(
                     statusCode: StatusCodes.Status404NotFound,
-                    title: "Registrant profile not found");
+                    title: "User profile not found");
             }
 
             switch (provider)
             {
                 case "linkedin":
-                    registrant.LinkedInProfile = null;
-                    registrant.IsLinkedInVerified = false;
-                    registrant.LinkedInVerifiedAt = null;
+                    user.LinkedInProfile = null;
+                    user.IsLinkedInVerified = false;
+                    user.LinkedInVerifiedAt = null;
                     break;
                 case "github":
-                    registrant.GitHubProfile = null;
-                    registrant.IsGitHubVerified = false;
-                    registrant.GitHubVerifiedAt = null;
+                    user.GitHubProfile = null;
+                    user.IsGitHubVerified = false;
+                    user.GitHubVerifiedAt = null;
                     break;
                 default:
                     return Results.Problem(
@@ -1155,28 +1166,29 @@ public static class ProfileApi
 
             db.SocialVerificationEvents.Add(new SocialVerificationEvent
             {
-                RegistrantId = registrant.Id,
+                UserId = user.Id,
                 Provider = provider,
                 Action = "disconnect",
                 OccurredAtUtc = now,
                 Outcome = "succeeded"
             });
 
+            user.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
 
             var status = new SocialConnectionStatusDto
             {
                 LinkedIn = new SocialProviderStatusDto
                 {
-                    IsConnected = registrant.IsLinkedInVerified,
-                    ProfileUrl = registrant.LinkedInProfile,
-                    VerifiedAt = registrant.LinkedInVerifiedAt
+                    IsConnected = user.IsLinkedInVerified,
+                    ProfileUrl = user.LinkedInProfile,
+                    VerifiedAt = user.LinkedInVerifiedAt
                 },
                 GitHub = new SocialProviderStatusDto
                 {
-                    IsConnected = registrant.IsGitHubVerified,
-                    ProfileUrl = registrant.GitHubProfile,
-                    VerifiedAt = registrant.GitHubVerifiedAt
+                    IsConnected = user.IsGitHubVerified,
+                    ProfileUrl = user.GitHubProfile,
+                    VerifiedAt = user.GitHubVerifiedAt
                 }
             };
 
@@ -1191,36 +1203,36 @@ public static class ProfileApi
         });
     }
 
-    private static async Task<Registrant?> ResolveRegistrantForCurrentUserAsync(
+    private static async Task<User?> ResolveUserForCurrentUserAsync(
         HttpContext http,
-        RegistrantDB db,
+        UserDB db,
         ILogger logger,
         bool asTracking)
     {
         var userId = http.User.FindFirst("sub")?.Value;
 
         // Prefer internal StrictId when present.
-        if (!string.IsNullOrWhiteSpace(userId) && Id<Registrant>.TryParse(userId, out var strictId))
+        if (!string.IsNullOrWhiteSpace(userId) && Id<User>.TryParse(userId, out var strictId))
         {
-            var byIdQuery = asTracking ? db.Registrants : db.Registrants.AsNoTracking();
-            return await byIdQuery.FirstOrDefaultAsync(r => r.Id == strictId);
+            var byIdQuery = asTracking ? db.Users : db.Users.AsNoTracking();
+            return await byIdQuery.FirstOrDefaultAsync(u => u.Id == strictId);
         }
 
         var email = ResolveEmail(http.User);
         if (string.IsNullOrWhiteSpace(email))
         {
-            logger.LogWarning("Registrant resolution failed: no StrictId in sub and no email claim.");
+            logger.LogWarning("User resolution failed: no StrictId in sub and no email claim.");
             return null;
         }
 
-        var query = asTracking ? db.Registrants : db.Registrants.AsNoTracking();
+        var query = asTracking ? db.Users : db.Users.AsNoTracking();
 
         // Prefer the most recently completed profile when duplicates exist.
         return await query
-            .Where(r => r.Email == email)
-            .OrderByDescending(r => r.IsProfileComplete)
-            .ThenByDescending(r => r.ProfileCompletedAt.HasValue)
-            .ThenByDescending(r => r.ProfileCompletedAt)
+            .Where(u => u.Email == email)
+            .OrderByDescending(u => u.IsProfileComplete)
+            .ThenByDescending(u => u.ProfileCompletedAt.HasValue)
+            .ThenByDescending(u => u.ProfileCompletedAt)
             .FirstOrDefaultAsync();
     }
 

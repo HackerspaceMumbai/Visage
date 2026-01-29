@@ -195,7 +195,7 @@ public class ProfileService : IProfileService
     /// <summary>
     /// Gets the full profile for the current authenticated user using their email.
     /// </summary>
-    public async Task<Registrant?> GetProfileAsync()
+    public async Task<User?> GetProfileAsync()
     {
         try
         {
@@ -224,7 +224,7 @@ public class ProfileService : IProfileService
             
             if (response.IsSuccessStatusCode)
             {
-                var registrant = await response.Content.ReadFromJsonAsync<Registrant>();
+                var registrant = await response.Content.ReadFromJsonAsync<User>();
                 _logger.LogInformation("GetProfileAsync: Profile loaded successfully");
                 return registrant;
             }
@@ -254,7 +254,7 @@ public class ProfileService : IProfileService
     /// <summary>
     /// Updates the profile for the current authenticated user.
     /// </summary>
-    public async Task<bool> UpdateProfileAsync(Registrant registrant)
+    public async Task<bool> UpdateProfileAsync(User registrant)
     {
         try
         {
@@ -295,6 +295,8 @@ public class ProfileService : IProfileService
             return false;
         }
     }
+
+    
 
     /// <summary>
     /// Saves a draft of the profile section for the current authenticated user.

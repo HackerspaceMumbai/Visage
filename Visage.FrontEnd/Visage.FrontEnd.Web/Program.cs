@@ -104,40 +104,41 @@ builder.Services.AddHttpClient<ICloudinaryImageSigningService, CloudinaryImageSi
 
 builder.Services.AddHttpClient<IUserProfileService, UserProfileService>(client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
+    client.BaseAddress = new Uri("https+http://userprofile-api");
 })
    .AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
 builder.Services.AddHttpClient<IRegistrationService, RegistrationService>(client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
-});
+    client.BaseAddress = new Uri("https+http://userprofile-api");
+})
+.AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
 // T034: Register HttpClient for ProfileService calling backend API directly
 // In Blazor Server, ProfileService runs server-side and can use AuthenticationDelegatingHandler
 builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
+    client.BaseAddress = new Uri("https+http://userprofile-api");
 })
 .AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
 // T087: Register SocialAuthService for OAuth-based social profile linking
 builder.Services.AddHttpClient<ISocialAuthService, SocialAuthService>(client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
+    client.BaseAddress = new Uri("https+http://userprofile-api");
 })
 .AddHttpMessageHandler<AuthenticationDelegatingHandler>();
 
 // BFF endpoint for profile completion status
-builder.Services.AddHttpClient("registrations-api-bff", client =>
+builder.Services.AddHttpClient("userprofile-api-bff", client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
+    client.BaseAddress = new Uri("https+http://userprofile-api");
 });
 
-// Named client for persisting direct OAuth results to Registrations API.
-builder.Services.AddHttpClient("registrations-api-direct", client =>
+// Named client for persisting direct OAuth results to UserProfile API.
+builder.Services.AddHttpClient("userprofile-api-direct", client =>
 {
-    client.BaseAddress = new Uri("https+http://registrations-api");
+    client.BaseAddress = new Uri("https+http://userprofile-api");
 });
 
 
@@ -339,7 +340,7 @@ app.MapGet("/oauth/linkedin/callback", async (
         var draft = await registrationDraftService.GetDraftAsync();
         if (draft == null)
         {
-            draft = new Registrant();
+            draft = new Visage.Shared.Models.User();
         }
 
         draft.IsLinkedInVerified = true;
@@ -535,7 +536,7 @@ app.MapGet("/oauth/github/callback", async (
         var draft = await registrationDraftService.GetDraftAsync();
         if (draft == null)
         {
-            draft = new Registrant();
+            draft = new Visage.Shared.Models.User();
         }
         draft.GitHubProfile = profileUrl;
         draft.IsGitHubVerified = true;
@@ -597,7 +598,7 @@ app.MapGet("/bff/profile/completion-status", async (HttpContext httpContext, IHt
 
     logger.LogInformation("[BFF] Access token retrieved (length: {Length})", accessToken.Length);
 
-    var client = httpClientFactory.CreateClient("registrations-api-bff");
+    var client = httpClientFactory.CreateClient("userprofile-api-bff");
     client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
     
     logger.LogInformation("[BFF] Calling backend API: {BaseAddress}/api/profile/completion-status", client.BaseAddress);

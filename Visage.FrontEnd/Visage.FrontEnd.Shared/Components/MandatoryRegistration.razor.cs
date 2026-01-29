@@ -19,7 +19,7 @@ namespace Visage.FrontEnd.Shared.Components;
 /// </summary>
 public partial class MandatoryRegistration : ComponentBase
 {
-    private Registrant registrant = new();
+    private User registrant = new();
     private bool isSubmitting = false;
     private readonly List<string> customErrors = new();
     private readonly List<string> successMessages = new();
@@ -315,18 +315,15 @@ public partial class MandatoryRegistration : ComponentBase
             }
 
             // T016: Try parse userId to StrictId; if it's an external provider id (e.g. auth0|...) we'll submit without client-side Id
-            Id<Registrant>? parsedUserId = null;
-            if (Id<Registrant>.TryParse(userId, out var tmpParsed))
+            Id<User>? parsedUserId = null;
+            if (Id<User>.TryParse(userId, out var tmpParsed))
             {
                 parsedUserId = tmpParsed;
             }
 
-            // Only capture type + last-4; do not store full GovtId to avoid PII leakage
-            registrant.GovtId = string.Empty;
-
             var registrantToSubmit = BuildRegistrantPayload(parsedUserId);
 
-            var registrationResult = await RegistrationService.RegisterAsync(registrantToSubmit);
+            var registrationResult = await RegistrationService.CreateUserAsync(registrantToSubmit);
 
             if (!registrationResult.IsSuccess)
             {
@@ -349,11 +346,10 @@ public partial class MandatoryRegistration : ComponentBase
                 return;
             }
 
-            var savedRegistrant = registrationResult.Registrant;
-
+            var savedRegistrant = registrationResult.User;
             if (savedRegistrant is null)
             {
-                customErrors.Add("Profile saved but server returned an unexpected response. Please refresh and verify your details.");
+                customErrors.Add("Server returned an unexpected response.");
                 editContext?.NotifyValidationStateChanged();
                 return;
             }
@@ -392,11 +388,11 @@ public partial class MandatoryRegistration : ComponentBase
         }
     }
 
-    private Registrant BuildRegistrantPayload(Id<Registrant>? parsedUserId)
+    private User BuildRegistrantPayload(Id<User>? parsedUserId)
     {
         var payload = parsedUserId.HasValue
-            ? new Registrant { Id = parsedUserId.Value }
-            : new Registrant();
+            ? new User { Id = parsedUserId.Value }
+            : new User();
 
         payload.FirstName = registrant.FirstName;
         payload.LastName = registrant.LastName;
@@ -429,6 +425,32 @@ public partial class MandatoryRegistration : ComponentBase
         payload.ProfileCompletedAt = DateTime.UtcNow;
         payload.IsAideProfileComplete = registrant.IsAideProfileComplete;
         payload.AideProfileCompletedAt = registrant.AideProfileCompletedAt;
+
+        payload.GenderIdentity = registrant.GenderIdentity;
+        payload.SelfDescribeGender = registrant.SelfDescribeGender;
+        payload.AgeRange = registrant.AgeRange;
+        payload.Ethnicity = registrant.Ethnicity;
+        payload.SelfDescribeEthnicity = registrant.SelfDescribeEthnicity;
+        payload.LanguageProficiency = registrant.LanguageProficiency;
+        payload.SelfDescribeLanguage = registrant.SelfDescribeLanguage;
+        payload.EducationalBackground = registrant.EducationalBackground;
+        payload.SelfDescribeEducation = registrant.SelfDescribeEducation;
+        payload.Disability = registrant.Disability;
+        payload.DisabilityDetails = registrant.DisabilityDetails;
+        payload.DietaryRequirements = registrant.DietaryRequirements;
+        payload.SelfDescribeDietary = registrant.SelfDescribeDietary;
+        payload.LgbtqIdentity = registrant.LgbtqIdentity;
+        payload.ParentalStatus = registrant.ParentalStatus;
+        payload.HowDidYouHear = registrant.HowDidYouHear;
+        payload.SelfDescribeHowDidYouHear = registrant.SelfDescribeHowDidYouHear;
+        payload.AdditionalSupport = registrant.AdditionalSupport;
+        payload.Religion = registrant.Religion;
+        payload.Caste = registrant.Caste;
+        payload.Neighborhood = registrant.Neighborhood;
+        payload.ModeOfTransportation = registrant.ModeOfTransportation;
+        payload.SocioeconomicBackground = registrant.SocioeconomicBackground;
+        payload.Neurodiversity = registrant.Neurodiversity;
+        payload.CaregivingResponsibilities = registrant.CaregivingResponsibilities;
 
         return payload;
     }

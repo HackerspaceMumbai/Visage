@@ -16,15 +16,16 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
-  <!-- System.Text.Json removed; runtime provides this and central package management should control versions when necessary -->
+    <!-- System.Text.Json removed; runtime provides this and central package management should control versions when necessary -->
     <PackageReference Include="TUnit" />
     <PackageReference Include="TUnit.Playwright" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Visage.AppHost\Visage.AppHost.csproj" />
     <ProjectReference Include="..\..\Visage.Shared\Visage.Shared.csproj" />
-    <ProjectReference Include="..\..\Visage.Services.Registrations\Visage.Services.Registrations.csproj" />
+    <ProjectReference Include="..\..\Visage.Services.UserProfile\Visage.Services.UserProfile.csproj" />
   </ItemGroup>
 
   <ItemGroup>
