@@ -435,7 +435,7 @@ app.MapPost("/register", async Task<Results<Created<User>, Ok<User>, BadRequest>
             inputUser.CreatedAt = DateTime.UtcNow;
             await db.Users.AddAsync(inputUser);
             await db.SaveChangesAsync();
-            logger.LogInformation("Created user for {Email}", inputUser.Email);
+            logger.LogInformation("Created user for Auth0Subject {Auth0Subject}", auth0Subject);
             return TypedResults.Created($"/register/{inputUser.Id}", inputUser);
         }
 
