@@ -231,15 +231,15 @@ static async Task<Results<BadRequest<String>, Created<Event>>> ScheduleEvent([Fr
 
 // Event Registration handlers
 
-static async Task<Results<BadRequest<string>, UnauthorizedHttpResult, Conflict, Created<EventRegistration>>> RegisterForEvent(
-    [FromBody] RegisterEventRequest request,
-    EventDB db,
+static async Task<Results<BadRequest<string>, Created<EventRegistration>>> RegisterForEvent(
+    [FromBody] RegisterEventRequest request, 
+    EventDB db, 
     HttpContext http)
 {
     var auth0Sub = http.User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(auth0Sub))
     {
-        return TypedResults.Unauthorized();
+        return TypedResults.BadRequest("Unauthorized: Auth0 subject not found");
     }
 
     // Check if event exists
@@ -268,25 +268,17 @@ static async Task<Results<BadRequest<string>, UnauthorizedHttpResult, Conflict, 
     };
 
     db.EventRegistrations.Add(registration);
-    try
-    {
-        await db.SaveChangesAsync();
-    }
-    catch (DbUpdateException)
-    {
-        // Assume unique constraint violation (EventId, Auth0Subject)
-        return TypedResults.Conflict();
-    }
+    await db.SaveChangesAsync();
 
     return TypedResults.Created($"/registrations/{registration.Id}", registration);
 }
 
-static async Task<IResult> GetMyRegistrations(EventDB db, HttpContext http)
+static async Task<Ok<List<EventRegistration>>> GetMyRegistrations(EventDB db, HttpContext http)
 {
     var auth0Sub = http.User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(auth0Sub))
     {
-        return TypedResults.Unauthorized();
+        return TypedResults.Ok(new List<EventRegistration>());
     }
 
     var registrations = await db.EventRegistrations
@@ -297,21 +289,15 @@ static async Task<IResult> GetMyRegistrations(EventDB db, HttpContext http)
     return TypedResults.Ok(registrations);
 }
 
-static async Task<Results<NotFound, BadRequest<string>, UnauthorizedHttpResult, ForbidHttpResult, Ok<EventRegistration>>> ApproveRegistration(
-    StrictId.Id<EventRegistration> id,
-    EventDB db,
+static async Task<Results<NotFound, BadRequest<string>, Ok<EventRegistration>>> ApproveRegistration(
+    StrictId.Id<EventRegistration> id, 
+    EventDB db, 
     HttpContext http)
 {
-    // Explicit authentication check
-    if (http.User?.Identity is null || !http.User.Identity.IsAuthenticated)
-    {
-        return TypedResults.Unauthorized();
-    }
-
     // Verify approver has admin privileges
     if (!http.User.IsInRole("VisageAdmin"))
     {
-        return TypedResults.Forbid();
+        return TypedResults.BadRequest("Insufficient privileges to approve registrations");
     }
 
     var registration = await db.EventRegistrations.FindAsync(id);
@@ -326,7 +312,7 @@ static async Task<Results<NotFound, BadRequest<string>, UnauthorizedHttpResult, 
     }
 
     var approverSub = http.User.FindFirst("sub")?.Value;
-
+    
     registration.Status = RegistrationStatus.Approved;
     registration.ApprovedAt = DateTime.UtcNow;
     registration.ApprovedBy = approverSub;
@@ -363,7 +349,18 @@ static async Task<Results<BadRequest<string>, Ok<CheckInResponse>>> CheckInToSes
         return TypedResults.BadRequest("No approved registration found for this event");
     }
 
-    // Try to insert a new check-in, handle race conditions
+    // Check if already checked in to this session
+    var existingCheckIn = await db.SessionCheckIns
+        .FirstOrDefaultAsync(c => 
+            c.EventRegistrationId == registration.Id && 
+            c.SessionId == request.SessionId &&
+            c.CheckedOutAt == null);
+
+    if (existingCheckIn != null)
+    {
+        return TypedResults.BadRequest($"Already checked in to session {request.SessionId}");
+    }
+
     var checkIn = new SessionCheckIn
     {
         EventRegistrationId = registration.Id,
@@ -373,88 +370,24 @@ static async Task<Results<BadRequest<string>, Ok<CheckInResponse>>> CheckInToSes
     };
 
     db.SessionCheckIns.Add(checkIn);
-    try
-    {
-        await db.SaveChangesAsync();
-        return TypedResults.Ok(new CheckInResponse(
-            checkIn.Id,
-            registration.Id,
-            request.SessionId,
-            checkIn.CheckedInAt,
-            "Checked in successfully"));
-    }
-    catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_SessionCheckIns_Registration_Session") == true)
-    {
-        // Unique constraint violation: already checked in
-        var existingCheckIn = await db.SessionCheckIns
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c =>
-                c.EventRegistrationId == registration.Id &&
-                c.SessionId == request.SessionId &&
-                c.CheckedOutAt == null);
-        if (existingCheckIn != null)
-        {
-            return TypedResults.Ok(new CheckInResponse(
-                existingCheckIn.Id,
-                registration.Id,
-                request.SessionId,
-                existingCheckIn.CheckedInAt,
-                "Already checked in to this session"));
-        }
-        return TypedResults.BadRequest($"Already checked in to session {request.SessionId}");
-    }
-    catch (DbUpdateConcurrencyException)
-    {
-        // Concurrency error, treat as duplicate
-        var existingCheckIn = await db.SessionCheckIns
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c =>
-                c.EventRegistrationId == registration.Id &&
-                c.SessionId == request.SessionId &&
-                c.CheckedOutAt == null);
-        if (existingCheckIn != null)
-        {
-            return TypedResults.Ok(new CheckInResponse(
-                existingCheckIn.Id,
-                registration.Id,
-                request.SessionId,
-                existingCheckIn.CheckedInAt,
-                "Already checked in to this session"));
-        }
-        return TypedResults.BadRequest($"Already checked in to session {request.SessionId}");
-    }
+    await db.SaveChangesAsync();
+
+    return TypedResults.Ok(new CheckInResponse(
+        checkIn.Id,
+        registration.Id,
+        request.SessionId,
+        checkIn.CheckedInAt,
+        "Checked in successfully"));
 }
 
-static async Task<Results<BadRequest<string>, UnauthorizedHttpResult, ForbidHttpResult, Ok<CheckOutResponse>>> CheckOutFromSession(
+static async Task<Results<BadRequest<string>, Ok<CheckOutResponse>>> CheckOutFromSession(
     [FromBody] CheckOutRequest request,
-    EventDB db,
-    HttpContext http)
+    EventDB db)
 {
-    var auth0Sub = http.User.FindFirst("sub")?.Value;
-    if (string.IsNullOrEmpty(auth0Sub))
-    {
-        return TypedResults.Unauthorized();
-    }
-
-    // Load check-in and its registration (to get Auth0Subject)
     var checkIn = await db.SessionCheckIns.FindAsync(request.CheckInId);
     if (checkIn == null)
     {
         return TypedResults.BadRequest("Check-in record not found");
-    }
-
-    var registration = await db.EventRegistrations.AsNoTracking().FirstOrDefaultAsync(r => r.Id == checkIn.EventRegistrationId);
-    if (registration == null)
-    {
-        return TypedResults.BadRequest("Associated registration not found");
-    }
-
-    // Only the owner or an admin can check out
-    var isOwner = string.Equals(registration.Auth0Subject, auth0Sub, StringComparison.Ordinal);
-    var isAdmin = http.User.IsInRole("VisageAdmin");
-    if (!isOwner && !isAdmin)
-    {
-        return TypedResults.Forbid();
     }
 
     if (checkIn.CheckedOutAt != null)
@@ -475,7 +408,7 @@ static async Task<Results<BadRequest<string>, UnauthorizedHttpResult, ForbidHttp
         "Checked out successfully"));
 }
 
-static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>> LookupByPin(
+static async Task<Results<BadRequest<string>, NotFound, Ok<EventRegistration>>> LookupByPin(
     string pin, 
     EventDB db,
     HttpContext http)
@@ -484,7 +417,7 @@ static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>
     var auth0Sub = http.User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(auth0Sub))
     {
-        return TypedResults.Unauthorized();
+        return TypedResults.BadRequest("Authentication required");
     }
 
     // Fast lookup using CheckInPin index
@@ -497,15 +430,7 @@ static async Task<Results<UnauthorizedHttpResult, NotFound, Ok<RegistrationDto>>
         return TypedResults.NotFound();
     }
 
-    // Return limited DTO to avoid exposing sensitive fields
-    var dto = new RegistrationDto(
-        registration.Id,
-        registration.EventId,
-        registration.Status,
-        registration.RegisteredAt,
-        registration.ApprovedAt);
-
-    return TypedResults.Ok(dto);
+    return TypedResults.Ok(registration);
 }
 
 // Helper methods
@@ -521,16 +446,6 @@ static string GenerateCheckInPin()
 
 // Use shared contracts so frontend and tests can reuse models.
 // (Defined in `Visage.Shared.Models.CheckInDtos`)
-
-/// <summary>
-/// Limited DTO for registration lookup to avoid exposing sensitive fields
-/// </summary>
-public record RegistrationDto(
-    StrictId.Id<EventRegistration> Id,
-    StrictId.Id<Event> EventId,
-    RegistrationStatus Status,
-    DateTime RegisteredAt,
-    DateTime? ApprovedAt);
 
 
 
