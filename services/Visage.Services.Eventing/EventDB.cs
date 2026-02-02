@@ -68,11 +68,6 @@ namespace Visage.Services.Eventing
                       .HasConversion<string>()
                       .HasMaxLength(50);
 
-                // Ignore cross-DbContext navigation/value properties to avoid shadow properties
-                // These properties are specific to UserProfile DB and should not be mapped here
-                entity.Ignore(e => e.User);
-                entity.Ignore(e => e.UserId);
-
                 // Composite index for fast registration lookups (EventId + Auth0Subject)
                 entity.HasIndex(e => new { e.EventId, e.Auth0Subject })
                       .IsUnique()
@@ -106,9 +101,8 @@ namespace Visage.Services.Eventing
                       .ValueGeneratedOnAdd()
                       .HasStrictIdValueGenerator();
 
-                // Composite unique index for session attendance queries
+                // Composite index for session attendance queries
                 entity.HasIndex(e => new { e.EventRegistrationId, e.SessionId })
-                      .IsUnique()
                       .HasDatabaseName("IX_SessionCheckIns_Registration_Session");
 
                 // Index on CheckedInAt for time-based queries (compliance reports)
