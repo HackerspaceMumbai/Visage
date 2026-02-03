@@ -5,6 +5,17 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Multi-Environment Secret Management
+// In non-Development environments, pull secrets from Azure Key Vault
+// For local development, secrets are loaded from User Secrets
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultName = builder.Configuration["KeyVault:VaultName"] 
+        ?? throw new InvalidOperationException("KeyVault:VaultName configuration is required in non-Development environments");
+    
+    builder.Configuration.AddAzureKeyVault(keyVaultName, default);
+}
+
 #region Auth0Configuration
 
 var iamDomain = builder.AddParameter("auth0-domain");

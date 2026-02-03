@@ -57,13 +57,14 @@ Before running the Visage project, ensure you have the following installed:
 ### Running the Project
 
 1. **Start Docker Desktop** - Ensure Docker is running before launching the application
-2. **Run the AppHost**:
+2. **Configure Secrets** - Set up your local development secrets (Auth0, OAuth, Cloudinary). See [SECRETS.md](./SECRETS.md) for detailed instructions.
+3. **Run the AppHost**:
    ```bash
    cd Visage.AppHost
    dotnet run
    ```
-3. **Access the Aspire Dashboard** - Opens automatically at `https://localhost:17044/`
-4. **Verify Health Status**:
+4. **Access the Aspire Dashboard** - Opens automatically at `https://localhost:17044/`
+5. **Verify Health Status**:
    - ✅ SQL Server resource shows "Healthy" (green)
    - ✅ Both `registrationdb` and `eventingdb` databases are listed
    - ✅ Registration and Eventing services show "Healthy"
