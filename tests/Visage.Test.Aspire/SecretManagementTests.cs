@@ -15,23 +15,48 @@ namespace Visage.Test.Aspire;
 public class SecretManagementTests
 {
     /// <summary>
+    /// Gets the repository root directory by traversing up from the test assembly location
+    /// </summary>
+    private static string GetRepositoryRoot()
+    {
+        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var directory = new DirectoryInfo(Path.GetDirectoryName(assemblyLocation)!);
+        
+        // Traverse up until we find the directory containing Visage.slnx
+        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Visage.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        
+        if (directory == null)
+        {
+            throw new DirectoryNotFoundException("Could not find repository root containing Visage.slnx");
+        }
+        
+        return directory.FullName;
+    }
+    
+    /// <summary>
     /// Verify that User Secrets are properly initialized for all service projects
     /// </summary>
     [Test]
     public void Service_Projects_Should_Have_UserSecretsId_Configured()
     {
-        // Assert - Verify .csproj files have UserSecretsId
+        // Arrange
+        var repoRoot = GetRepositoryRoot();
+        
         var projectPaths = new Dictionary<string, string>
         {
-            ["AppHost"] = "/home/runner/work/Visage/Visage/Visage.AppHost/Visage.AppHost.csproj",
-            ["FrontEnd.Web"] = "/home/runner/work/Visage/Visage/Visage.FrontEnd/Visage.FrontEnd.Web/Visage.FrontEnd.Web.csproj",
-            ["Services.Eventing"] = "/home/runner/work/Visage/Visage/services/Visage.Services.Eventing/Visage.Services.Eventing.csproj",
-            ["Services.Registrations"] = "/home/runner/work/Visage/Visage/services/Visage.Services.Registrations/Visage.Services.Registrations.csproj"
+            ["AppHost"] = Path.Combine(repoRoot, "Visage.AppHost", "Visage.AppHost.csproj"),
+            ["FrontEnd.Web"] = Path.Combine(repoRoot, "Visage.FrontEnd", "Visage.FrontEnd.Web", "Visage.FrontEnd.Web.csproj"),
+            ["Services.Eventing"] = Path.Combine(repoRoot, "services", "Visage.Services.Eventing", "Visage.Services.Eventing.csproj"),
+            ["Services.Registrations"] = Path.Combine(repoRoot, "services", "Visage.Services.Registrations", "Visage.Services.Registrations.csproj")
         };
         
+        // Act & Assert
         foreach (var (projectName, projectPath) in projectPaths)
         {
-            File.Exists(projectPath).Should().BeTrue($"{projectName} project file should exist");
+            File.Exists(projectPath).Should().BeTrue($"{projectName} project file should exist at {projectPath}");
             
             var projectContent = File.ReadAllText(projectPath);
             projectContent.Should().Contain("<UserSecretsId>",
@@ -46,7 +71,8 @@ public class SecretManagementTests
     public void AppHost_Should_Reference_AzureKeyVault_Packages()
     {
         // Arrange
-        var appHostCsprojPath = "/home/runner/work/Visage/Visage/Visage.AppHost/Visage.AppHost.csproj";
+        var repoRoot = GetRepositoryRoot();
+        var appHostCsprojPath = Path.Combine(repoRoot, "Visage.AppHost", "Visage.AppHost.csproj");
         
         // Act
         var projectContent = File.ReadAllText(appHostCsprojPath);
@@ -65,7 +91,8 @@ public class SecretManagementTests
     public void AppHost_Should_Have_KeyVault_Configuration_Logic()
     {
         // Arrange
-        var appHostPath = "/home/runner/work/Visage/Visage/Visage.AppHost/AppHost.cs";
+        var repoRoot = GetRepositoryRoot();
+        var appHostPath = Path.Combine(repoRoot, "Visage.AppHost", "AppHost.cs");
         
         // Act
         var appHostContent = File.ReadAllText(appHostPath);
@@ -90,10 +117,11 @@ public class SecretManagementTests
     public void SECRETS_Documentation_Should_Exist_And_Be_Comprehensive()
     {
         // Arrange
-        var secretsDocPath = "/home/runner/work/Visage/Visage/SECRETS.md";
+        var repoRoot = GetRepositoryRoot();
+        var secretsDocPath = Path.Combine(repoRoot, "SECRETS.md");
         
         // Act
-        File.Exists(secretsDocPath).Should().BeTrue("SECRETS.md documentation should exist");
+        File.Exists(secretsDocPath).Should().BeTrue($"SECRETS.md documentation should exist at {secretsDocPath}");
         var secretsContent = File.ReadAllText(secretsDocPath);
         
         // Assert - Verify documentation covers all required topics
@@ -127,7 +155,8 @@ public class SecretManagementTests
     public void README_Should_Reference_SECRETS_Documentation()
     {
         // Arrange
-        var readmePath = "/home/runner/work/Visage/Visage/README.md";
+        var repoRoot = GetRepositoryRoot();
+        var readmePath = Path.Combine(repoRoot, "README.md");
         
         // Act
         var readmeContent = File.ReadAllText(readmePath);
