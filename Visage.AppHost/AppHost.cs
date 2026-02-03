@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using Aspire.Hosting;
 using Visage.AppHost;
 using Scalar.Aspire;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -13,7 +16,10 @@ if (!builder.Environment.IsDevelopment())
     var keyVaultName = builder.Configuration["KeyVault:VaultName"] 
         ?? throw new InvalidOperationException("KeyVault:VaultName configuration is required in non-Development environments");
     
-    builder.Configuration.AddAzureKeyVault(keyVaultName, default);
+    // Configure the builder to use Key Vault for configuration
+    ((IConfigurationBuilder)builder.Configuration).AddAzureKeyVault(
+        new Uri($"https://{keyVaultName}.vault.azure.net/"),
+        new DefaultAzureCredential());
 }
 
 #region Auth0Configuration
