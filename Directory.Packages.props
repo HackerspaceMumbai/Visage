@@ -47,6 +47,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
     <!-- Authentication packages -->
     <PackageVersion Include="Auth0.AspNetCore.Authentication" Version="1.6.0" />
+    <!-- Azure packages -->
+    <PackageVersion Include="Azure.Identity" Version="1.17.0" />
+    <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
     <!-- Testing packages -->
     <PackageVersion Include="TUnit" Version="1.5.70" />
     <PackageVersion Include="TUnit.Playwright" Version="1.5.70" />
