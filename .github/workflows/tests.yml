@@ -19,8 +19,7 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
-      - name: Restore .NET workloads
-        run: dotnet workload restore
+      # CI runs on ubuntu; avoid restoring MAUI workloads (iOS/MacCatalyst) which require non-Linux SDK packs.
 
       - name: Display dotnet version
         run: dotnet --version
@@ -32,7 +31,7 @@ jobs:
           fi
 
       - name: Run default smoke tests
-        run: dotnet test --filter "Category=Smoke"
+        run: dotnet test --project tests/Visage.Test.Aspire/Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category=Smoke]"
 
   requires-auth-tests:
     runs-on: ubuntu-latest
@@ -64,4 +63,4 @@ jobs:
           fi
 
       - name: Run RequiresAuth tests
-        run: dotnet test --filter "Category=RequiresAuth"
+        run: dotnet test --project tests/Visage.Test.Aspire/Visage.Test.Aspire.csproj -- --treenode-filter "/*/*/*/*[Category=RequiresAuth]"

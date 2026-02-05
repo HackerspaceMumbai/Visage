@@ -1,14 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using StrictId;
+using SharedEvent = Visage.Shared.Models.Event;
 
 namespace Visage.FrontEnd.Shared.Models;
 
-public class Event
+public class EventDto
 {
     [Required]
     //[StringLength(50, ErrorMessage = "Event ID must be less than 50 characters.")]
-    public Id<Event> Id { get; init; }
+    public Id<SharedEvent> Id { get; init; }
 
     [Required]
     [StringLength(100, ErrorMessage = "Event Name must be less than 100 characters")]
@@ -40,7 +41,8 @@ public class Event
     [Obsolete("Use CoverPicture property instead.")]
     public string? CoverPictureFileName { get; set; }
 
-    public int? AttendeesPercentage { get; set; }
+    // Match shared model type to avoid conversions
+    public decimal? AttendeesPercentage { get; set; }
 
     // New properties
     public string? Hashtag { get; set; }

@@ -14,7 +14,7 @@ public class DraftRegistration
     public Id<DraftRegistration> Id { get; init; }
 
     [Required]
-    public Id<Registrant> UserId { get; set; }
+    public Id<User> UserId { get; set; }
 
     /// <summary>
     /// Section identifier: "mandatory" or "aide"

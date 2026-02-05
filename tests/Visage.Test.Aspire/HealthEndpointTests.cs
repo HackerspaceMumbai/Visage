@@ -22,7 +22,7 @@ public class HealthEndpointTests
     public async Task RegistrationApi_Health_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         
         // Act
         var response = await httpClient.GetAsync("/health");
@@ -40,7 +40,7 @@ public class HealthEndpointTests
     public async Task RegistrationApi_Alive_Endpoint_Should_Return_200()
     {
         // Arrange
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
         
         // Act
         var response = await httpClient.GetAsync("/alive");
@@ -167,7 +167,7 @@ public class HealthEndpointTests
     public async Task All_Http_Resources_Should_Have_Health_Endpoints()
     {
         // Arrange
-        var resourceNames = new[] { "registrations-api", "eventing", "frontendweb", "cloudinary-image-signing" };
+        var resourceNames = new[] { "userprofile-api", "eventing", "frontendweb", "cloudinary-image-signing" };
         var failures = new List<string>();
 
         // Act & Assert

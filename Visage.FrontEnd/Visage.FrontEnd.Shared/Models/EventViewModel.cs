@@ -1,8 +1,16 @@
+using StrictId;
+using SharedEvent = Visage.Shared.Models.Event;
+
 namespace Visage.FrontEnd.Shared.Models;
 
 public record EventViewModel
 {
+    // Strict typed Event id (used for calling EventService and checkin flows)
+    public required Id<SharedEvent> EventId { get; init; }
+
+    // Legacy Guid id kept for places that expect a Guid
     public required Guid Id { get; init; }
+
     public required string Name { get; init; }
     public required DateTime Date { get; init; }
     public required string Location { get; init; }

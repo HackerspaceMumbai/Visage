@@ -121,7 +121,8 @@ These tests are NEW and should NOT have any failures:
 
 ```pwsh
 # Run only the health endpoint tests
-dotnet test --filter "Category=AspireHealth"
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=AspireHealth]"
 ```
 
 This keeps the health endpoint tests out of default runs (unit/integration) to avoid false positives in CI unless explicitly invoked.
@@ -143,16 +144,18 @@ This keeps the health endpoint tests out of default runs (unit/integration) to a
 
 ## Running tests (exclude Auth0-dependent & health checks)
 
-To avoid counting external Auth-related failures as general test regressions, the default test command should exclude tests that require Auth0 and the Aspire health probe tests. Use:
+To avoid counting external Auth-related failures as general test regressions, the default test command should exclude tests that require Auth0 and the Aspire health probe tests.
 
 ```pwsh
-dotnet test --filter "Category!=RequiresAuth&Category!=AspireHealth"
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category!=RequiresAuth][Category!=AspireHealth]"
 ```
 
 Run Auth0-dependent tests explicitly when you have an Auth0 test tenant configured:
 
 ```pwsh
-dotnet test --filter "Category=RequiresAuth"
+
+dotnet test --project tests\Visage.Test.Aspire\Visage.Test.Aspire.csproj --treenode-filter "/*/*/*/*[Category=RequiresAuth]"
 ```
 
 
@@ -160,4 +163,4 @@ dotnet test --filter "Category=RequiresAuth"
 - When resolving failures, update this document with resolution date and approach
 - Add new failure categories as discovered
 - Keep this file in sync with actual test suite status
-- Run `dotnet test tests/Visage.Test.Aspire/Visage.Test.Aspire.csproj --logger "console;verbosity=detailed"` to verify current status
+- Prefer `dotnet build` before expensive test runs when working on compilation failures

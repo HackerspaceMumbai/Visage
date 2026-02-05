@@ -156,7 +156,7 @@
     private bool isSubmitting;
 
 
-    private Event? newEvent { get; set; }
+    private EventDto? newEvent { get; set; }
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
 
@@ -170,7 +170,7 @@
 
     protected override void OnInitialized()
     {
-        newEvent ??= new Event()
+        newEvent ??= new EventDto()
         {
             StartDate = DateOnly.FromDateTime(DateTime.Now),
             StartTime = TimeOnly.FromDateTime(DateTime.Now),
@@ -379,7 +379,7 @@
 
     private void ClearForm()
     {
-        newEvent = new Event()
+        newEvent = new EventDto()
         {
             StartDate = DateOnly.FromDateTime(DateTime.Now),
             StartTime = TimeOnly.FromDateTime(DateTime.Now),

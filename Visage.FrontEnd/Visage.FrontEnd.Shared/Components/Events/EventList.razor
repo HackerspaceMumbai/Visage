@@ -30,7 +30,7 @@ else
     <EventGrid>
         @foreach (var evt in Events)
         {
-            <EventCard Event="@evt" />
+            <EventCard Event="@evt" OnRSVP="@OnRSVP" />
         }
     </EventGrid>
 }
@@ -38,6 +38,10 @@ else
 @code {
     [Parameter]
     public List<EventViewModel>? Events { get; set; }
+
+    // Optional RSVPs bubbled up to parent page/component
+    [Parameter]
+    public EventCallback<EventViewModel> OnRSVP { get; set; }
     
     [Parameter]
     public string EmptyIcon { get; set; } = "📭";

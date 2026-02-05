@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 using Visage.FrontEnd.Shared.Services;
 using Visage.Shared.Models;
-using System.Security.Claims;
 
 namespace Visage.FrontEnd.Web.Services;
 
@@ -16,7 +16,7 @@ public class ServerRegistrationDraftService : IRegistrationDraftService
     private readonly ILogger<ServerRegistrationDraftService> _logger;
 
     public ServerRegistrationDraftService(
-        IMemoryCache cache, 
+        IMemoryCache cache,
         IHttpContextAccessor httpContextAccessor,
         ILogger<ServerRegistrationDraftService> logger)
     {
@@ -37,7 +37,7 @@ public class ServerRegistrationDraftService : IRegistrationDraftService
         return user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
-    public Task SaveDraftAsync(Registrant registrant)
+    public Task SaveDraftAsync(User user)
     {
         var key = GetUserKey();
         if (string.IsNullOrEmpty(key))
@@ -47,27 +47,27 @@ public class ServerRegistrationDraftService : IRegistrationDraftService
         }
 
         var cacheKey = $"registration_draft_{key}";
-        _cache.Set(cacheKey, registrant, TimeSpan.FromMinutes(30));
+        _cache.Set(cacheKey, user, TimeSpan.FromMinutes(30));
         _logger.LogInformation("Saved registration draft for user {UserId}", key);
         return Task.CompletedTask;
     }
 
-    public Task<Registrant?> GetDraftAsync()
+    public Task<User?> GetDraftAsync()
     {
         var key = GetUserKey();
         if (string.IsNullOrEmpty(key))
         {
-            return Task.FromResult<Registrant?>(null);
+            return Task.FromResult<User?>(null);
         }
 
         var cacheKey = $"registration_draft_{key}";
-        if (_cache.TryGetValue(cacheKey, out Registrant? registrant))
+        if (_cache.TryGetValue(cacheKey, out User? user))
         {
             _logger.LogInformation("Restored registration draft for user {UserId}", key);
-            return Task.FromResult(registrant);
+            return Task.FromResult(user);
         }
 
-        return Task.FromResult<Registrant?>(null);
+        return Task.FromResult<User?>(null);
     }
 
     public Task ClearDraftAsync()

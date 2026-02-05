@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using TUnit.Core;
-using Visage.Services.Registration;
+using Visage.Services.UserProfile;
 using Visage.Shared.Models;
 
 namespace Visage.Test.Aspire;
@@ -23,43 +23,42 @@ public sealed class SocialProfileLinkingTests
         => Environment.GetEnvironmentVariable("TEST_USER_EMAIL")
            ?? throw new InvalidOperationException("TEST_USER_EMAIL not set. Required for auth-backed social profile tests.");
 
-    private static string GetRegistrationDbConnectionString()
+    private static string GetUserProfileDbConnectionString()
     {
         var configuration = TestAppContext.App.Services.GetRequiredService<IConfiguration>();
 
-        var cs = configuration.GetConnectionString("registrationdb")
-                 ?? configuration["ConnectionStrings:registrationdb"]
-                 ?? configuration["ConnectionStrings__registrationdb"];
+        var cs = configuration.GetConnectionString("userprofiledb")
+                 ?? configuration["ConnectionStrings:userprofiledb"]
+                 ?? configuration["ConnectionStrings__userprofiledb"];
 
         if (!string.IsNullOrWhiteSpace(cs))
             return cs;
 
-        // Fallback: attempt to locate any injected key containing registrationdb.
         var match = configuration
             .AsEnumerable()
-            .FirstOrDefault(kvp => kvp.Key.Contains("registrationdb", StringComparison.OrdinalIgnoreCase)
+            .FirstOrDefault(kvp => kvp.Key.Contains("userprofiledb", StringComparison.OrdinalIgnoreCase)
                                   && !string.IsNullOrWhiteSpace(kvp.Value));
 
         if (!string.IsNullOrWhiteSpace(match.Value))
             return match.Value!;
 
-        throw new InvalidOperationException("Unable to resolve registrationdb connection string from configuration.");
+        throw new InvalidOperationException("Unable to resolve userprofiledb connection string from configuration.");
     }
 
-    private static RegistrantDB CreateRegistrantDb()
+    private static UserDB CreateUserDb()
     {
-        var options = new DbContextOptionsBuilder<RegistrantDB>()
-            .UseSqlServer(GetRegistrationDbConnectionString())
+        var options = new DbContextOptionsBuilder<UserDB>()
+            .UseSqlServer(GetUserProfileDbConnectionString())
             .Options;
 
-        return new RegistrantDB(options);
+        return new UserDB(options);
     }
 
-    private static async Task<Registrant> EnsureAuthBackedRegistrantAsync(HttpClient httpClient)
+    private static async Task<User> EnsureAuthBackedUserAsync(HttpClient httpClient)
     {
         var email = GetTestUserEmail();
 
-        var registrant = new Registrant
+        var user = new User
         {
             FirstName = "Auth",
             LastName = "User",
@@ -72,42 +71,44 @@ public sealed class SocialProfileLinkingTests
             GovtIdLast4Digits = "1234",
             GovtIdType = "Aadhaar",
             OccupationStatus = "Employed",
-            CompanyName = "Visage Tests"
+            CompanyName = "Visage Tests",
+            IsProfileComplete = true,
+            ProfileCompletedAt = DateTime.UtcNow
         };
 
         // /register is an upsert endpoint by email.
-        var response = await httpClient.PostAsJsonAsync("/register", registrant);
+        var response = await httpClient.PostAsJsonAsync("/register", user);
         response.IsSuccessStatusCode.Should().BeTrue($"/register should succeed but got {response.StatusCode}");
 
-        var saved = await response.Content.ReadFromJsonAsync<Registrant>();
-        saved.Should().NotBeNull("/register should return the saved registrant");
+        var saved = await response.Content.ReadFromJsonAsync<User>();
+        saved.Should().NotBeNull("/register should return the saved user");
         saved!.Email.Should().Be(email);
         return saved;
     }
 
     private static async Task ResetSocialStateForEmailAsync(string email)
     {
-        await using var db = CreateRegistrantDb();
+        await using var db = CreateUserDb();
 
-        var registrant = await db.Registrants
-            .Where(r => r.Email == email)
-            .OrderByDescending(r => r.ProfileCompletedAt)
+        var user = await db.Users
+            .Where(u => u.Email == email)
+            .OrderByDescending(u => u.ProfileCompletedAt)
             .FirstOrDefaultAsync();
 
-        if (registrant is null)
+        if (user is null)
             return;
 
-        registrant.LinkedInProfile = null;
-        registrant.GitHubProfile = null;
+        user.LinkedInProfile = null;
+        user.GitHubProfile = null;
 
-        registrant.IsLinkedInVerified = false;
-        registrant.LinkedInVerifiedAt = null;
-        registrant.IsGitHubVerified = false;
-        registrant.GitHubVerifiedAt = null;
+        user.IsLinkedInVerified = false;
+        user.LinkedInVerifiedAt = null;
+        user.IsGitHubVerified = false;
+        user.GitHubVerifiedAt = null;
 
         // Clean audit events for deterministic assertions.
         await db.SocialVerificationEvents
-            .Where(e => e.RegistrantId == registrant.Id)
+            .Where(e => e.UserId == user.Id)
             .ExecuteDeleteAsync();
 
         await db.SaveChangesAsync();
@@ -116,10 +117,10 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_Status_Should_Default_To_Disconnected_When_Not_Linked()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        await EnsureAuthBackedRegistrantAsync(httpClient);
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
+        await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
         await ResetSocialStateForEmailAsync(email);
@@ -144,10 +145,10 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_LinkCallback_Should_Persist_Verification_And_Create_Audit_Event()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        await EnsureAuthBackedRegistrantAsync(httpClient);
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
+        await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
         await ResetSocialStateForEmailAsync(email);
@@ -177,21 +178,20 @@ public sealed class SocialProfileLinkingTests
         status.LinkedIn.VerifiedAt.Should().NotBeNull();
 
         // Verify DB persisted + audit event written
-        await using var db = CreateRegistrantDb();
-        var registrant = await db.Registrants
+        await using var db = CreateUserDb();
+        var user = await db.Users
             .AsNoTracking()
             .Where(r => r.Email == email)
             .OrderByDescending(r => r.ProfileCompletedAt)
             .FirstAsync();
 
-        registrant.IsLinkedInVerified.Should().BeTrue();
-        registrant.LinkedInProfile.Should().Be(linkedInUrl);
-        registrant.LinkedInVerifiedAt.Should().NotBeNull();
+        user.IsLinkedInVerified.Should().BeTrue();
+        user.LinkedInProfile.Should().Be(linkedInUrl);
+        user.LinkedInVerifiedAt.Should().NotBeNull();
 
         var auditEvents = await db.SocialVerificationEvents
             .AsNoTracking()
-            .Where(e => e.RegistrantId == registrant.Id && e.Provider == "linkedin")
-            .OrderByDescending(e => e.OccurredAtUtc)
+            .Where(e => e.UserId == user.Id && e.Provider == "linkedin")
             .ToListAsync();
 
         auditEvents.Should().NotBeEmpty("a successful link should create an audit event");
@@ -201,10 +201,10 @@ public sealed class SocialProfileLinkingTests
     [Test]
     public async Task Social_LinkCallback_Should_Return_409_When_Profile_Is_Already_Verified_By_Another_Registrant()
     {
-        await TestAppContext.WaitForResourceAsync("registrations-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
+        await TestAppContext.WaitForResourceAsync("userprofile-api", KnownResourceStates.Running, TimeSpan.FromSeconds(90));
 
-        var httpClient = TestAppContext.CreateHttpClient("registrations-api");
-        await EnsureAuthBackedRegistrantAsync(httpClient);
+        var httpClient = TestAppContext.CreateHttpClient("userprofile-api");
+        await EnsureAuthBackedUserAsync(httpClient);
 
         var email = GetTestUserEmail();
         await ResetSocialStateForEmailAsync(email);
@@ -212,9 +212,9 @@ public sealed class SocialProfileLinkingTests
         var conflictUrl = $"https://www.linkedin.com/in/visage-conflict-{Guid.NewGuid():N}";
 
         // Seed a conflicting verified registrant directly in DB.
-        await using (var db = CreateRegistrantDb())
+        await using (var db = CreateUserDb())
         {
-            var otherRegistrant = new Registrant
+            var otherRegistrant = new User
             {
                 FirstName = "Other",
                 LastName = "Registrant",
@@ -234,7 +234,7 @@ public sealed class SocialProfileLinkingTests
                 LinkedInVerifiedAt = DateTime.UtcNow
             };
 
-            db.Registrants.Add(otherRegistrant);
+            db.Users.Add(otherRegistrant);
             await db.SaveChangesAsync();
         }
 
@@ -257,21 +257,21 @@ public sealed class SocialProfileLinkingTests
         doc.RootElement.GetProperty("type").GetString().Should().Be("https://visage.app/problems/social-profile-conflict");
 
         // Verify an audit event is recorded for the failed attempt.
-        await using var verifyDb = CreateRegistrantDb();
-        var authRegistrant = await verifyDb.Registrants
+        await using var verifyDb = CreateUserDb();
+        var authRegistrant = await verifyDb.Users
             .AsNoTracking()
             .Where(r => r.Email == email)
             .OrderByDescending(r => r.ProfileCompletedAt)
             .FirstAsync();
 
-        var failureEvent = await verifyDb.SocialVerificationEvents
+        var failureAudit = await verifyDb.SocialVerificationEvents
             .AsNoTracking()
-            .Where(e => e.RegistrantId == authRegistrant.Id && e.Provider == "linkedin" && e.Outcome == "failed")
+            .Where(e => e.UserId == authRegistrant.Id && e.Provider == "linkedin" && e.Outcome == "failed")
             .OrderByDescending(e => e.OccurredAtUtc)
             .FirstOrDefaultAsync();
 
-        failureEvent.Should().NotBeNull("conflict attempts must be auditable");
-        failureEvent!.ProfileUrl.Should().Be(conflictUrl);
-        failureEvent.FailureReason.Should().NotBeNullOrWhiteSpace();
+        failureAudit.Should().NotBeNull("conflict attempts must be auditable");
+        failureAudit!.ProfileUrl.Should().Be(conflictUrl);
+        failureAudit.FailureReason.Should().NotBeNullOrWhiteSpace();
     }
 }

@@ -28,6 +28,7 @@ namespace Visage.Test.Aspire;
 [Category("E2E")]
 [Category("DraftPersistence")]
 [Category("RequiresAuth")]
+[AuthRequired]
 [NotInParallel] // E2E tests should run sequentially to avoid state conflicts
 public class ProfileDraftPersistenceTests : IAsyncDisposable
 {
@@ -103,6 +104,7 @@ public class ProfileDraftPersistenceTests : IAsyncDisposable
     [Category("Smoke")] // Add smoke test category for quick sanity checks
     public async Task WhenUserFillsProfileThenDraftSavesAndRestores()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Ensure page is initialized by setup
         if (_page == null || _context == null)
             throw new InvalidOperationException("Page not initialized. Setup did not run.");
@@ -156,6 +158,7 @@ public class ProfileDraftPersistenceTests : IAsyncDisposable
     [Category("Full")] // Full workflow test
     public async Task WhenUserDeletesDraftThenFieldsAreCleared()
     {
+        AuthTestGuard.RequireAuthConfigured();
         // Ensure page is initialized by setup
         if (_page == null || _context == null)
             throw new InvalidOperationException("Page not initialized. Setup did not run.");

@@ -7,14 +7,14 @@ namespace Visage.FrontEnd.Shared.Services;
 /// </summary>
 public interface IRegistrationDraftService
 {
-    Task SaveDraftAsync(Registrant registrant);
-    Task<Registrant?> GetDraftAsync();
+    Task SaveDraftAsync(User user);
+    Task<User?> GetDraftAsync();
     Task ClearDraftAsync();
 }
 
 public class NoOpRegistrationDraftService : IRegistrationDraftService
 {
-    public Task SaveDraftAsync(Registrant registrant) => Task.CompletedTask;
-    public Task<Registrant?> GetDraftAsync() => Task.FromResult<Registrant?>(null);
+    public Task SaveDraftAsync(User user) => Task.CompletedTask;
+    public Task<User?> GetDraftAsync() => Task.FromResult<User?>(null);
     public Task ClearDraftAsync() => Task.CompletedTask;
 }
